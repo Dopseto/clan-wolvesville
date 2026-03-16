@@ -45,7 +45,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     let html = `
         <h1>${info.name || 'Clan'} <span class="tag">${info.tag || ''}</span></h1>
         <div class="card">
-            <p style="color:#a0a3b8; font-size:15px">${info.description || 'Sin descripción'}</p>
+            <p style="color:#a0a3b8; font-size:15px">${(info.description || 'Sin descripción').replace(/\n/g, '<br>')}</p>
         </div>
         <div class="grid">
             <div class="stat">
