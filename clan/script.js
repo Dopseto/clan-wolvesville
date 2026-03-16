@@ -122,7 +122,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
             html += `<tr>
                 <td>${d.playerUsername || 'N/A'}</td>
                 <td>${d.type || 'N/A'}</td>
-                <td>${d.amount || 0}</td>
+                <td>${d.gold ? d.gold + ' 🥇' : ''} ${d.gems ? d.gems + ' 💎' : ''}</td>
                 <td>${fecha}</td>
             </tr>`
         })
@@ -187,7 +187,7 @@ function mostrarMiembros(members) {
         return
     }
     html += `<div class="card"><table>
-        <tr><th>Nombre</th><th>Rango</th><th>Nivel</th><th>XP donado</th><th>Oro donado</th><th></th></tr>`
+        <tr><th>Nombre</th><th>Rango</th><th>Nivel</th><th>XP donado</th><th>Oro donado</th><th>Gemas donadas</th><th></th></tr>
     members.forEach(m => {
         const nivel = m.level === -1 ? 'Oculto' : (m.level || 'N/A')
         html += `<tr>
@@ -196,6 +196,7 @@ function mostrarMiembros(members) {
             <td>${nivel}</td>
             <td>${m.xpDonated || 0}</td>
             <td>${m.goldDonated || 0}</td>
+            <td>${m.gemsDonated || 0}</td>
             <td><button class="btn-tracker" onclick="agregarAlTracker('${m.playerId}', '${m.username}')">+ Tracker</button></td>
         </tr>`
     })
