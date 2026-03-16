@@ -4,6 +4,13 @@ window.onload = function() {
     mostrarSeccion('inicio')
 }
 
+function mostrarToast(msg, tipo = 'ok') {
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.className = `toast ${tipo} show`
+    setTimeout(() => t.classList.remove('show'), 3000)
+}
+
 function mostrarSeccion(seccion, btn = null) {
     seccionActual = seccion
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('activo'))
@@ -78,7 +85,16 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     }
     html += `</div>`
 
-    // Anuncios
+    // Publicar anuncio
+    html += `
+        <div class="card">
+            <h3>📝 Publicar anuncio</h3>
+            <textarea id="nuevoAnuncio" placeholder="Escribí tu anuncio acá..."></textarea>
+            <button class="btn-primary" onclick="publicarAnuncio()">📢 Publicar</button>
+        </div>
+    `
+
+    // Anuncios existentes
     html += `<div class="card"><h3>📢 Anuncios</h3>`
     if (anuncios && anuncios.length > 0) {
         anuncios.slice(0, 5).forEach(a => {
@@ -100,9 +116,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     html += `<div class="card"><h3>💰 Donaciones recientes</h3>`
     if (ledger && ledger.length > 0) {
         html += `<table>
-            <tr>
-                <th>Jugador</th><th>Tipo</th><th>Cantidad</th><th>Fecha</th>
-            </tr>`
+            <tr><th>Jugador</th><th>Tipo</th><th>Cantidad</th><th>Fecha</th></tr>`
         ledger.slice(0, 20).forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             html += `<tr>
@@ -121,6 +135,44 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     contenido.innerHTML = html
 }
 
+// =================== PUBLICAR ANUNCIO ===================
+function publicarAnuncio() {
+    const mensaje = document.getElementById('nuevoAnuncio').value.trim()
+    if (!mensaje) {
+        mostrarToast('Escribí un mensaje primero', 'error')
+        return
+    }
+    const btn = document.querySelector('#contenido .btn-primary')
+    btn.disabled = true
+    btn.textContent = 'Publicando...'
+
+    fetch('/clan/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: mensaje })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            mostrarToast('Error: ' + data.error, 'error')
+            btn.disabled = false
+            btn.textContent = '📢 Publicar'
+        } else {
+            mostrarToast('✓ Anuncio publicado!')
+            document.getElementById('nuevoAnuncio').value = ''
+            btn.disabled = false
+            btn.textContent = '📢 Publicar'
+            // Recargar inicio para ver el nuevo anuncio
+            setTimeout(() => cargarInicio(), 1000)
+        }
+    })
+    .catch(() => {
+        mostrarToast('Error al publicar', 'error')
+        btn.disabled = false
+        btn.textContent = '📢 Publicar'
+    })
+}
+
 // =================== MIEMBROS ===================
 function cargarMiembros() {
     fetch('/clan/members').then(r => r.json()).then(mostrarMiembros)
@@ -135,9 +187,7 @@ function mostrarMiembros(members) {
         return
     }
     html += `<div class="card"><table>
-        <tr>
-            <th>Nombre</th><th>Rango</th><th>Nivel</th><th>XP donado</th><th>Oro donado</th><th></th>
-        </tr>`
+        <tr><th>Nombre</th><th>Rango</th><th>Nivel</th><th>XP donado</th><th>Oro donado</th><th></th></tr>`
     members.forEach(m => {
         const nivel = m.level === -1 ? 'Oculto' : (m.level || 'N/A')
         html += `<tr>
@@ -194,7 +244,7 @@ function agregarAlTracker(id, nombre) {
     fetch(`/buscarid?id=${encodeURIComponent(id)}`)
         .then(r => r.json())
         .then(data => {
-            if (data.error) alert('Error: ' + data.error)
-            else alert(`✓ ${nombre} agregado al tracker!`)
+            if (data.error) mostrarToast('Error: ' + data.error, 'error')
+            else mostrarToast(`✓ ${nombre} agregado al tracker!`)
         })
 }

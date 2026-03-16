@@ -58,6 +58,17 @@ def consultar_api(url):
     with urllib.request.urlopen(req) as response:
         return json.loads(response.read())
 
+def post_api(url, data):
+    body = json.dumps(data).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="POST")
+    req.add_header("Authorization", "Bot " + api_key)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    with urllib.request.urlopen(req) as response:
+        raw = response.read()
+        return json.loads(raw) if raw else {"ok": True}
+
 def formato_fecha(fecha):
     if not fecha or fecha == 'N/A':
         return 'N/A'
@@ -76,7 +87,6 @@ class Handler(BaseHTTPRequestHandler):
         body = None
 
         try:
-            # Archivos estáticos
             if parsed.path == "/":
                 body, content_type = servir_archivo("clan/index.html", "text/html; charset=utf-8")
             elif parsed.path == "/tracker/" or parsed.path == "/tracker/index.html":
@@ -87,8 +97,6 @@ class Handler(BaseHTTPRequestHandler):
                 body, content_type = servir_archivo("clan/index.html", "text/html; charset=utf-8")
             elif parsed.path == "/clan/script.js":
                 body, content_type = servir_archivo("clan/script.js", "application/javascript")
-
-            # API del tracker
             elif parsed.path == "/jugadores":
                 body = json.dumps(cargar_jugadores()).encode("utf-8")
             elif parsed.path == "/buscar":
@@ -157,8 +165,6 @@ class Handler(BaseHTTPRequestHandler):
                     if nivel == -1: nivel = "Oculto"
                     resultados.append({"id": id_j, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nombre_anterior": nombre_anterior, "cambio": cambio, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
                 body = json.dumps(resultados).encode("utf-8")
-
-            # API del clan
             elif parsed.path == "/clan/info":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/info")
                 body = json.dumps(data).encode("utf-8")
@@ -177,6 +183,38 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/clan/logs":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
                 body = json.dumps(data).encode("utf-8")
+
+        except urllib.error.HTTPError as e:
+            body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
+        except Exception as e:
+            body = json.dumps({"error": str(e)}).encode("utf-8")
+
+        if body is None:
+            body = json.dumps({}).encode("utf-8")
+
+        self.send_response(200)
+        self.send_header("Content-type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        content_type = "application/json"
+        body = None
+
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw) if raw else {}
+
+            if parsed.path == "/clan/announcements":
+                mensaje = data.get("message", "").strip()
+                if mensaje:
+                    result = post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": mensaje})
+                    body = json.dumps({"ok": True}).encode("utf-8")
+                else:
+                    body = json.dumps({"error": "Mensaje vacío"}).encode("utf-8")
 
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
