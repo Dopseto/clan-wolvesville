@@ -1,5 +1,13 @@
 let seccionActual = 'inicio'
 
+// Mensajes pregrabados para anuncios automáticos
+const ANUNCIOS_AUTO = [
+    "¡Ya están las nuevas misiones para votar! Recuerden que tienen 12 horas para participar en la votación.",
+    "¡La misión de la semana ha comenzado! Tienen hasta el domingo para completarla. ¡Mucho éxito a todos!",
+    "Recordatorio: donen oro o gemas al clan para mantener los recursos. ¡Gracias a todos por su apoyo!",
+    "¡Felicitaciones al clan por completar la misión! Los premios serán entregados en breve.",
+]
+
 window.onload = function() {
     mostrarSeccion('inicio')
 }
@@ -42,19 +50,23 @@ function cargarInicio() {
 function mostrarInicio(info, quests, anuncios, ledger) {
     const contenido = document.getElementById('contenido')
 
-    let html = `
-        <h1>${info.name || 'Clan'} <span class="tag">${info.tag || ''}</span></h1>
+    // Título
+    let html = `<h1>${info.name || 'Clan'} <span class="tag">${info.tag || ''}</span></h1>`
+
+    // Descripción del clan
+    html += `
         <div class="card">
-            <p style="color:#a0a3b8; font-size:15px">${(info.description || 'Sin descripción').replace(/\n/g, '<br>')}</p>
+            <h3>📜 Descripción</h3>
+            <p style="font-size:15px; line-height:1.7">${(info.description || 'Sin descripción').replace(/\n/g, '<br>')}</p>
         </div>
+    `
+
+    // Stats generales
+    html += `
         <div class="grid">
             <div class="stat">
                 <div class="stat-valor">${info.memberCount || 0}</div>
                 <div class="stat-label">Miembros</div>
-            </div>
-            <div class="stat">
-                <div class="stat-valor">${info.gold || 0}</div>
-                <div class="stat-label">Oro</div>
             </div>
             <div class="stat">
                 <div class="stat-valor">${info.xp || 0}</div>
@@ -64,38 +76,84 @@ function mostrarInicio(info, quests, anuncios, ledger) {
                 <div class="stat-valor">${info.language || 'N/A'}</div>
                 <div class="stat-label">Idioma</div>
             </div>
+            <div class="stat">
+                <div class="stat-valor">${info.minLevel || 0}</div>
+                <div class="stat-label">Nivel mínimo</div>
+            </div>
+        </div>
+    `
+
+    // Recursos del clan
+    html += `
+        <div class="card" style="margin-top:16px">
+            <h3>💰 Recursos del clan</h3>
+            <div class="grid">
+                <div class="stat">
+                    <div class="stat-valor">🥇 ${info.gold || 0}</div>
+                    <div class="stat-label">Oro</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-valor">💎 ${info.gems || 0}</div>
+                    <div class="stat-label">Gemas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-valor">🥇 ${info.goldReserve || 0}</div>
+                    <div class="stat-label">Reserva de oro</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-valor">💎 ${info.gemsReserve || 0}</div>
+                    <div class="stat-label">Reserva de gemas</div>
+                </div>
+            </div>
         </div>
     `
 
     // Misión activa
-    html += `<div class="card" style="margin-top:16px"><h3>⚔️ Misión activa</h3>`
+    html += `<div class="card"><h3>⚔️ Misión activa</h3>`
     if (quests && quests.quest) {
         const progreso = quests.currentValue || 0
         const objetivo = quests.quest.targetValue || 1
         const pct = Math.min(100, Math.round((progreso / objetivo) * 100))
         html += `
-            <p style="margin-bottom:8px"><span style="color:#a0a3b8">Misión:</span> <b>${quests.quest.name || 'N/A'}</b></p>
-            <div style="background:#1e2035; border-radius:6px; height:8px; overflow:hidden; margin:10px 0">
-                <div style="background:#e94560; width:${pct}%; height:100%; border-radius:6px; transition:width 0.5s"></div>
+            <p style="margin-bottom:8px"><b>${quests.quest.name || 'N/A'}</b></p>
+            <div style="background:rgba(160,128,64,0.2); border-radius:6px; height:10px; overflow:hidden; margin:10px 0; border:1px solid rgba(160,128,64,0.3)">
+                <div style="background:var(--accent); width:${pct}%; height:100%; border-radius:6px; transition:width 0.5s"></div>
             </div>
-            <p style="font-size:13px; color:#7b7f96">${progreso} / ${objetivo} &nbsp;·&nbsp; Recompensa: ${quests.quest.goldReward || 0} oro</p>
+            <p style="font-size:14px; color:var(--muted)">${progreso} / ${objetivo} &nbsp;·&nbsp; Recompensa: ${quests.quest.goldReward || 0} 🥇</p>
         `
     } else {
-        html += `<p style="color:#7b7f96">No hay misión activa</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay misión activa</p>`
     }
     html += `</div>`
 
-    // Publicar anuncio
+    // Anuncios - tabs Manual / Automático
     html += `
         <div class="card">
-            <h3>📝 Publicar anuncio</h3>
-            <textarea id="nuevoAnuncio" placeholder="Escribí tu anuncio acá..."></textarea>
-            <button class="btn-primary" onclick="publicarAnuncio()">📢 Publicar</button>
+            <h3>📢 Anuncios</h3>
+            <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
+                <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">Manual</button>
+                <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">Automático</button>
+            </div>
+
+            <div id="panel-manual">
+                <textarea id="nuevoAnuncio" placeholder="Escribí tu anuncio acá..."></textarea>
+                <button class="btn-primary" onclick="publicarAnuncio()">📢 Publicar</button>
+            </div>
+
+            <div id="panel-auto" style="display:none">
+                <p style="font-size:14px; color:var(--muted); margin-bottom:12px; font-style:italic">Seleccioná un mensaje pregrabado para publicar:</p>
+                ${ANUNCIOS_AUTO.map((msg, i) => `
+                    <div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:all 0.2s" onclick="seleccionarAutoAnuncio(${i})" id="auto-${i}">
+                        <p style="font-size:14px; color:var(--ink-light)">${msg}</p>
+                    </div>
+                `).join('')}
+                <button class="btn-primary" style="margin-top:8px" onclick="publicarAutoAnuncio()">📢 Publicar seleccionado</button>
+            </div>
         </div>
     `
 
-    // Anuncios existentes
-    html += `<div class="card"><h3>📢 Anuncios</h3>`
+    // Historial de anuncios
+    html += `<div class="card"><h3>📜 Historial de anuncios</h3>`
     if (anuncios && anuncios.length > 0) {
         anuncios.slice(0, 5).forEach(a => {
             const fecha = a.timestamp ? a.timestamp.slice(0, 10).split('-').reverse().join('-') : 'N/A'
@@ -108,12 +166,12 @@ function mostrarInicio(info, quests, anuncios, ledger) {
             `
         })
     } else {
-        html += `<p style="color:#7b7f96">No hay anuncios</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay anuncios</p>`
     }
     html += `</div>`
 
-    // Donaciones
-    html += `<div class="card"><h3>💰 Donaciones recientes</h3>`
+    // Donaciones recientes
+    html += `<div class="card"><h3>🏦 Donaciones recientes</h3>`
     if (ledger && ledger.length > 0) {
         html += `<table>
             <tr><th>Jugador</th><th>Tipo</th><th>Cantidad</th><th>Fecha</th></tr>`
@@ -128,11 +186,64 @@ function mostrarInicio(info, quests, anuncios, ledger) {
         })
         html += `</table>`
     } else {
-        html += `<p style="color:#7b7f96">No hay donaciones registradas</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay donaciones registradas</p>`
     }
     html += `</div>`
 
     contenido.innerHTML = html
+}
+
+// =================== TABS ANUNCIOS ===================
+let autoSeleccionado = null
+
+function switchTab(tab) {
+    const manual = document.getElementById('panel-manual')
+    const auto = document.getElementById('panel-auto')
+    const btnManual = document.getElementById('tab-manual')
+    const btnAuto = document.getElementById('tab-auto')
+
+    if (tab === 'manual') {
+        manual.style.display = 'block'
+        auto.style.display = 'none'
+        btnManual.style.background = 'var(--accent)'
+        btnManual.style.color = '#fff8e8'
+        btnAuto.style.background = 'rgba(160,128,64,0.1)'
+        btnAuto.style.color = 'var(--muted)'
+    } else {
+        manual.style.display = 'none'
+        auto.style.display = 'block'
+        btnManual.style.background = 'rgba(160,128,64,0.1)'
+        btnManual.style.color = 'var(--muted)'
+        btnAuto.style.background = 'var(--accent)'
+        btnAuto.style.color = '#fff8e8'
+    }
+}
+
+function seleccionarAutoAnuncio(i) {
+    // Deseleccionar todos
+    ANUNCIOS_AUTO.forEach((_, idx) => {
+        const el = document.getElementById(`auto-${idx}`)
+        if (el) {
+            el.style.background = 'rgba(255,252,235,0.5)'
+            el.style.borderColor = 'rgba(160,128,64,0.3)'
+        }
+    })
+    // Seleccionar el elegido
+    const el = document.getElementById(`auto-${i}`)
+    if (el) {
+        el.style.background = 'rgba(196,122,42,0.15)'
+        el.style.borderColor = 'var(--accent)'
+    }
+    autoSeleccionado = i
+}
+
+function publicarAutoAnuncio() {
+    if (autoSeleccionado === null) {
+        mostrarToast('Seleccioná un mensaje primero', 'error')
+        return
+    }
+    const mensaje = ANUNCIOS_AUTO[autoSeleccionado]
+    enviarAnuncio(mensaje)
 }
 
 // =================== PUBLICAR ANUNCIO ===================
@@ -142,10 +253,10 @@ function publicarAnuncio() {
         mostrarToast('Escribí un mensaje primero', 'error')
         return
     }
-    const btn = document.querySelector('#contenido .btn-primary')
-    btn.disabled = true
-    btn.textContent = 'Publicando...'
+    enviarAnuncio(mensaje)
+}
 
+function enviarAnuncio(mensaje) {
     fetch('/clan/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,22 +266,12 @@ function publicarAnuncio() {
     .then(data => {
         if (data.error) {
             mostrarToast('Error: ' + data.error, 'error')
-            btn.disabled = false
-            btn.textContent = '📢 Publicar'
         } else {
             mostrarToast('✓ Anuncio publicado!')
-            document.getElementById('nuevoAnuncio').value = ''
-            btn.disabled = false
-            btn.textContent = '📢 Publicar'
-            // Recargar inicio para ver el nuevo anuncio
             setTimeout(() => cargarInicio(), 1000)
         }
     })
-    .catch(() => {
-        mostrarToast('Error al publicar', 'error')
-        btn.disabled = false
-        btn.textContent = '📢 Publicar'
-    })
+    .catch(() => mostrarToast('Error al publicar', 'error'))
 }
 
 // =================== MIEMBROS ===================
@@ -182,7 +283,7 @@ function mostrarMiembros(members) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>👥 Miembros</h1>`
     if (!members || members.length === 0) {
-        html += `<div class="card"><p style="color:#7b7f96">No hay miembros</p></div>`
+        html += `<div class="card"><p style="color:var(--muted); font-style:italic">No hay miembros</p></div>`
         contenido.innerHTML = html
         return
     }
@@ -201,7 +302,6 @@ function mostrarMiembros(members) {
         </tr>`
     })
     html += `</table></div>`
-    html += `</table></div>`
     contenido.innerHTML = html
 }
 
@@ -214,7 +314,7 @@ function mostrarLogs(logs) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>📋 Actividad del clan</h1><div class="card">`
     if (!logs || logs.length === 0) {
-        html += `<p style="color:#7b7f96">No hay actividad registrada</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay actividad registrada</p>`
     } else {
         html += `<table>
             <tr><th>Fecha</th><th>Evento</th><th>Jugador</th></tr>`
@@ -237,7 +337,7 @@ function cargarStats() {
     document.getElementById('contenido').innerHTML = `
         <h1>📊 Estadísticas</h1>
         <div class="card">
-            <p style="color:#7b7f96">Próximamente...</p>
+            <p style="color:var(--muted); font-style:italic">Próximamente...</p>
         </div>`
 }
 
@@ -250,4 +350,3 @@ function agregarAlTracker(id, nombre) {
             else mostrarToast(`✓ ${nombre} agregado al tracker!`)
         })
 }
-
