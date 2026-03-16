@@ -120,7 +120,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
         ledger.slice(0, 20).forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             html += `<tr>
-                <td>${d.username || 'N/A'}</td>
+                <td>${d.playerUsername || 'N/A'}</td>
                 <td>${d.type || 'N/A'}</td>
                 <td>${d.amount || 0}</td>
                 <td>${fecha}</td>
@@ -221,7 +221,7 @@ function mostrarLogs(logs) {
             html += `<tr>
                 <td>${fecha}</td>
                 <td>${l.type || 'N/A'}</td>
-                <td>${l.username || 'N/A'}</td>
+                <td>${l.playerUsername || 'N/A'}</td>
             </tr>`
         })
         html += `</table>`
