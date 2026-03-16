@@ -1,6 +1,12 @@
-// Cargar lista de jugadores al abrir la página
 window.onload = function() {
     cargarLista()
+}
+
+function mostrarToast(msg) {
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.classList.add('show')
+    setTimeout(() => t.classList.remove('show'), 2500)
 }
 
 function cargarLista() {
@@ -20,11 +26,11 @@ function cargarLista() {
                 const li = document.createElement('li')
                 li.innerHTML = `
                     <div class="jugador-fila">
-                        <span>${i + 1} - ${nombre}</span>
-                        <div>
-                            <input type="text" class="nota-input" id="nota-${id}" value="${nota}" placeholder="Escribir nota..."/>
-                            <button onclick="guardarNota('${id}')">Guardar nota</button>
-                            <button onclick="verificarUno('${id}')">Verificar</button>
+                        <span class="jugador-nombre"><span class="jugador-num">${i + 1}.</span>${nombre}</span>
+                        <div class="jugador-acciones">
+                            <input type="text" class="nota-input" id="nota-${id}" value="${nota}" placeholder="Nota..."/>
+                            <button class="btn-secondary btn-sm" onclick="guardarNota('${id}')">💾 Guardar</button>
+                            <button class="btn-verificar btn-sm" onclick="verificarUno('${id}')">🔍 Verificar</button>
                         </div>
                     </div>
                 `
@@ -44,12 +50,12 @@ function mostrarCargando() {
 function tarjeta(j) {
     return `
     <div class="resultado-card">
-        <p><b>Nombre original:</b> ${j.nombre_original}</p>
-        <p><b>Nombre actual:</b> ${j.nombre_actual}</p>
-        <p><b>Nivel:</b> ${j.nivel}</p>
-        <p><b>Cuenta creada:</b> ${j.fecha}</p>
-        <p><b>Clan actual:</b> ${j.clan}</p>
-        <p><b>ID:</b> ${j.id}</p>
+        <p><b>Nombre original</b> ${j.nombre_original}</p>
+        <p><b>Nombre actual</b> ${j.nombre_actual}</p>
+        <p><b>Nivel</b> ${j.nivel}</p>
+        <p><b>Cuenta creada</b> ${j.fecha}</p>
+        <p><b>Clan actual</b> ${j.clan}</p>
+        <p><b>ID</b> ${j.id}</p>
     </div>`
 }
 
@@ -61,10 +67,10 @@ function buscarPorNombre() {
         .then(r => r.json())
         .then(data => {
             if (data.error) {
-                mostrarResultado(`<p style='color:red'>Error: ${data.error}</p>`)
+                mostrarResultado(`<p class='error'>Error: ${data.error}</p>`)
                 return
             }
-            mostrarResultado('<h3>✓ Jugador guardado</h3>' + tarjeta(data))
+            mostrarResultado('<h3 style="margin-bottom:10px">✓ Jugador guardado</h3>' + tarjeta(data))
             cargarLista()
         })
 }
@@ -77,10 +83,10 @@ function buscarPorID() {
         .then(r => r.json())
         .then(data => {
             if (data.error) {
-                mostrarResultado(`<p style='color:red'>Error: ${data.error}</p>`)
+                mostrarResultado(`<p class='error'>Error: ${data.error}</p>`)
                 return
             }
-            mostrarResultado('<h3>✓ Jugador guardado</h3>' + tarjeta(data))
+            mostrarResultado('<h3 style="margin-bottom:10px">✓ Jugador guardado</h3>' + tarjeta(data))
             cargarLista()
         })
 }
@@ -90,9 +96,7 @@ function guardarNota(id) {
     fetch(`/guardarnota?id=${encodeURIComponent(id)}&nota=${encodeURIComponent(nota)}`)
         .then(r => r.json())
         .then(data => {
-            if (data.ok) {
-                mostrarResultado("<p class='ok'>✓ Nota guardada</p>")
-            }
+            if (data.ok) mostrarToast('✓ Nota guardada')
         })
 }
 
@@ -102,7 +106,7 @@ function verificarUno(id) {
         .then(r => r.json())
         .then(data => {
             if (data.error) {
-                mostrarResultado(`<p style='color:red'>Error: ${data.error}</p>`)
+                mostrarResultado(`<p class='error'>Error: ${data.error}</p>`)
                 return
             }
             let html = tarjeta(data)
@@ -122,10 +126,10 @@ function verificarTodos() {
         .then(r => r.json())
         .then(lista => {
             if (lista.error) {
-                mostrarResultado(`<p style='color:red'>Error: ${lista.error}</p>`)
+                mostrarResultado(`<p class='error'>Error: ${lista.error}</p>`)
                 return
             }
-            let html = '<h3>Resultados</h3>'
+            let html = '<h3 style="margin-bottom:12px">Resultados</h3>'
             lista.forEach(data => {
                 html += tarjeta(data)
                 if (data.cambio) {
