@@ -222,7 +222,7 @@ function mostrarLogs(logs) {
             const fecha = l.creationTime ? l.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             html += `<tr>
                 <td>${fecha}</td>
-                <td>${l.type || 'N/A'}</td>
+                <td>${l.action || 'N/A'}</td>
                 <td>${l.playerUsername || 'N/A'}</td>
             </tr>`
         })
