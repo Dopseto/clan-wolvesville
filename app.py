@@ -77,7 +77,9 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             # Archivos estáticos
-            if parsed.path == "/" or parsed.path == "/tracker/" or parsed.path == "/tracker/index.html":
+            if parsed.path == "/":
+                body, content_type = servir_archivo("clan/index.html", "text/html; charset=utf-8")
+            elif parsed.path == "/tracker/" or parsed.path == "/tracker/index.html":
                 body, content_type = servir_archivo("tracker/index.html", "text/html; charset=utf-8")
             elif parsed.path == "/tracker/script.js":
                 body, content_type = servir_archivo("tracker/script.js", "application/javascript")
@@ -194,6 +196,6 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 print("Abriendo Wolvesville...")
-threading.Timer(1, lambda: webbrowser.open("http://localhost:8080/tracker/")).start()
 threading.Timer(1, lambda: webbrowser.open("http://localhost:8080/clan/")).start()
+threading.Timer(1, lambda: webbrowser.open("http://localhost:8080/tracker/")).start()
 HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
