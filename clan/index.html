@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Clan Wolvesville</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #1a1a2e; color: #eee; display: flex; height: 100vh; }
+        
+        /* Panel lateral */
+        #sidebar {
+            width: 200px;
+            background: #0f3460;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-height: 100vh;
+        }
+        #sidebar h2 {
+            color: #e94560;
+            text-align: center;
+            padding: 10px 20px 20px;
+            font-size: 18px;
+        }
+        .nav-btn {
+            padding: 12px 20px;
+            background: none;
+            color: #eee;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+        .nav-btn:hover { background: #16213e; }
+        .nav-btn.activo { background: #e94560; }
+
+        /* Contenido principal */
+        #contenido {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .card {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        h1 { color: #e94560; margin-bottom: 20px; }
+        h3 { color: #e94560; margin-bottom: 10px; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .stat {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-valor {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e94560;
+        }
+        .stat-label { font-size: 13px; color: #aaa; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #0f3460; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #0f3460; }
+        tr:hover { background: #0f3460; }
+        .cargando { color: #aaa; font-style: italic; }
+        .tag {
+            display: inline-block;
+            background: #e94560;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        a { color: #e94560; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>🐺 Clan</h2>
+    <button class="nav-btn activo" onclick="mostrarSeccion('inicio', this)">🏠 Inicio</button>
+    <button class="nav-btn" onclick="mostrarSeccion('miembros', this)">👥 Miembros</button>
+    <button class="nav-btn" onclick="mostrarSeccion('logs', this)">📋 Logs</button>
+    <button class="nav-btn" onclick="mostrarSeccion('stats', this)">📊 Estadísticas</button>
+    <button class="nav-btn" onclick="window.location.href='http://localhost:8080/tracker/'">🔍 Tracker</button>
+</div>
+
+<div id="contenido">
+    <p class="cargando">Cargando...</p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

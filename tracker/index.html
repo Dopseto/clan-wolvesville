@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Wolvesville Name Tracker</title>
+    <style>
+        body { font-family: Arial; background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { color: #e94560; }
+        .card { background: #16213e; padding: 15px; border-radius: 10px; margin: 10px 0; }
+        input[type=text] { padding: 8px; width: 300px; border-radius: 5px; border: none; margin: 5px; background: #0f3460; color: #eee; }
+        button { padding: 8px 15px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #c73652; }
+        ul { list-style: none; padding: 0; }
+        li { background: #16213e; padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .jugador-fila { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+        .nota-input { width: 200px; background: #0f3460; color: #eee; }
+        .resultado-card { background: #16213e; padding: 15px; border-radius: 10px; margin: 8px 0; }
+        .aviso { color: #f5a623; font-weight: bold; }
+        .ok { color: #2ecc71; font-weight: bold; }
+        .cargando { color: #aaa; font-style: italic; }
+        #resultado { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🐺 Wolvesville Name Tracker</h1>
+
+    <div class="card">
+        <h3>Agregar por nombre</h3>
+        <input type="text" id="inputNombre" placeholder="Nombre del jugador"/>
+        <button onclick="buscarPorNombre()">Buscar</button>
+    </div>
+
+    <div class="card">
+        <h3>Agregar por ID</h3>
+        <input type="text" id="inputID" placeholder="ID del jugador"/>
+        <button onclick="buscarPorID()">Buscar</button>
+    </div>
+
+    <div class="card">
+        <h3>Jugadores guardados</h3>
+        <ul id="listaJugadores"></ul>
+        <button onclick="verificarTodos()">Verificar cambios en TODOS</button>
+    </div>
+
+    <div id="resultado"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
