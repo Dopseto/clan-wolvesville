@@ -10,17 +10,44 @@ from urllib.parse import parse_qs, urlparse
 api_key = "FkUKPpQhT9jlJspDzwKeuBK3MuvSOvFVHIfeMn9E0TiB9UrrzNzegAkJNCQWPbun"
 clan_id = "b734e3a5-cb89-4645-b9f5-0bd4229d4a99"
 base = os.path.dirname(os.path.abspath(__file__))
-archivo = os.path.join(base, "jugadores.json")
+
+SUPABASE_URL = "https://dtsjfrtofhvfjsqncsjl.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0c2pmcnRvZmh2ZmpzcW5jc2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQ5NTcsImV4cCI6MjA4OTIwMDk1N30.7IW5IMb-1aLdEUo6wq5L90vTZDmXbG9P9Kvd_cwosS0"
+
+def supabase_request(method, endpoint, data=None):
+    url = f"{SUPABASE_URL}/rest/v1/{endpoint}"
+    req = urllib.request.Request(url, method=method)
+    req.add_header("apikey", SUPABASE_KEY)
+    req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "return=representation,resolution=merge-duplicates")
+    body = json.dumps(data).encode("utf-8") if data else None
+    with urllib.request.urlopen(req, body) as response:
+        return json.loads(response.read())
 
 def cargar_jugadores():
-    if os.path.exists(archivo):
-        with open(archivo, "r") as f:
-            return json.load(f)
-    return {}
+    rows = supabase_request("GET", "jugadores?select=*")
+    jugadores = {}
+    for row in rows:
+        jugadores[row["id"]] = {
+            "nombre_original": row["nombre_original"],
+            "nombre_actual": row["nombre_actual"],
+            "nota": row.get("nota", "")
+        }
+    return jugadores
 
-def guardar_jugadores(jugadores):
-    with open(archivo, "w") as f:
-        json.dump(jugadores, f, indent=2)
+def guardar_jugador(id_jugador, nombre_original, nombre_actual, nota=""):
+    data = {
+        "id": id_jugador,
+        "nombre_original": nombre_original,
+        "nombre_actual": nombre_actual,
+        "nota": nota
+    }
+    supabase_request("POST", "jugadores", data)
+
+def actualizar_jugador(id_jugador, campos):
+    query = f"jugadores?id=eq.{id_jugador}"
+    supabase_request("PATCH", query, campos)
 
 def consultar_api(url):
     req = urllib.request.Request(url)
@@ -69,10 +96,9 @@ class Handler(BaseHTTPRequestHandler):
                     id_jugador = data["id"]
                     nombre_actual = data["username"]
                     jugadores = cargar_jugadores()
-                    nombre_original = jugadores.get(id_jugador, {}).get("nombre_original", nombre_actual) if isinstance(jugadores.get(id_jugador), dict) else nombre_actual
-                    nota = jugadores.get(id_jugador, {}).get("nota", "") if isinstance(jugadores.get(id_jugador), dict) else ""
-                    jugadores[id_jugador] = {"nombre_original": nombre_original, "nombre_actual": nombre_actual, "nota": nota}
-                    guardar_jugadores(jugadores)
+                    nombre_original = jugadores.get(id_jugador, {}).get("nombre_original", nombre_actual)
+                    nota = jugadores.get(id_jugador, {}).get("nota", "")
+                    guardar_jugador(id_jugador, nombre_original, nombre_actual, nota)
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
                     resultado = {"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota}
@@ -83,10 +109,9 @@ class Handler(BaseHTTPRequestHandler):
                     data = consultar_api(f"https://api.wolvesville.com/players/{id_jugador}")
                     nombre_actual = data["username"]
                     jugadores = cargar_jugadores()
-                    nombre_original = jugadores.get(id_jugador, {}).get("nombre_original", nombre_actual) if isinstance(jugadores.get(id_jugador), dict) else nombre_actual
-                    nota = jugadores.get(id_jugador, {}).get("nota", "") if isinstance(jugadores.get(id_jugador), dict) else ""
-                    jugadores[id_jugador] = {"nombre_original": nombre_original, "nombre_actual": nombre_actual, "nota": nota}
-                    guardar_jugadores(jugadores)
+                    nombre_original = jugadores.get(id_jugador, {}).get("nombre_original", nombre_actual)
+                    nota = jugadores.get(id_jugador, {}).get("nota", "")
+                    guardar_jugador(id_jugador, nombre_original, nombre_actual, nota)
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
                     resultado = {"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota}
@@ -95,25 +120,21 @@ class Handler(BaseHTTPRequestHandler):
                 id_jugador = params.get("id", [""])[0]
                 nota = params.get("nota", [""])[0]
                 if id_jugador:
-                    jugadores = cargar_jugadores()
-                    if id_jugador in jugadores and isinstance(jugadores[id_jugador], dict):
-                        jugadores[id_jugador]["nota"] = nota
-                        guardar_jugadores(jugadores)
+                    actualizar_jugador(id_jugador, {"nota": nota})
                     body = json.dumps({"ok": True}).encode("utf-8")
             elif parsed.path == "/verificarid":
                 id_j = params.get("id", [""])[0]
                 if id_j:
                     jugadores = cargar_jugadores()
                     info = jugadores.get(id_j, {})
-                    nombre_anterior = info["nombre_actual"] if isinstance(info, dict) else info
-                    nombre_original = info["nombre_original"] if isinstance(info, dict) else info
-                    nota = info.get("nota", "") if isinstance(info, dict) else ""
+                    nombre_anterior = info.get("nombre_actual", "")
+                    nombre_original = info.get("nombre_original", "")
+                    nota = info.get("nota", "")
                     data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     nombre_actual = data["username"]
                     cambio = nombre_actual != nombre_anterior
                     if cambio:
-                        jugadores[id_j]["nombre_actual"] = nombre_actual
-                        guardar_jugadores(jugadores)
+                        actualizar_jugador(id_j, {"nombre_actual": nombre_actual})
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
                     resultado = {"id": id_j, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nombre_anterior": nombre_anterior, "cambio": cambio, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota}
@@ -122,18 +143,17 @@ class Handler(BaseHTTPRequestHandler):
                 jugadores = cargar_jugadores()
                 resultados = []
                 for id_j, info in list(jugadores.items()):
-                    nombre_anterior = info["nombre_actual"] if isinstance(info, dict) else info
-                    nombre_original = info["nombre_original"] if isinstance(info, dict) else info
-                    nota = info.get("nota", "") if isinstance(info, dict) else ""
+                    nombre_anterior = info.get("nombre_actual", "")
+                    nombre_original = info.get("nombre_original", "")
+                    nota = info.get("nota", "")
                     data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     nombre_actual = data["username"]
                     cambio = nombre_actual != nombre_anterior
                     if cambio:
-                        jugadores[id_j]["nombre_actual"] = nombre_actual
+                        actualizar_jugador(id_j, {"nombre_actual": nombre_actual})
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
                     resultados.append({"id": id_j, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nombre_anterior": nombre_anterior, "cambio": cambio, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
-                guardar_jugadores(jugadores)
                 body = json.dumps(resultados).encode("utf-8")
 
             # API del clan
@@ -166,6 +186,7 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Content-type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(body)
 
