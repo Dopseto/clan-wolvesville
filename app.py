@@ -8,9 +8,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
 api_key = "FkUKPpQhT9jlJspDzwKeuBK3MuvSOvFVHIfeMn9E0TiB9UrrzNzegAkJNCQWPbun"
-archivo = os.path.join(base, "jugadores.json")
 clan_id = "b734e3a5-cb89-4645-b9f5-0bd4229d4a99"
 base = os.path.dirname(os.path.abspath(__file__))
+archivo = os.path.join(base, "jugadores.json")
 
 def cargar_jugadores():
     if os.path.exists(archivo):
