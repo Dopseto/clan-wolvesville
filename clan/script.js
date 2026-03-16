@@ -98,12 +98,12 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     html += `<div class="card"><h3>📢 Anuncios</h3>`
     if (anuncios && anuncios.length > 0) {
         anuncios.slice(0, 5).forEach(a => {
-            const fecha = a.creationTime ? a.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
+            const fecha = a.timestamp ? a.timestamp.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             html += `
                 <div class="anuncio">
                     <span class="anuncio-autor">${a.author || 'N/A'}</span>
                     <span class="anuncio-fecha">${fecha}</span>
-                    <p class="anuncio-msg">${a.message || ''}</p>
+                    <p class="anuncio-msg">${a.content || ''}</p>
                 </div>
             `
         })
