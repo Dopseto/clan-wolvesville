@@ -187,7 +187,7 @@ function mostrarMiembros(members) {
         return
     }
     html += `<div class="card"><table>
-        <tr><th>Nombre</th><th>Rango</th><th>Nivel</th><th>XP donado</th><th>Oro donado</th><th>Gemas donadas</th><th></th></tr>
+        <tr><th>Nombre</th><th>Rango</th><th>Nivel</th><th>XP donado</th><th>Oro donado</th><th>Gemas donadas</th><th></th></tr>`
     members.forEach(m => {
         const nivel = m.level === -1 ? 'Oculto' : (m.level || 'N/A')
         html += `<tr>
@@ -200,6 +200,7 @@ function mostrarMiembros(members) {
             <td><button class="btn-tracker" onclick="agregarAlTracker('${m.playerId}', '${m.username}')">+ Tracker</button></td>
         </tr>`
     })
+    html += `</table></div>`
     html += `</table></div>`
     contenido.innerHTML = html
 }
