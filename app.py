@@ -69,6 +69,27 @@ def post_api(url, data):
         raw = response.read()
         return json.loads(raw) if raw else {"ok": True}
 
+def patch_api(url, data):
+    body = json.dumps(data).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="PATCH")
+    req.add_header("Authorization", "Bot " + api_key)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    with urllib.request.urlopen(req) as response:
+        raw = response.read()
+        return json.loads(raw) if raw else {"ok": True}
+
+def delete_api(url):
+    req = urllib.request.Request(url, method="DELETE")
+    req.add_header("Authorization", "Bot " + api_key)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    with urllib.request.urlopen(req) as response:
+        raw = response.read()
+        return json.loads(raw) if raw else {"ok": True}
+
 def formato_fecha(fecha):
     if not fecha or fecha == 'N/A':
         return 'N/A'
@@ -211,10 +232,73 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/clan/announcements":
                 mensaje = data.get("message", "").strip()
                 if mensaje:
-                    result = post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": mensaje})
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": mensaje})
                     body = json.dumps({"ok": True}).encode("utf-8")
                 else:
                     body = json.dumps({"error": "Mensaje vacío"}).encode("utf-8")
+
+        except urllib.error.HTTPError as e:
+            body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
+        except Exception as e:
+            body = json.dumps({"error": str(e)}).encode("utf-8")
+
+        if body is None:
+            body = json.dumps({}).encode("utf-8")
+
+        self.send_response(200)
+        self.send_header("Content-type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_PATCH(self):
+        parsed = urlparse(self.path)
+        content_type = "application/json"
+        body = None
+
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw) if raw else {}
+
+            # PATCH /clan/announcements/{id}
+            if parsed.path.startswith("/clan/announcements/"):
+                anuncio_id = parsed.path.split("/clan/announcements/")[1]
+                contenido = data.get("content", "").strip()
+                if anuncio_id and contenido:
+                    patch_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements/{anuncio_id}", {"message": contenido})
+                    body = json.dumps({"ok": True}).encode("utf-8")
+                else:
+                    body = json.dumps({"error": "Datos inválidos"}).encode("utf-8")
+
+        except urllib.error.HTTPError as e:
+            body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
+        except Exception as e:
+            body = json.dumps({"error": str(e)}).encode("utf-8")
+
+        if body is None:
+            body = json.dumps({}).encode("utf-8")
+
+        self.send_response(200)
+        self.send_header("Content-type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_DELETE(self):
+        parsed = urlparse(self.path)
+        content_type = "application/json"
+        body = None
+
+        try:
+            # DELETE /clan/announcements/{id}
+            if parsed.path.startswith("/clan/announcements/"):
+                anuncio_id = parsed.path.split("/clan/announcements/")[1]
+                if anuncio_id:
+                    delete_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements/{anuncio_id}")
+                    body = json.dumps({"ok": True}).encode("utf-8")
+                else:
+                    body = json.dumps({"error": "ID inválido"}).encode("utf-8")
 
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")

@@ -101,9 +101,17 @@ function mostrarInicio(info, quests, anuncios, ledger) {
             const fecha = a.timestamp ? a.timestamp.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             html += `
                 <div class="anuncio">
-                    <span class="anuncio-autor">${a.author || 'N/A'}</span>
-                    <span class="anuncio-fecha">${fecha}</span>
-                    <p class="anuncio-msg">${a.content || ''}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
+                        <div>
+                            <span class="anuncio-autor">${a.author || 'N/A'}</span>
+                            <span class="anuncio-fecha">${fecha}</span>
+                        </div>
+                        <div style="display:flex; gap:6px">
+                            <button class="btn-tracker" onclick="editarAnuncio('${a.id}', this)">✏️ Editar</button>
+                            <button class="btn-tracker" style="color:#8b2010; border-color:#8b2010" onclick="eliminarAnuncio('${a.id}')">🗑 Eliminar</button>
+                        </div>
+                    </div>
+                    <p class="anuncio-msg" id="anuncio-msg-${a.id}">${(a.content || '').replace(/\n/g, '<br>')}</p>
                 </div>
             `
         })
@@ -249,4 +257,39 @@ function agregarAlTracker(id, nombre) {
             if (data.error) mostrarToast('Error: ' + data.error, 'error')
             else mostrarToast(`✓ ${nombre} agregado al tracker!`)
         })
+}
+
+// ============== EDITAR ANUNCIOS ===================
+function editarAnuncio(id, btn) {
+    const p = document.getElementById(`anuncio-msg-${id}`)
+    const textoActual = p.innerText
+    p.outerHTML = `
+        <textarea id="edit-${id}" style="width:100%; margin-top:8px; padding:8px; font-family:Almendra,serif; font-size:15px; border:1px solid var(--border); background:rgba(255,252,235,0.8); color:var(--ink); border-radius:3px; resize:vertical">${textoActual}</textarea>
+        <button class="btn-primary" style="margin-top:8px" onclick="guardarEdicionAnuncio('${id}')">💾 Guardar</button>
+    `
+}
+
+function guardarEdicionAnuncio(id) {
+    const texto = document.getElementById(`edit-${id}`).value.trim()
+    if (!texto) return
+    fetch(`/clan/announcements/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: texto })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) mostrarToast('Error: ' + data.error, 'error')
+        else { mostrarToast('✓ Anuncio editado!'); setTimeout(() => cargarInicio(), 1000) }
+    })
+}
+
+function eliminarAnuncio(id) {
+    if (!confirm('¿Eliminar este anuncio?')) return
+    fetch(`/clan/announcements/${id}`, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) mostrarToast('Error: ' + data.error, 'error')
+        else { mostrarToast('✓ Anuncio eliminado!'); setTimeout(() => cargarInicio(), 1000) }
+    })
 }
