@@ -134,12 +134,12 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     html += `</div>`
 
     html += `<div class="card">
-        <h3>🔄 Sincronizar donaciones</h3>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px">
+        <h3>🔄 Registro de donaciones</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
             <button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>
             <span id="sync-info-inicio" style="font-size:12px; color:var(--muted); font-style:italic"></span>
         </div>
-        <div id="sync-registro" style="margin-top:8px"></div>
+        <div id="sync-registro"></div>
     </div>`
 
     contenido.innerHTML = html
