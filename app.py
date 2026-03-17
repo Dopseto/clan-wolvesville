@@ -212,6 +212,16 @@ class Handler(BaseHTTPRequestHandler):
                 if id_j:
                     data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     body = json.dumps(data).encode("utf-8")
+            elif parsed.path == "/clan/avatar":
+                id_j = params.get("id", [""])[0]
+                if id_j:
+                    slot = consultar_api(f"https://api.wolvesville.com/avatars/sharedAvatarId/{id_j}/0")
+                    shared_id = slot.get("sharedAvatarId")
+                    if shared_id:
+                        avatar = consultar_api(f"https://api.wolvesville.com/avatars/{shared_id}")
+                        body = json.dumps(avatar).encode("utf-8")
+                    else:
+                        body = json.dumps({"error": "no avatar"}).encode("utf-8")
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
         except Exception as e:
