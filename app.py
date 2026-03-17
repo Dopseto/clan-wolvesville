@@ -207,7 +207,11 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/clan/icons":
                 data = consultar_api("https://api.wolvesville.com/items/profileIcons")
                 body = json.dumps(data).encode("utf-8")
-                
+            elif parsed.path == "/clan/rawplayer":
+                id_j = params.get("id", [""])[0]
+                if id_j:
+                    data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
+                    body = json.dumps(data).encode("utf-8")
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
         except Exception as e:
