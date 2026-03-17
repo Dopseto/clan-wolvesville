@@ -227,10 +227,6 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/clan/logs":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
                 body = json.dumps(data).encode("utf-8")
-            elif parsed.path.startswith("/clan/avatar/"):
-                player_id = parsed.path.split("/clan/avatar/")[1]
-                avatar_url = obtener_avatar(player_id)
-                body = json.dumps({"avatarUrl": avatar_url}).encode("utf-8")
 
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
@@ -243,11 +239,6 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", content_type)
         self.send_header("Access-Control-Allow-Origin", "*")
-        # No cachear archivos estáticos para que los cambios se reflejen siempre
-        if content_type in ("text/html; charset=utf-8", "application/javascript"):
-            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-            self.send_header("Pragma", "no-cache")
-            self.send_header("Expires", "0")
         self.end_headers()
         self.wfile.write(body)
 
