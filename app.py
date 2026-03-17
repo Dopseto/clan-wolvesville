@@ -37,17 +37,11 @@ def cargar_jugadores():
     return jugadores
 
 def guardar_jugador(id_jugador, nombre_original, nombre_actual, nota=""):
-    data = {
-        "id": id_jugador,
-        "nombre_original": nombre_original,
-        "nombre_actual": nombre_actual,
-        "nota": nota
-    }
+    data = {"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nota": nota}
     supabase_request("POST", "jugadores", data)
 
 def actualizar_jugador(id_jugador, campos):
-    query = f"jugadores?id=eq.{id_jugador}"
-    supabase_request("PATCH", query, campos)
+    supabase_request("PATCH", f"jugadores?id=eq.{id_jugador}", campos)
 
 def consultar_api(url):
     req = urllib.request.Request(url)
@@ -61,6 +55,17 @@ def consultar_api(url):
 def post_api(url, data):
     body = json.dumps(data).encode("utf-8")
     req = urllib.request.Request(url, data=body, method="POST")
+    req.add_header("Authorization", "Bot " + api_key)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    with urllib.request.urlopen(req) as response:
+        raw = response.read()
+        return json.loads(raw) if raw else {"ok": True}
+
+def put_api(url, data):
+    body = json.dumps(data).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="PUT")
     req.add_header("Authorization", "Bot " + api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/json")
@@ -99,6 +104,17 @@ def formato_fecha(fecha):
 def servir_archivo(path, content_type):
     with open(os.path.join(base, path), "rb") as f:
         return f.read(), content_type
+
+def obtener_avatar(player_id):
+    try:
+        slot = consultar_api(f"https://api.wolvesville.com/avatars/sharedAvatarId/{player_id}/0")
+        shared_id = slot.get("sharedAvatarId")
+        if shared_id:
+            avatar = consultar_api(f"https://api.wolvesville.com/avatars/{shared_id}")
+            return avatar.get("avatar", {}).get("url", None)
+    except:
+        pass
+    return None
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -192,6 +208,13 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/clan/members":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
                 body = json.dumps(data).encode("utf-8")
+            elif parsed.path == "/clan/members/withavatar":
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                for m in members:
+                    player_id = m.get("playerId")
+                    if player_id:
+                        m["avatarUrl"] = obtener_avatar(player_id)
+                body = json.dumps(members).encode("utf-8")
             elif parsed.path == "/clan/quests":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active")
                 body = json.dumps(data).encode("utf-8")
@@ -204,24 +227,7 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/clan/logs":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
                 body = json.dumps(data).encode("utf-8")
-            elif parsed.path == "/clan/icons":
-                data = consultar_api("https://api.wolvesville.com/items/profileIcons")
-                body = json.dumps(data).encode("utf-8")
-            elif parsed.path == "/clan/rawplayer":
-                id_j = params.get("id", [""])[0]
-                if id_j:
-                    data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
-                    body = json.dumps(data).encode("utf-8")
-            elif parsed.path == "/clan/avatar":
-                id_j = params.get("id", [""])[0]
-                if id_j:
-                    slot = consultar_api(f"https://api.wolvesville.com/avatars/sharedAvatarId/{id_j}/0")
-                    shared_id = slot.get("sharedAvatarId")
-                    if shared_id:
-                        avatar = consultar_api(f"https://api.wolvesville.com/avatars/{shared_id}")
-                        body = json.dumps(avatar).encode("utf-8")
-                    else:
-                        body = json.dumps({"error": "no avatar"}).encode("utf-8")
+
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
         except Exception as e:
@@ -268,6 +274,67 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_PUT(self):
+        parsed = urlparse(self.path)
+        content_type = "application/json"
+        body = None
+
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw) if raw else {}
+
+            # PUT /clan/members/{id}/participate → toggle individual
+            if parsed.path.startswith("/clan/members/") and parsed.path.endswith("/participate"):
+                member_id = parsed.path.split("/clan/members/")[1].replace("/participate", "")
+                participar = data.get("participateInQuests", True)
+                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": participar})
+                body = json.dumps({"ok": True}).encode("utf-8")
+
+            # PUT /clan/members/all/participate → activar todos o con filtro
+            elif parsed.path == "/clan/members/all/participate":
+                participar = data.get("participateInQuests", True)
+                min_gold = data.get("minGold", None)
+                min_gems = data.get("minGems", None)
+
+                if min_gold is not None or min_gems is not None:
+                    # Activar solo los que cumplen el filtro
+                    members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                    actualizados = 0
+                    for m in members:
+                        gold = m.get("donated", {}).get("gold", {}).get("allTime", 0)
+                        gems = m.get("donated", {}).get("gems", {}).get("allTime", 0)
+                        cumple = True
+                        if min_gold is not None and gold < min_gold:
+                            cumple = False
+                        if min_gems is not None and gems < min_gems:
+                            cumple = False
+                        if cumple:
+                            try:
+                                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{m['playerId']}/participateInQuests", {"participateInQuests": participar})
+                                actualizados += 1
+                            except:
+                                pass
+                    body = json.dumps({"ok": True, "actualizados": actualizados}).encode("utf-8")
+                else:
+                    # Activar/desactivar a todos de una vez
+                    put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/all/participateInQuests", {"participateInQuests": participar})
+                    body = json.dumps({"ok": True}).encode("utf-8")
+
+        except urllib.error.HTTPError as e:
+            body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")
+        except Exception as e:
+            body = json.dumps({"error": str(e)}).encode("utf-8")
+
+        if body is None:
+            body = json.dumps({}).encode("utf-8")
+
+        self.send_response(200)
+        self.send_header("Content-type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_PATCH(self):
         parsed = urlparse(self.path)
         content_type = "application/json"
@@ -278,7 +345,6 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
-            # PATCH /clan/announcements/{id}
             if parsed.path.startswith("/clan/announcements/"):
                 anuncio_id = parsed.path.split("/clan/announcements/")[1]
                 contenido = data.get("content", "").strip()
@@ -308,7 +374,6 @@ class Handler(BaseHTTPRequestHandler):
         body = None
 
         try:
-            # DELETE /clan/announcements/{id}
             if parsed.path.startswith("/clan/announcements/"):
                 anuncio_id = parsed.path.split("/clan/announcements/")[1]
                 if anuncio_id:
