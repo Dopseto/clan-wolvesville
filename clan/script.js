@@ -8,7 +8,8 @@ const ANUNCIOS_AUTO = [
     "¡Felicitaciones al clan por completar la misión! Los premios serán entregados en breve.",
 ]
 
-window.onload = function() {
+window.onload = async function() {
+    await cargarSesion()
     mostrarSeccion('inicio')
 }
 
@@ -30,6 +31,7 @@ function mostrarSeccion(seccion, btn = null) {
     else if (seccion === 'miembros') cargarMiembros()
     else if (seccion === 'logs') cargarLogs()
     else if (seccion === 'stats') cargarStats()
+    else if (seccion === 'admin') cargarAdmin()
 }
 
 // =================== INICIO ===================
@@ -289,9 +291,9 @@ function mostrarMiembros(members) {
                 </div>
             </div>
 
-            <div style="flex-shrink:0">
+            ${rolActual === 'admin' ? `<div style="flex-shrink:0">
                 <button class="btn-tracker" onclick="agregarAlTracker('${m.playerId}', '${m.username}')">+ Tracker</button>
-            </div>
+            </div>` : ''}
         </div>`
     })
 
@@ -402,5 +404,136 @@ function agregarAlTracker(id, nombre) {
         .then(data => {
             if (data.error) mostrarToast('Error: ' + data.error, 'error')
             else mostrarToast(`✓ ${nombre} agregado al tracker!`)
+        })
+}
+
+// =================== SESIÓN Y ADMIN ===================
+let rolActual = null
+
+async function cargarSesion() {
+    const res = await fetch('/auth/me')
+    if (res.status === 401) {
+        window.location.href = '/'
+        return
+    }
+    const data = await res.json()
+    rolActual = data.rol
+
+    // Mostrar nombre de usuario y botón logout en sidebar
+    const footer = document.querySelector('.sidebar-footer')
+    if (footer) {
+        footer.innerHTML = `
+            <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:8px">${data.username}</p>
+            ${data.rol === 'admin' ? '<p style="color:var(--accent); font-size:9px; letter-spacing:1px; margin-bottom:10px">✦ ADMIN ✦</p>' : ''}
+            <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
+                onmouseover="this.style.background='rgba(139,32,16,0.15)'; this.style.color='#c87060'"
+                onmouseout="this.style.background='transparent'; this.style.color='rgba(160,100,60,0.6)'">
+                Cerrar sesión
+            </button>
+        `
+    }
+
+    // Mostrar/ocultar botón Tracker según rol
+    const btnTracker = document.getElementById('btn-tracker')
+    if (btnTracker) {
+        if (data.rol !== 'admin') btnTracker.style.display = 'none'
+    }
+
+    // Agregar botón Admin en nav si es admin
+    if (data.rol === 'admin') {
+        const navSection = document.querySelector('.nav-section')
+        if (navSection && !document.getElementById('btn-admin')) {
+            const btn = document.createElement('button')
+            btn.className = 'nav-btn'
+            btn.id = 'btn-admin'
+            btn.innerHTML = '<span class="nav-icon">🛡️</span> Admin'
+            btn.onclick = function() { mostrarSeccion('admin', this) }
+            navSection.appendChild(btn)
+        }
+    }
+}
+
+async function cerrarSesion() {
+    await fetch('/auth/logout', { method: 'POST' })
+    window.location.href = '/'
+}
+
+// =================== PANEL ADMIN ===================
+function cargarAdmin() {
+    if (rolActual !== 'admin') {
+        document.getElementById('contenido').innerHTML = `<h1>🛡️ Admin</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
+        return
+    }
+    document.getElementById('contenido').innerHTML = `<h1>🛡️ Panel de administración</h1><p class="cargando">Cargando usuarios...</p>`
+    fetch('/admin/usuarios')
+        .then(r => r.json())
+        .then(mostrarAdmin)
+}
+
+function mostrarAdmin(usuarios) {
+    const contenido = document.getElementById('contenido')
+    let html = `<h1>🛡️ Panel de administración</h1>`
+
+    const pendientes = usuarios.filter(u => !u.aprobado)
+    const aprobados = usuarios.filter(u => u.aprobado)
+
+    if (pendientes.length > 0) {
+        html += `<div class="card"><h3>⏳ Solicitudes pendientes</h3>`
+        pendientes.forEach(u => {
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
+                <div>
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
+                    <span style="font-size:12px; color:var(--muted); margin-left:8px">${u.created_at ? u.created_at.slice(0,10) : ''}</span>
+                </div>
+                <div style="display:flex; gap:8px">
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px" onclick="gestionarUsuario(${u.id}, true)">✓ Aprobar</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">✗ Rechazar</button>
+                </div>
+            </div>`
+        })
+        html += `</div>`
+    } else {
+        html += `<div class="card"><p style="color:var(--muted); font-style:italic">No hay solicitudes pendientes ✓</p></div>`
+    }
+
+    html += `<div class="card"><h3>👥 Usuarios aprobados</h3>`
+    if (aprobados.length === 0) {
+        html += `<p style="color:var(--muted); font-style:italic">No hay usuarios aprobados aún</p>`
+    } else {
+        aprobados.forEach(u => {
+            const esAdmin = u.rol === 'admin'
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
+                <div>
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
+                    ${esAdmin ? '<span style="font-size:10px; color:var(--accent); margin-left:8px; font-family:Cinzel,serif">ADMIN</span>' : ''}
+                </div>
+                ${!esAdmin ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">Revocar acceso</button>` : ''}
+            </div>`
+        })
+    }
+    html += `</div>`
+    contenido.innerHTML = html
+}
+
+function gestionarUsuario(id, aprobar) {
+    fetch(`/admin/usuarios/${id}/aprobar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aprobado: aprobar })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) { mostrarToast(aprobar ? '✓ Usuario aprobado' : '✓ Usuario desactivado'); cargarAdmin() }
+        else mostrarToast('Error: ' + data.error, 'error')
+    })
+}
+
+function eliminarUsuarioAdmin(id, nombre) {
+    if (!confirm(`¿Eliminar a ${nombre}?`)) return
+    fetch(`/admin/usuarios/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) { mostrarToast(`✓ ${nombre} eliminado`); cargarAdmin() }
+            else mostrarToast('Error: ' + data.error, 'error')
         })
 }
