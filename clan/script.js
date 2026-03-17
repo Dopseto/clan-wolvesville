@@ -424,11 +424,27 @@ function activarTodos(participar) {
 }
 
 function activarConFiltro(tipo) {
-    const minGold = tipo === 'oro' ? (parseInt(document.getElementById('filtroOro').value) || null) : null
-    const minGems = tipo === 'gemas' ? (parseInt(document.getElementById('filtroGemas').value) || null) : null
+    const oroInput = document.getElementById('filtroOro')
+    const gemasInput = document.getElementById('filtroGemas')
 
-    if (!minGold && !minGems) {
+    if (!oroInput || !gemasInput) {
+        mostrarToast('Error: no se encontraron los campos', 'error')
+        return
+    }
+
+    const oroVal = oroInput.value.trim()
+    const gemasVal = gemasInput.value.trim()
+
+    const minGold = tipo === 'oro' ? (oroVal !== '' ? parseInt(oroVal) : null) : null
+    const minGems = tipo === 'gemas' ? (gemasVal !== '' ? parseInt(gemasVal) : null) : null
+
+    if (minGold === null && minGems === null) {
         mostrarToast('Ingresá un valor primero', 'error')
+        return
+    }
+
+    if ((minGold !== null && isNaN(minGold)) || (minGems !== null && isNaN(minGems))) {
+        mostrarToast('El valor debe ser un número', 'error')
         return
     }
 
