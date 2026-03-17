@@ -18,17 +18,12 @@ SUPABASE_URL = "https://dtsjfrtofhvfjsqncsjl.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0c2pmcnRvZmh2ZmpzcW5jc2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQ5NTcsImV4cCI6MjA4OTIwMDk1N30.7IW5IMb-1aLdEUo6wq5L90vTZDmXbG9P9Kvd_cwosS0"
 
 # =================== SESIONES EN MEMORIA ===================
-# { token: { "username": ..., "rol": ..., "expires": timestamp } }
 sesiones = {}
 SESSION_DURATION = 60 * 60 * 8  # 8 horas
 
 def crear_sesion(username, rol):
     token = secrets.token_hex(32)
-    sesiones[token] = {
-        "username": username,
-        "rol": rol,
-        "expires": time.time() + SESSION_DURATION
-    }
+    sesiones[token] = {"username": username, "rol": rol, "expires": time.time() + SESSION_DURATION}
     return token
 
 def obtener_sesion(token):
@@ -63,6 +58,7 @@ def supabase_request(method, endpoint, data=None):
     with urllib.request.urlopen(req, body) as response:
         return json.loads(response.read())
 
+# =================== JUGADORES ===================
 def cargar_jugadores():
     rows = supabase_request("GET", "jugadores?select=*")
     jugadores = {}
@@ -75,16 +71,14 @@ def cargar_jugadores():
     return jugadores
 
 def guardar_jugador(id_jugador, nombre_original, nombre_actual, nota=""):
-    data = {"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nota": nota}
-    supabase_request("POST", "jugadores", data)
+    supabase_request("POST", "jugadores", {"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nota": nota})
 
 def actualizar_jugador(id_jugador, campos):
     supabase_request("PATCH", f"jugadores?id=eq.{id_jugador}", campos)
 
-# =================== USUARIOS (Supabase) ===================
+# =================== USUARIOS ===================
 def crear_usuario_supabase(username, password_hash, rol="user", aprobado=False):
-    data = {"username": username, "password": password_hash, "rol": rol, "aprobado": aprobado}
-    return supabase_request("POST", "usuarios", data)
+    return supabase_request("POST", "usuarios", {"username": username, "password": password_hash, "rol": rol, "aprobado": aprobado})
 
 def buscar_usuario(username):
     rows = supabase_request("GET", f"usuarios?username=eq.{username}&select=*")
@@ -99,8 +93,15 @@ def aprobar_usuario(user_id, aprobado):
 def eliminar_usuario(user_id):
     supabase_request("DELETE", f"usuarios?id=eq.{user_id}")
 
+def actualizar_actividad(username):
+    # Guarda timestamp ISO en ultima_actividad
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        supabase_request("PATCH", f"usuarios?username=eq.{username}", {"ultima_actividad": now})
+    except:
+        pass
+
 def init_admin():
-    """Crea el usuario admin si no existe"""
     try:
         existente = buscar_usuario("dopseto")
         if not existente:
@@ -108,6 +109,20 @@ def init_admin():
             print("Admin creado: dopseto")
     except Exception as e:
         print(f"Error iniciando admin: {e}")
+
+# =================== CARTERAS ===================
+def cargar_carteras():
+    rows = supabase_request("GET", "carteras?select=*")
+    carteras = {}
+    for row in rows:
+        carteras[row["player_id"]] = {"oro": row.get("oro", 0), "gemas": row.get("gemas", 0)}
+    return carteras
+
+def upsert_cartera(player_id, username, oro, gemas):
+    supabase_request("POST", "carteras", {"player_id": player_id, "username": username, "oro": oro, "gemas": gemas})
+
+def actualizar_cartera(player_id, campos):
+    supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
 
 # =================== API WOLVESVILLE ===================
 def consultar_api(url):
@@ -216,11 +231,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         params = parse_qs(parsed.query)
-
         try:
-            # ===== RUTAS PÚBLICAS =====
+            # Rutas públicas
             if parsed.path == "/":
-                # Si ya tiene sesión válida, redirigir al clan
                 sesion = self.get_sesion()
                 if sesion:
                     self.redirect("/clan/")
@@ -229,18 +242,19 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_html(body, ct)
                 return
 
-            if parsed.path == "/login" or parsed.path == "/login/":
+            if parsed.path in ("/login", "/login/"):
                 body, ct = servir_archivo("login.html", "text/html; charset=utf-8")
                 self.send_html(body, ct)
                 return
 
-            # ===== RUTAS PROTEGIDAS - verificar sesión =====
+            # Rutas protegidas
             sesion = self.get_sesion()
 
             if parsed.path in ("/clan/", "/clan/index.html"):
                 if not sesion:
                     self.redirect("/")
                     return
+                actualizar_actividad(sesion["username"])
                 body, ct = servir_archivo("clan/index.html", "text/html; charset=utf-8")
                 self.send_html(body, ct)
                 return
@@ -253,7 +267,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_html(body, ct)
                 return
 
-            # Tracker (solo admin)
             if parsed.path in ("/tracker/", "/tracker/index.html"):
                 if not sesion or sesion["rol"] != "admin":
                     self.redirect("/")
@@ -270,63 +283,61 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_html(body, ct)
                 return
 
-            # ===== APIs — requieren sesión =====
+            # APIs — requieren sesión
             if not sesion:
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
-            # Info de sesión actual (para que el frontend sepa el rol)
+            # Ping de actividad (el frontend lo llama cada 2 minutos)
+            if parsed.path == "/auth/ping":
+                actualizar_actividad(sesion["username"])
+                self.send_json({"ok": True})
+                return
+
             if parsed.path == "/auth/me":
                 self.send_json({"username": sesion["username"], "rol": sesion["rol"]})
                 return
 
-            # Panel admin: listar usuarios (solo admin)
             if parsed.path == "/admin/usuarios":
                 if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
-                usuarios = listar_usuarios()
-                self.send_json(usuarios)
+                self.send_json(listar_usuarios())
                 return
 
-            # APIs del clan
             if parsed.path == "/clan/info":
-                data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/info")
-                self.send_json(data)
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/info"))
                 return
 
             if parsed.path == "/clan/members":
-                data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
-                self.send_json(data)
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed"))
                 return
 
             if parsed.path.startswith("/clan/avatar/"):
                 player_id = parsed.path.split("/clan/avatar/")[1]
-                avatar_url = obtener_avatar(player_id)
-                self.send_json({"avatarUrl": avatar_url})
+                self.send_json({"avatarUrl": obtener_avatar(player_id)})
                 return
 
             if parsed.path == "/clan/quests":
-                data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active")
-                self.send_json(data)
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active"))
                 return
 
             if parsed.path == "/clan/announcements":
-                data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements")
-                self.send_json(data)
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements"))
                 return
 
             if parsed.path == "/clan/ledger":
-                data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger")
-                self.send_json(data)
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger"))
                 return
 
             if parsed.path == "/clan/logs":
-                data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
-                self.send_json(data)
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs"))
                 return
 
-            # APIs del tracker
+            if parsed.path == "/clan/carteras":
+                self.send_json(cargar_carteras())
+                return
+
             if parsed.path == "/jugadores":
                 self.send_json(cargar_jugadores())
                 return
@@ -335,38 +346,38 @@ class Handler(BaseHTTPRequestHandler):
                 nombre = params.get("nombre", [""])[0]
                 if nombre:
                     data = consultar_api(f"https://api.wolvesville.com/players/search?username={nombre}")
-                    id_jugador = data["id"]
+                    id_j = data["id"]
                     nombre_actual = data["username"]
                     jugadores = cargar_jugadores()
-                    nombre_original = jugadores.get(id_jugador, {}).get("nombre_original", nombre_actual)
-                    nota = jugadores.get(id_jugador, {}).get("nota", "")
-                    guardar_jugador(id_jugador, nombre_original, nombre_actual, nota)
+                    nombre_original = jugadores.get(id_j, {}).get("nombre_original", nombre_actual)
+                    nota = jugadores.get(id_j, {}).get("nota", "")
+                    guardar_jugador(id_j, nombre_original, nombre_actual, nota)
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
-                    self.send_json({"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
-                    return
+                    self.send_json({"id": id_j, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
+                return
 
             if parsed.path == "/buscarid":
-                id_jugador = params.get("id", [""])[0]
-                if id_jugador:
-                    data = consultar_api(f"https://api.wolvesville.com/players/{id_jugador}")
+                id_j = params.get("id", [""])[0]
+                if id_j:
+                    data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     nombre_actual = data["username"]
                     jugadores = cargar_jugadores()
-                    nombre_original = jugadores.get(id_jugador, {}).get("nombre_original", nombre_actual)
-                    nota = jugadores.get(id_jugador, {}).get("nota", "")
-                    guardar_jugador(id_jugador, nombre_original, nombre_actual, nota)
+                    nombre_original = jugadores.get(id_j, {}).get("nombre_original", nombre_actual)
+                    nota = jugadores.get(id_j, {}).get("nota", "")
+                    guardar_jugador(id_j, nombre_original, nombre_actual, nota)
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
-                    self.send_json({"id": id_jugador, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
-                    return
+                    self.send_json({"id": id_j, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
+                return
 
             if parsed.path == "/guardarnota":
-                id_jugador = params.get("id", [""])[0]
+                id_j = params.get("id", [""])[0]
                 nota = params.get("nota", [""])[0]
-                if id_jugador:
-                    actualizar_jugador(id_jugador, {"nota": nota})
+                if id_j:
+                    actualizar_jugador(id_j, {"nota": nota})
                     self.send_json({"ok": True})
-                    return
+                return
 
             if parsed.path == "/verificarid":
                 id_j = params.get("id", [""])[0]
@@ -384,7 +395,7 @@ class Handler(BaseHTTPRequestHandler):
                     nivel = data.get("level", "N/A")
                     if nivel == -1: nivel = "Oculto"
                     self.send_json({"id": id_j, "nombre_original": nombre_original, "nombre_actual": nombre_actual, "nombre_anterior": nombre_anterior, "cambio": cambio, "nivel": nivel, "fecha": formato_fecha(data.get("creationTime", "N/A")), "clan": data.get("clanName") or "Oculto o sin clan", "nota": nota})
-                    return
+                return
 
             if parsed.path == "/verificar":
                 jugadores = cargar_jugadores()
@@ -418,7 +429,6 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
-            # ===== AUTH: LOGIN =====
             if parsed.path == "/auth/login":
                 username = data.get("username", "").strip()
                 password = data.get("password", "")
@@ -426,16 +436,14 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Campos incompletos"})
                     return
                 usuario = buscar_usuario(username)
-                if not usuario:
-                    self.send_json({"error": "Usuario o contraseña incorrectos"})
-                    return
-                if usuario["password"] != hash_password(password):
+                if not usuario or usuario["password"] != hash_password(password):
                     self.send_json({"error": "Usuario o contraseña incorrectos"})
                     return
                 if not usuario["aprobado"]:
                     self.send_json({"pendiente": True, "error": "Cuenta pendiente de aprobación"})
                     return
                 token = crear_sesion(usuario["username"], usuario["rol"])
+                actualizar_actividad(usuario["username"])
                 body = json.dumps({"ok": True, "rol": usuario["rol"]}).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
@@ -445,7 +453,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
                 return
 
-            # ===== AUTH: REGISTRO =====
             if parsed.path == "/auth/registro":
                 username = data.get("username", "").strip()
                 password = data.get("password", "")
@@ -455,15 +462,13 @@ class Handler(BaseHTTPRequestHandler):
                 if len(username) < 3:
                     self.send_json({"error": "El usuario debe tener al menos 3 caracteres"})
                     return
-                existente = buscar_usuario(username)
-                if existente:
+                if buscar_usuario(username):
                     self.send_json({"error": "Ese nombre de usuario ya está en uso"})
                     return
-                crear_usuario_supabase(username, hash_password(password), rol="user", aprobado=False)
+                crear_usuario_supabase(username, hash_password(password))
                 self.send_json({"ok": True})
                 return
 
-            # ===== AUTH: LOGOUT =====
             if parsed.path == "/auth/logout":
                 token = get_token_from_request(self)
                 if token and token in sesiones:
@@ -477,7 +482,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
                 return
 
-            # ===== RUTAS PROTEGIDAS =====
             sesion = self.get_sesion()
             if not sesion:
                 self.send_json({"error": "No autorizado"}, 401)
@@ -504,26 +508,22 @@ class Handler(BaseHTTPRequestHandler):
             if not sesion:
                 self.send_json({"error": "No autorizado"}, 401)
                 return
-
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
-            # Admin: aprobar/rechazar usuario
             if parsed.path.startswith("/admin/usuarios/") and parsed.path.endswith("/aprobar"):
                 if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 user_id = parsed.path.split("/admin/usuarios/")[1].replace("/aprobar", "")
-                aprobado = data.get("aprobado", True)
-                aprobar_usuario(user_id, aprobado)
+                aprobar_usuario(user_id, data.get("aprobado", True))
                 self.send_json({"ok": True})
                 return
 
             if parsed.path.startswith("/clan/members/") and parsed.path.endswith("/participate"):
                 member_id = parsed.path.split("/clan/members/")[1].replace("/participate", "")
-                participar = data.get("participateInQuests", True)
-                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": participar})
+                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": data.get("participateInQuests", True)})
                 self.send_json({"ok": True})
                 return
 
@@ -532,17 +532,18 @@ class Handler(BaseHTTPRequestHandler):
                 min_gold = data.get("minGold", None)
                 min_gems = data.get("minGems", None)
                 if min_gold is not None or min_gems is not None:
+                    carteras = cargar_carteras()
                     members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
                     actualizados = 0
                     for m in members:
-                        gold = m.get("donated", {}).get("gold", {}).get("allTime", 0)
-                        gems = m.get("donated", {}).get("gems", {}).get("allTime", 0)
+                        pid = m.get("playerId")
+                        cartera = carteras.get(pid, {"oro": 0, "gemas": 0})
                         cumple = True
-                        if min_gold is not None and gold < min_gold: cumple = False
-                        if min_gems is not None and gems < min_gems: cumple = False
+                        if min_gold is not None and cartera["oro"] < min_gold: cumple = False
+                        if min_gems is not None and cartera["gemas"] < min_gems: cumple = False
                         if cumple:
                             try:
-                                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{m['playerId']}/participateInQuests", {"participateInQuests": participar})
+                                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{pid}/participateInQuests", {"participateInQuests": participar})
                                 actualizados += 1
                             except: pass
                     self.send_json({"ok": True, "actualizados": actualizados})
@@ -563,7 +564,6 @@ class Handler(BaseHTTPRequestHandler):
             if not sesion:
                 self.send_json({"error": "No autorizado"}, 401)
                 return
-
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
@@ -576,6 +576,22 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"ok": True})
                 else:
                     self.send_json({"error": "Datos inválidos"})
+                return
+
+            if parsed.path.startswith("/clan/carteras/"):
+                if sesion["rol"] != "admin":
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                player_id = parsed.path.split("/clan/carteras/")[1]
+                campos = {}
+                if data.get("oro") is not None: campos["oro"] = int(data["oro"])
+                if data.get("gemas") is not None: campos["gemas"] = int(data["gemas"])
+                if campos:
+                    try:
+                        actualizar_cartera(player_id, campos)
+                    except:
+                        upsert_cartera(player_id, data.get("username", ""), campos.get("oro", 0), campos.get("gemas", 0))
+                self.send_json({"ok": True})
                 return
 
         except urllib.error.HTTPError as e:
@@ -591,13 +607,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
-            # Admin: eliminar usuario
             if parsed.path.startswith("/admin/usuarios/"):
                 if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
-                user_id = parsed.path.split("/admin/usuarios/")[1]
-                eliminar_usuario(user_id)
+                eliminar_usuario(parsed.path.split("/admin/usuarios/")[1])
                 self.send_json({"ok": True})
                 return
 
@@ -606,8 +620,6 @@ class Handler(BaseHTTPRequestHandler):
                 if anuncio_id:
                     delete_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements/{anuncio_id}")
                     self.send_json({"ok": True})
-                else:
-                    self.send_json({"error": "ID inválido"})
                 return
 
         except urllib.error.HTTPError as e:

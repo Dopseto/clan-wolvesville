@@ -191,16 +191,16 @@ function enviarAnuncio(mensaje) {
 function cargarMiembros() {
     const contenido = document.getElementById('contenido')
     contenido.innerHTML = `<h1>👥 Miembros</h1><p class="cargando">Cargando miembros...</p>`
-    fetch('/clan/members')
-        .then(r => r.json())
-        .then(members => {
-            miembrosCache = members
-            mostrarMiembros(members)
-            cargarAvatares(members)
-        })
-        .catch(() => {
-            contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted)">Error al cargar miembros</p></div>`
-        })
+    Promise.all([
+        fetch('/clan/members').then(r => r.json()),
+        fetch('/clan/carteras').then(r => r.json())
+    ]).then(([members, carteras]) => {
+        miembrosCache = members
+        mostrarMiembros(members, carteras)
+        cargarAvatares(members)
+    }).catch(() => {
+        contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted)">Error al cargar miembros</p></div>`
+    })
 }
 
 function cargarAvatares(members) {
@@ -224,13 +224,14 @@ function cargarAvatares(members) {
     })
 }
 
-function mostrarMiembros(members) {
+function mostrarMiembros(members, carteras = {}) {
     const contenido = document.getElementById('contenido')
     if (!members || members.length === 0) {
         contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted); font-style:italic">No hay miembros</p></div>`
         return
     }
 
+    members = members.filter(m => m.status !== 'invited')
     const orden = { 'LEADER': 0, 'CO_LEADER': 1, 'MEMBER': 2 }
     members.sort((a, b) => (orden[a.clanRole] ?? 3) - (orden[b.clanRole] ?? 3))
 
@@ -267,8 +268,9 @@ function mostrarMiembros(members) {
     members.forEach(m => {
         const nivel = m.level === -1 ? '?' : (m.level || '?')
         const participa = m.participateInClanQuests !== false
-        const goldDonado = m.donated?.gold?.allTime || 0
-        const gemsDonado = m.donated?.gems?.allTime || 0
+        const cartera = carteras[m.playerId] || { oro: 0, gemas: 0 }
+        const goldDonado = cartera.oro
+        const gemsDonado = cartera.gemas
         const xpSemana = m.xpDurations?.week || 0
         const rolColor = m.clanRole === 'LEADER' ? '#c47a2a' : m.clanRole === 'CO_LEADER' ? '#9b5e1a' : 'var(--muted)'
         const rolTexto = m.clanRole === 'LEADER' ? '👑 Líder' : m.clanRole === 'CO_LEADER' ? '⭐ Co-líder' : '🐺 Miembro'
@@ -299,15 +301,34 @@ function mostrarMiembros(members) {
 
                 <div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); padding:10px 14px">
                     <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:8px">CARTERA</p>
-                    <div style="display:flex; gap:20px; flex-wrap:wrap">
+                    <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end">
                         <div>
-                            <span style="font-size:18px; font-weight:700; color:var(--accent-dark); font-family:Cinzel,serif">🥇 ${goldDonado}</span>
-                            <p style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px">Oro total</p>
+                            ${rolActual === 'admin'
+                                ? `<div style="display:flex; align-items:center; gap:6px">
+                                    <span style="font-size:16px">🥇</span>
+                                    <input type="number" id="oro-${m.playerId}" value="${goldDonado}" min="0"
+                                        style="width:90px; padding:4px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Cinzel,serif; font-size:15px; font-weight:700; color:var(--accent-dark)">
+                                   </div>`
+                                : `<span style="font-size:18px; font-weight:700; color:var(--accent-dark); font-family:Cinzel,serif">🥇 ${goldDonado}</span>`
+                            }
+                            <p style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; margin-top:4px">Oro total</p>
                         </div>
                         <div>
-                            <span style="font-size:18px; font-weight:700; color:#7b2da8; font-family:Cinzel,serif">💎 ${gemsDonado}</span>
-                            <p style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px">Gemas total</p>
+                            ${rolActual === 'admin'
+                                ? `<div style="display:flex; align-items:center; gap:6px">
+                                    <span style="font-size:16px">💎</span>
+                                    <input type="number" id="gemas-${m.playerId}" value="${gemsDonado}" min="0"
+                                        style="width:90px; padding:4px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Cinzel,serif; font-size:15px; font-weight:700; color:#7b2da8">
+                                   </div>`
+                                : `<span style="font-size:18px; font-weight:700; color:#7b2da8; font-family:Cinzel,serif">💎 ${gemsDonado}</span>`
+                            }
+                            <p style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; margin-top:4px">Gemas total</p>
                         </div>
+                        ${rolActual === 'admin'
+                            ? `<button class="btn-primary" style="padding:5px 12px; font-size:10px; margin-bottom:18px"
+                                onclick="guardarCartera('${m.playerId}', '${m.username}')">💾 Guardar</button>`
+                            : ''
+                        }
                     </div>
                 </div>
             </div>
@@ -431,7 +452,12 @@ function agregarAlTracker(id, nombre) {
 // =================== SESIÓN Y ADMIN ===================
 let rolActual = null
 
+// Heartbeat: actualiza actividad cada 2 minutos
+setInterval(() => fetch('/auth/ping').catch(() => {}), 2 * 60 * 1000)
+
 async function cargarSesion() {
+    // Ping de actividad cada 2 minutos
+    setInterval(() => fetch('/auth/ping'), 2 * 60 * 1000)
     const res = await fetch('/auth/me')
     if (res.status === 401) {
         window.location.href = '/'
@@ -491,6 +517,12 @@ function cargarAdmin() {
         .then(mostrarAdmin)
 }
 
+function estaConectado(ultimaActividad) {
+    if (!ultimaActividad) return false
+    const hace = (Date.now() - new Date(ultimaActividad).getTime()) / 1000 / 60
+    return hace < 5 // conectado si activo en los últimos 5 minutos
+}
+
 function mostrarAdmin(usuarios) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>🛡️ Panel de administración</h1>`
@@ -524,11 +556,17 @@ function mostrarAdmin(usuarios) {
     } else {
         aprobados.forEach(u => {
             const esAdmin = u.rol === 'admin'
+            const conectado = estaConectado(u.ultima_actividad)
+            const luz = conectado
+                ? `<span title="Conectado" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
+                : `<span title="Desconectado" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
             html += `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
-                <div>
+                <div style="display:flex; align-items:center">
+                    ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
                     ${esAdmin ? '<span style="font-size:10px; color:var(--accent); margin-left:8px; font-family:Cinzel,serif">ADMIN</span>' : ''}
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR') : 'Nunca')}</span>
                 </div>
                 ${!esAdmin ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">Revocar acceso</button>` : ''}
             </div>`
@@ -557,4 +595,18 @@ function eliminarUsuarioAdmin(id, nombre) {
             if (data.ok) { mostrarToast(`✓ ${nombre} eliminado`); cargarAdmin() }
             else mostrarToast('Error: ' + data.error, 'error')
         })
+}
+
+// =================== CARTERAS ===================
+function guardarCartera(playerId, username) {
+    const oro = parseInt(document.getElementById(`oro-${playerId}`).value) || 0
+    const gemas = parseInt(document.getElementById(`gemas-${playerId}`).value) || 0
+    fetch(`/clan/carteras/${playerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oro, gemas, username })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) mostrarToast('✓ Cartera guardada')
+        else mostrarToast('Error: ' + data.error, 'error')
+    }).catch(() => mostrarToast('Error al guardar', 'error'))
 }
