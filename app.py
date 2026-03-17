@@ -117,9 +117,21 @@ def cargar_carteras():
         carteras[row["player_id"]] = {"oro": row.get("oro", 0), "gemas": row.get("gemas", 0)}
     return carteras
 
-def upsert_cartera(player_id, username, oro, gemas):
-    supabase_request("POST", "carteras", {"player_id": player_id, "username": username, "oro": oro, "gemas": gemas})
-
+def upsert_cartera(player_id, username, oro=0, gemas=0):
+    try:
+        # Intentar insertar nueva
+        url = f"{SUPABASE_URL}/rest/v1/carteras"
+        req = urllib.request.Request(url, method="POST")
+        req.add_header("apikey", SUPABASE_KEY)
+        req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Prefer", "return=representation,resolution=ignore-duplicates")
+        body = json.dumps({"player_id": player_id, "username": username, "oro": oro, "gemas": gemas}).encode("utf-8")
+        with urllib.request.urlopen(req, body) as response:
+            response.read()
+    except:
+        pass
+    
 def actualizar_cartera(player_id, campos):
     supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
 
