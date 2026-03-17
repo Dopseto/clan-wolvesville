@@ -96,14 +96,6 @@ function mostrarInicio(info, quests, anuncios, ledger) {
                     <div class="stat-valor">💎 ${info.gems || 0}</div>
                     <div class="stat-label">Gemas</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-valor">🥇 ${info.goldReserve || 0}</div>
-                    <div class="stat-label">Reserva de oro</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-valor">💎 ${info.gemsReserve || 0}</div>
-                    <div class="stat-label">Reserva de gemas</div>
-                </div>
             </div>
         </div>
     `
