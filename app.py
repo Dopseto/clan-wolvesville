@@ -94,7 +94,6 @@ def eliminar_usuario(user_id):
     supabase_request("DELETE", f"usuarios?id=eq.{user_id}")
 
 def actualizar_actividad(username):
-    # Guarda timestamp ISO en ultima_actividad
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
         supabase_request("PATCH", f"usuarios?username=eq.{username}", {"ultima_actividad": now})
@@ -124,8 +123,25 @@ def upsert_cartera(player_id, username, oro, gemas):
 def actualizar_cartera(player_id, campos):
     supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
 
-# =================== CONFIG (Supabase) ===================
-FECHA_INICIO = "2026-03-17T00:00:00Z"  # Fecha desde donde se cuentan donaciones
+def inicializar_carteras(members):
+    """Crea filas en carteras para miembros que no las tienen aún."""
+    try:
+        carteras = cargar_carteras()
+        for m in members:
+            player_id = m.get("playerId")
+            username = m.get("username", "")
+            if player_id and player_id not in carteras:
+                try:
+                    upsert_cartera(player_id, username, 0, 0)
+                    carteras[player_id] = {"oro": 0, "gemas": 0}
+                except:
+                    pass
+        return carteras
+    except:
+        return {}
+
+# =================== CONFIG ===================
+FECHA_INICIO = "2026-03-17T00:00:00Z"
 
 def get_config(clave):
     try:
@@ -136,7 +152,6 @@ def get_config(clave):
 
 def set_config(clave, valor):
     try:
-        # Upsert
         supabase_request("POST", "config", {"clave": clave, "valor": valor})
     except:
         try:
@@ -145,24 +160,14 @@ def set_config(clave, valor):
             pass
 
 def sincronizar_donaciones():
-    # Obtener última sincronización (o fecha de inicio si nunca se sincronizó)
     ultima = get_config("ultima_sincronizacion") or FECHA_INICIO
-
-    # Traer ledger completo
     ledger = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger")
-
-    # Filtrar solo donaciones posteriores a ultima sincronización
-    nuevas = []
-    for entry in ledger:
-        fecha = entry.get("creationTime", "")
-        if fecha > ultima:
-            nuevas.append(entry)
+    nuevas = [e for e in ledger if e.get("creationTime", "") > ultima]
 
     if not nuevas:
         return {"ok": True, "procesadas": 0, "mensaje": "No hay donaciones nuevas"}
 
-    # Agrupar por jugador
-    sumas = {}  # { username: { "gold": x, "gems": y } }
+    sumas = {}
     for entry in nuevas:
         username = entry.get("playerUsername", "")
         if not username:
@@ -172,11 +177,8 @@ def sincronizar_donaciones():
         sumas[username]["gold"] += entry.get("gold", 0) or 0
         sumas[username]["gems"] += entry.get("gems", 0) or 0
 
-    # Actualizar carteras — buscar por username
     carteras_rows = supabase_request("GET", "carteras?select=*")
-    carteras_por_username = {}
-    for row in carteras_rows:
-        carteras_por_username[row["username"]] = row
+    carteras_por_username = {row["username"]: row for row in carteras_rows}
 
     procesadas = 0
     for username, montos in sumas.items():
@@ -187,7 +189,6 @@ def sincronizar_donaciones():
             supabase_request("PATCH", f"carteras?player_id=eq.{row['player_id']}", {"oro": nuevo_oro, "gemas": nuevo_gemas})
             procesadas += 1
 
-    # Guardar nueva fecha de sincronización
     ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     set_config("ultima_sincronizacion", ahora)
 
@@ -357,7 +358,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
-            # Ping de actividad (el frontend lo llama cada 2 minutos)
             if parsed.path == "/auth/ping":
                 actualizar_actividad(sesion["username"])
                 self.send_json({"ok": True})
@@ -379,7 +379,14 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/clan/members":
-                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed"))
+                # Trae miembros e inicializa carteras automáticamente
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                carteras = inicializar_carteras(members)
+                # Adjuntar cartera a cada miembro
+                for m in members:
+                    pid = m.get("playerId")
+                    m["cartera"] = carteras.get(pid, {"oro": 0, "gemas": 0})
+                self.send_json(members)
                 return
 
             if parsed.path.startswith("/clan/avatar/"):
