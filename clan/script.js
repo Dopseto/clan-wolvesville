@@ -388,7 +388,7 @@ function mostrarLogs(logs) {
     }
     html += `</div>`
     contenido.innerHTML = html
-}
+}a
 
 // =================== STATS ===================
 function cargarStats() {
