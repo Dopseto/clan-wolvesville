@@ -271,54 +271,29 @@ function mostrarMiembros(members, carteras = {}) {
     html += `
     <div class="card">
         <h3>⚡ Acciones masivas</h3>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:16px">
             <button class="btn-primary" onclick="activarTodos(true)">✅ Activar todos</button>
             <button class="btn-primary" style="background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="activarTodos(false)">❌ Desactivar todos</button>
-            ${rolActual === 'admin' ? `<button class="btn-primary" id="btn-sincronizar" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones()">🔄 Sincronizar donaciones</button>` : ''}
         </div>
-        <div id="sync-info" style="margin-top:8px; font-size:11px; color:var(--muted); font-style:italic"></div>
-        <div style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(160,128,64,0.2)">
-            <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">ACTIVAR POR CARTERA:</p>
-            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end">
-                <div style="position:relative" id="filtro-wrapper">
-                    <button class="btn-primary" id="btn-filtro-dropdown"
-                        onclick="toggleFiltroDropdown()"
-                        style="display:flex; align-items:center; gap:8px">
-                        ✅ Activar con filtro <span style="font-size:10px">▼</span>
-                    </button>
-                    <div id="filtro-dropdown" style="display:none; position:absolute; top:110%; left:0; background:var(--parchment); border:1px solid var(--parchment-shadow); border-radius:var(--radius-sm); box-shadow:0 4px 16px rgba(0,0,0,0.2); z-index:100; min-width:280px; overflow:hidden">
-                        <div style="padding:14px 16px; border-bottom:1px solid rgba(160,128,64,0.2)">
-                            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:8px">🥇 ACTIVAR LOS QUE TENGAN AL MENOS X ORO</p>
-                            <div style="display:flex; gap:8px; align-items:center">
-                                <input type="number" id="filtroOro" placeholder="ej: 500" min="0"
-                                    style="flex:1; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.9); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
-                                <button class="btn-primary" style="padding:6px 12px; font-size:10px; white-space:nowrap" onclick="activarConFiltro('oro')">Activar</button>
-                            </div>
-                        </div>
-                        <div style="padding:14px 16px">
-                            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:8px">💎 ACTIVAR LOS QUE TENGAN AL MENOS X GEMAS</p>
-                            <div style="display:flex; gap:8px; align-items:center">
-                                <input type="number" id="filtroGemas" placeholder="ej: 10" min="0"
-                                    style="flex:1; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.9); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
-                                <button class="btn-primary" style="padding:6px 12px; font-size:10px; white-space:nowrap" onclick="activarConFiltro('gemas')">Activar</button>
-                            </div>
-                        </div>
-                    </div>
+        <div style="padding-top:16px; border-top:1px solid rgba(160,128,64,0.2)">
+            <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:12px">ACTIVAR POR CARTERA:</p>
+            <div style="display:flex; flex-direction:column; gap:12px">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+                    <span style="font-size:13px; color:var(--ink-light); min-width:16px">🥇</span>
+                    <input type="number" id="filtroOro" placeholder="Oro mínimo (ej: 500)" min="0"
+                        style="flex:1; min-width:160px; max-width:220px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                    <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('oro')">✅ Activar con este oro</button>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+                    <span style="font-size:13px; color:var(--ink-light); min-width:16px">💎</span>
+                    <input type="number" id="filtroGemas" placeholder="Gemas mínimas (ej: 10)" min="0"
+                        style="flex:1; min-width:160px; max-width:220px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                    <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('gemas')">✅ Activar con estas gemas</button>
                 </div>
             </div>
         </div>
     </div>`
 
-    // Mostrar última sincronización si es admin
-    if (rolActual === 'admin') {
-        fetch('/clan/sincronizar/info').then(r => r.json()).then(data => {
-            const el = document.getElementById('sync-info')
-            if (el && data.ultima_sincronizacion) {
-                const fecha = new Date(data.ultima_sincronizacion).toLocaleString('es-AR')
-                el.textContent = `Última sincronización: ${fecha}`
-            }
-        }).catch(() => {})
-    }
 
     html += `<div style="display:flex; flex-direction:column; gap:16px">`
 
@@ -448,20 +423,6 @@ function activarTodos(participar) {
     }).catch(() => mostrarToast('Error al actualizar', 'error'))
 }
 
-function toggleFiltroDropdown() {
-    const dd = document.getElementById('filtro-dropdown')
-    dd.style.display = dd.style.display === 'none' ? 'block' : 'none'
-    // Cerrar al hacer click afuera
-    setTimeout(() => {
-        document.addEventListener('click', function cerrar(e) {
-            if (!document.getElementById('filtro-wrapper')?.contains(e.target)) {
-                dd.style.display = 'none'
-                document.removeEventListener('click', cerrar)
-            }
-        })
-    }, 0)
-}
-
 function activarConFiltro(tipo) {
     const minGold = tipo === 'oro' ? (parseInt(document.getElementById('filtroOro').value) || null) : null
     const minGems = tipo === 'gemas' ? (parseInt(document.getElementById('filtroGemas').value) || null) : null
@@ -470,8 +431,6 @@ function activarConFiltro(tipo) {
         mostrarToast('Ingresá un valor primero', 'error')
         return
     }
-
-    document.getElementById('filtro-dropdown').style.display = 'none'
 
     fetch('/clan/members/all/participate', {
         method: 'PUT',
