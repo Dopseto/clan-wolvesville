@@ -133,7 +133,26 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     }
     html += `</div>`
 
+    html += `<div class="card">
+        <h3>🔄 Sincronizar donaciones</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px">
+            <button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>
+            <span id="sync-info-inicio" style="font-size:12px; color:var(--muted); font-style:italic"></span>
+        </div>
+        <div id="sync-registro" style="margin-top:8px"></div>
+    </div>`
+
     contenido.innerHTML = html
+
+    // Cargar info de última sincronización
+    fetch('/clan/sincronizar/info').then(r => r.json()).then(data => {
+        const el = document.getElementById('sync-info-inicio')
+        if (el && data.ultima_sincronizacion) {
+            const fecha = new Date(data.ultima_sincronizacion).toLocaleString('es-AR')
+            el.textContent = `Última sincronización: ${fecha}`
+        }
+        cargarRegistroDonaciones()
+    }).catch(() => {})
 }
 
 // =================== TABS ANUNCIOS ===================
@@ -195,9 +214,21 @@ function cargarMiembros() {
         fetch('/clan/members').then(r => r.json()),
         fetch('/clan/carteras').then(r => r.json())
     ]).then(([members, carteras]) => {
-        miembrosCache = members
-        mostrarMiembros(members, carteras)
-        cargarAvatares(members)
+        const membrosReales = members.filter(m => m.status !== 'invited')
+        miembrosCache = membrosReales
+        // Crear carteras para miembros que no tienen una todavía
+        membrosReales.forEach(m => {
+            if (!carteras[m.playerId]) {
+                fetch(`/clan/carteras/${m.playerId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ oro: 0, gemas: 0, username: m.username, crear: true })
+                }).catch(() => {})
+                carteras[m.playerId] = { oro: 0, gemas: 0 }
+            }
+        })
+        mostrarMiembros(membrosReales, carteras)
+        cargarAvatares(membrosReales)
     }).catch(() => {
         contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted)">Error al cargar miembros</p></div>`
     })
@@ -231,7 +262,6 @@ function mostrarMiembros(members, carteras = {}) {
         return
     }
 
-    members = members.filter(m => m.status !== 'invited')
     const orden = { 'LEADER': 0, 'CO_LEADER': 1, 'MEMBER': 2 }
     members.sort((a, b) => (orden[a.clanRole] ?? 3) - (orden[b.clanRole] ?? 3))
 
@@ -244,24 +274,51 @@ function mostrarMiembros(members, carteras = {}) {
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end">
             <button class="btn-primary" onclick="activarTodos(true)">✅ Activar todos</button>
             <button class="btn-primary" style="background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="activarTodos(false)">❌ Desactivar todos</button>
+            ${rolActual === 'admin' ? `<button class="btn-primary" id="btn-sincronizar" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones()">🔄 Sincronizar donaciones</button>` : ''}
         </div>
+        <div id="sync-info" style="margin-top:8px; font-size:11px; color:var(--muted); font-style:italic"></div>
         <div style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(160,128,64,0.2)">
-            <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">ACTIVAR SOLO LOS QUE TENGAN AL MENOS:</p>
+            <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">ACTIVAR POR CARTERA:</p>
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end">
-                <div>
-                    <p style="font-size:12px; color:var(--muted); margin-bottom:4px">🥇 Oro mínimo</p>
-                    <input type="number" id="filtroOro" placeholder="ej: 500" min="0"
-                        style="width:120px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                <div style="position:relative" id="filtro-wrapper">
+                    <button class="btn-primary" id="btn-filtro-dropdown"
+                        onclick="toggleFiltroDropdown()"
+                        style="display:flex; align-items:center; gap:8px">
+                        ✅ Activar con filtro <span style="font-size:10px">▼</span>
+                    </button>
+                    <div id="filtro-dropdown" style="display:none; position:absolute; top:110%; left:0; background:var(--parchment); border:1px solid var(--parchment-shadow); border-radius:var(--radius-sm); box-shadow:0 4px 16px rgba(0,0,0,0.2); z-index:100; min-width:280px; overflow:hidden">
+                        <div style="padding:14px 16px; border-bottom:1px solid rgba(160,128,64,0.2)">
+                            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:8px">🥇 ACTIVAR LOS QUE TENGAN AL MENOS X ORO</p>
+                            <div style="display:flex; gap:8px; align-items:center">
+                                <input type="number" id="filtroOro" placeholder="ej: 500" min="0"
+                                    style="flex:1; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.9); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                                <button class="btn-primary" style="padding:6px 12px; font-size:10px; white-space:nowrap" onclick="activarConFiltro('oro')">Activar</button>
+                            </div>
+                        </div>
+                        <div style="padding:14px 16px">
+                            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:8px">💎 ACTIVAR LOS QUE TENGAN AL MENOS X GEMAS</p>
+                            <div style="display:flex; gap:8px; align-items:center">
+                                <input type="number" id="filtroGemas" placeholder="ej: 10" min="0"
+                                    style="flex:1; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.9); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                                <button class="btn-primary" style="padding:6px 12px; font-size:10px; white-space:nowrap" onclick="activarConFiltro('gemas')">Activar</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p style="font-size:12px; color:var(--muted); margin-bottom:4px">💎 Gemas mínimas</p>
-                    <input type="number" id="filtroGemas" placeholder="ej: 10" min="0"
-                        style="width:120px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
-                </div>
-                <button class="btn-primary" onclick="activarConFiltro()">✅ Activar con filtro</button>
             </div>
         </div>
     </div>`
+
+    // Mostrar última sincronización si es admin
+    if (rolActual === 'admin') {
+        fetch('/clan/sincronizar/info').then(r => r.json()).then(data => {
+            const el = document.getElementById('sync-info')
+            if (el && data.ultima_sincronizacion) {
+                const fecha = new Date(data.ultima_sincronizacion).toLocaleString('es-AR')
+                el.textContent = `Última sincronización: ${fecha}`
+            }
+        }).catch(() => {})
+    }
 
     html += `<div style="display:flex; flex-direction:column; gap:16px">`
 
@@ -391,14 +448,30 @@ function activarTodos(participar) {
     }).catch(() => mostrarToast('Error al actualizar', 'error'))
 }
 
-function activarConFiltro() {
-    const minGold = parseInt(document.getElementById('filtroOro').value) || null
-    const minGems = parseInt(document.getElementById('filtroGemas').value) || null
+function toggleFiltroDropdown() {
+    const dd = document.getElementById('filtro-dropdown')
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none'
+    // Cerrar al hacer click afuera
+    setTimeout(() => {
+        document.addEventListener('click', function cerrar(e) {
+            if (!document.getElementById('filtro-wrapper')?.contains(e.target)) {
+                dd.style.display = 'none'
+                document.removeEventListener('click', cerrar)
+            }
+        })
+    }, 0)
+}
+
+function activarConFiltro(tipo) {
+    const minGold = tipo === 'oro' ? (parseInt(document.getElementById('filtroOro').value) || null) : null
+    const minGems = tipo === 'gemas' ? (parseInt(document.getElementById('filtroGemas').value) || null) : null
 
     if (!minGold && !minGems) {
-        mostrarToast('Ingresá al menos un filtro', 'error')
+        mostrarToast('Ingresá un valor primero', 'error')
         return
     }
+
+    document.getElementById('filtro-dropdown').style.display = 'none'
 
     fetch('/clan/members/all/participate', {
         method: 'PUT',
@@ -408,6 +481,65 @@ function activarConFiltro() {
         if (data.error) mostrarToast('Error: ' + data.error, 'error')
         else { mostrarToast(`✓ ${data.actualizados} miembro(s) activados`); setTimeout(() => cargarMiembros(), 1000) }
     }).catch(() => mostrarToast('Error al actualizar', 'error'))
+}
+
+// =================== SINCRONIZAR ===================
+function sincronizarDonaciones(origen = 'miembros') {
+    const btnId = origen === 'inicio' ? 'btn-sincronizar-inicio' : 'btn-sincronizar'
+    const infoId = origen === 'inicio' ? 'sync-info-inicio' : 'sync-info'
+    const btn = document.getElementById(btnId)
+    const info = document.getElementById(infoId)
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...' }
+
+    fetch('/clan/sincronizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    }).then(r => r.json()).then(data => {
+        if (data.error) {
+            mostrarToast('Error: ' + data.error, 'error')
+        } else {
+            mostrarToast(`✓ ${data.mensaje}`)
+            const ahora = new Date().toLocaleString('es-AR')
+            if (info) info.textContent = `Última sincronización: ${ahora} · ${data.procesadas} cartera(s) actualizada(s)`
+            if (origen === 'inicio') cargarRegistroDonaciones(new Date().toISOString())
+        }
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 Sincronizar' }
+    }).catch(() => {
+        mostrarToast('Error al sincronizar', 'error')
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 Sincronizar' }
+    })
+}
+
+function cargarRegistroDonaciones(desdefecha) {
+    fetch('/clan/ledger').then(r => r.json()).then(ledger => {
+        const el = document.getElementById('sync-registro')
+        if (!el) return
+
+        // Filtrar solo desde la fecha de inicio
+        const FECHA_INICIO = '2026-03-17T00:00:00Z'
+        const desde = FECHA_INICIO
+        const recientes = ledger.filter(d => d.creationTime && d.creationTime >= desde)
+
+        if (recientes.length === 0) {
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay donaciones registradas desde el inicio del seguimiento.</p>`
+            return
+        }
+
+        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Fecha</th></tr>`
+        recientes.slice(0, 50).forEach(d => {
+            const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
+            const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
+            html += `<tr>
+                <td style="font-family:Cinzel,serif; font-weight:600">${d.playerUsername || 'N/A'}</td>
+                <td>${d.gold ? `<span style="color:var(--accent-dark)">🥇 +${d.gold}</span>` : '—'}</td>
+                <td>${d.gems ? `<span style="color:#7b2da8">💎 +${d.gems}</span>` : '—'}</td>
+                <td style="font-size:12px; color:var(--muted)">${fecha} ${hora}</td>
+            </tr>`
+        })
+        html += `</table>`
+        el.innerHTML = html
+    }).catch(() => {})
 }
 
 // =================== LOGS ===================
@@ -452,12 +584,9 @@ function agregarAlTracker(id, nombre) {
 // =================== SESIÓN Y ADMIN ===================
 let rolActual = null
 
-// Heartbeat: actualiza actividad cada 2 minutos
-setInterval(() => fetch('/auth/ping').catch(() => {}), 2 * 60 * 1000)
-
 async function cargarSesion() {
     // Ping de actividad cada 2 minutos
-    setInterval(() => fetch('/auth/ping'), 2 * 60 * 1000)
+    setInterval(() => fetch('/auth/ping').catch(() => {}), 2 * 60 * 1000)
     const res = await fetch('/auth/me')
     if (res.status === 401) {
         window.location.href = '/'
@@ -604,7 +733,7 @@ function guardarCartera(playerId, username) {
     fetch(`/clan/carteras/${playerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oro, gemas, username })
+        body: JSON.stringify({ oro, gemas, username, crear: true })
     }).then(r => r.json()).then(data => {
         if (data.ok) mostrarToast('✓ Cartera guardada')
         else mostrarToast('Error: ' + data.error, 'error')

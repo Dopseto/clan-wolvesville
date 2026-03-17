@@ -124,6 +124,75 @@ def upsert_cartera(player_id, username, oro, gemas):
 def actualizar_cartera(player_id, campos):
     supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
 
+# =================== CONFIG (Supabase) ===================
+FECHA_INICIO = "2026-03-17T00:00:00Z"  # Fecha desde donde se cuentan donaciones
+
+def get_config(clave):
+    try:
+        rows = supabase_request("GET", f"config?clave=eq.{clave}&select=*")
+        return rows[0]["valor"] if rows else None
+    except:
+        return None
+
+def set_config(clave, valor):
+    try:
+        # Upsert
+        supabase_request("POST", "config", {"clave": clave, "valor": valor})
+    except:
+        try:
+            supabase_request("PATCH", f"config?clave=eq.{clave}", {"valor": valor})
+        except:
+            pass
+
+def sincronizar_donaciones():
+    # Obtener última sincronización (o fecha de inicio si nunca se sincronizó)
+    ultima = get_config("ultima_sincronizacion") or FECHA_INICIO
+
+    # Traer ledger completo
+    ledger = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger")
+
+    # Filtrar solo donaciones posteriores a ultima sincronización
+    nuevas = []
+    for entry in ledger:
+        fecha = entry.get("creationTime", "")
+        if fecha > ultima:
+            nuevas.append(entry)
+
+    if not nuevas:
+        return {"ok": True, "procesadas": 0, "mensaje": "No hay donaciones nuevas"}
+
+    # Agrupar por jugador
+    sumas = {}  # { username: { "gold": x, "gems": y } }
+    for entry in nuevas:
+        username = entry.get("playerUsername", "")
+        if not username:
+            continue
+        if username not in sumas:
+            sumas[username] = {"gold": 0, "gems": 0}
+        sumas[username]["gold"] += entry.get("gold", 0) or 0
+        sumas[username]["gems"] += entry.get("gems", 0) or 0
+
+    # Actualizar carteras — buscar por username
+    carteras_rows = supabase_request("GET", "carteras?select=*")
+    carteras_por_username = {}
+    for row in carteras_rows:
+        carteras_por_username[row["username"]] = row
+
+    procesadas = 0
+    for username, montos in sumas.items():
+        if username in carteras_por_username:
+            row = carteras_por_username[username]
+            nuevo_oro = row.get("oro", 0) + montos["gold"]
+            nuevo_gemas = row.get("gemas", 0) + montos["gems"]
+            supabase_request("PATCH", f"carteras?player_id=eq.{row['player_id']}", {"oro": nuevo_oro, "gemas": nuevo_gemas})
+            procesadas += 1
+
+    # Guardar nueva fecha de sincronización
+    ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    set_config("ultima_sincronizacion", ahora)
+
+    return {"ok": True, "procesadas": procesadas, "mensaje": f"{procesadas} cartera(s) actualizada(s)", "donaciones": nuevas}
+
 # =================== API WOLVESVILLE ===================
 def consultar_api(url):
     req = urllib.request.Request(url)
@@ -338,6 +407,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(cargar_carteras())
                 return
 
+            if parsed.path == "/clan/sincronizar/info":
+                ultima = get_config("ultima_sincronizacion") or FECHA_INICIO
+                self.send_json({"ultima_sincronizacion": ultima})
+                return
+
             if parsed.path == "/jugadores":
                 self.send_json(cargar_jugadores())
                 return
@@ -494,6 +568,11 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"ok": True})
                 else:
                     self.send_json({"error": "Mensaje vacío"})
+                return
+
+            if parsed.path == "/clan/sincronizar":
+                resultado = sincronizar_donaciones()
+                self.send_json(resultado)
                 return
 
         except urllib.error.HTTPError as e:
