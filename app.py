@@ -227,6 +227,10 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/clan/logs":
                 data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
                 body = json.dumps(data).encode("utf-8")
+            elif parsed.path.startswith("/clan/avatar/"):
+                player_id = parsed.path.split("/clan/avatar/")[1]
+                avatar_url = obtener_avatar(player_id)
+                body = json.dumps({"avatarUrl": avatar_url}).encode("utf-8")
 
         except urllib.error.HTTPError as e:
             body = json.dumps({"error": f"{e.code} {e.reason}"}).encode("utf-8")

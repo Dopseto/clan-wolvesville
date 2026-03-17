@@ -188,16 +188,41 @@ function enviarAnuncio(mensaje) {
 // =================== MIEMBROS ===================
 function cargarMiembros() {
     const contenido = document.getElementById('contenido')
-    contenido.innerHTML = `<h1>👥 Miembros</h1><p class="cargando">Cargando miembros y avatares... esto puede tardar unos segundos.</p>`
-    fetch('/clan/members/withavatar')
+    contenido.innerHTML = `<h1>👥 Miembros</h1><p class="cargando">Cargando miembros...</p>`
+
+    // Paso 1: cargamos los miembros sin avatar (rápido)
+    fetch('/clan/members')
         .then(r => r.json())
         .then(members => {
             miembrosCache = members
             mostrarMiembros(members)
+            // Paso 2: cargamos avatares en paralelo, uno por uno
+            cargarAvatares(members)
         })
         .catch(() => {
             contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted)">Error al cargar miembros</p></div>`
         })
+}
+
+function cargarAvatares(members) {
+    members.forEach(m => {
+        const playerId = m.playerId
+        if (!playerId) return
+        fetch(`/clan/avatar/${playerId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.avatarUrl) {
+                    const img = document.getElementById(`avatar-${playerId}`)
+                    if (img) {
+                        img.src = data.avatarUrl
+                        img.style.display = 'block'
+                        const placeholder = document.getElementById(`avatar-placeholder-${playerId}`)
+                        if (placeholder) placeholder.style.display = 'none'
+                    }
+                }
+            })
+            .catch(() => {}) // Si falla el avatar, no pasa nada
+    })
 }
 
 function mostrarMiembros(members) {
@@ -246,17 +271,16 @@ function mostrarMiembros(members) {
         const goldDonado = m.donated?.gold?.allTime || 0
         const gemsDonado = m.donated?.gems?.allTime || 0
         const xpSemana = m.xpDurations?.week || 0
-        const avatarUrl = m.avatarUrl
         const rolColor = m.clanRole === 'LEADER' ? '#c47a2a' : m.clanRole === 'CO_LEADER' ? '#9b5e1a' : 'var(--muted)'
         const rolTexto = m.clanRole === 'LEADER' ? '👑 Líder' : m.clanRole === 'CO_LEADER' ? '⭐ Co-líder' : '🐺 Miembro'
 
         html += `
         <div class="card" style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap">
             <div style="flex-shrink:0; text-align:center">
-                ${avatarUrl
-                    ? `<img src="${avatarUrl}" alt="${m.username}" style="width:80px; height:80px; object-fit:contain; border-radius:8px; border:2px solid var(--parchment-shadow); background:rgba(255,252,235,0.5)">`
-                    : `<div style="width:80px; height:80px; border-radius:8px; border:2px solid var(--parchment-shadow); background:rgba(160,128,64,0.2); display:flex; align-items:center; justify-content:center; font-family:Cinzel,serif; font-size:22px; font-weight:700; color:var(--ink)">${(m.username || '?')[0].toUpperCase()}</div>`
-                }
+                <img id="avatar-${m.playerId}" src="" alt="${m.username}"
+                    style="display:none; width:80px; height:80px; object-fit:contain; border-radius:8px; border:2px solid var(--parchment-shadow); background:rgba(255,252,235,0.5)">
+                <div id="avatar-placeholder-${m.playerId}"
+                    style="width:80px; height:80px; border-radius:8px; border:2px solid var(--parchment-shadow); background:rgba(160,128,64,0.2); display:flex; align-items:center; justify-content:center; font-family:Cinzel,serif; font-size:22px; font-weight:700; color:var(--ink)">${(m.username || '?')[0].toUpperCase()}</div>
                 <p style="font-size:10px; color:${rolColor}; margin-top:6px; font-family:Cinzel,serif; letter-spacing:0.5px">${rolTexto}</p>
             </div>
 
