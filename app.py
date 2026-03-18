@@ -671,7 +671,7 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(raw) if raw else {}
 
             if parsed.path.startswith("/admin/usuarios/") and parsed.path.endswith("/aprobar"):
-                if sesion["rol"] != "admin":
+                if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 user_id = parsed.path.split("/admin/usuarios/")[1].replace("/aprobar", "")

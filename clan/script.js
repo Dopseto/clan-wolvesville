@@ -713,8 +713,8 @@ async function cargarSesion() {
         if (data.rol !== 'admin') btnTracker.style.display = 'none'
     }
 
-    // Agregar botón Admin en nav si es admin
-    if (data.rol === 'admin') {
+    // Agregar botón Admin en nav si es admin o lider
+    if (data.rol === 'admin' || data.rol === 'lider') {
         const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-admin')) {
             const btn = document.createElement('button')
@@ -734,7 +734,7 @@ async function cerrarSesion() {
 
 // =================== PANEL ADMIN ===================
 function cargarAdmin() {
-    if (rolActual !== 'admin') {
+    if (rolActual !== 'admin' && rolActual !== 'lider') {
         document.getElementById('contenido').innerHTML = `<h1>🛡️ Admin</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
         return
     }
@@ -819,9 +819,9 @@ function mostrarAdmin(usuarios) {
                     <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR') : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
         })
@@ -846,9 +846,9 @@ function mostrarAdmin(usuarios) {
                     <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR') : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
         })
