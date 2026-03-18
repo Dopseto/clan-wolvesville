@@ -225,8 +225,9 @@ def sincronizar_donaciones():
             })
             procesadas += 1
 
-    ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    set_config("ultima_sincronizacion", ahora)
+    if nuevas:
+        ultima_nueva = max(e.get("creationTime", "") for e in nuevas)
+        set_config("ultima_sincronizacion", ultima_nueva)
 
     return {"ok": True, "procesadas": procesadas, "mensaje": f"{procesadas} cartera(s) actualizada(s)", "donaciones": nuevas}
 
