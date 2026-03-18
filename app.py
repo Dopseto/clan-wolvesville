@@ -665,8 +665,8 @@ class Handler(BaseHTTPRequestHandler):
                         pid = m.get("playerId")
                         cartera = carteras.get(pid, {"oro": 0, "gemas": 0})
                         cumple = True
-                        if min_gold is not None and cartera["oro"] < min_gold: cumple = False
-                        if min_gems is not None and cartera["gemas"] < min_gems: cumple = False
+                        if min_gold is not None and (cartera.get("oro") or 0) < min_gold: cumple = False
+                        if min_gems is not None and (cartera.get("gemas") or 0) < min_gems: cumple = False 
                         if cumple:
                             try:
                                 put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{pid}/participateInQuests", {"participateInQuests": participar})
