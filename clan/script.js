@@ -273,9 +273,9 @@ function mostrarMiembros(members, carteras = {}) {
 
     let html = `<h1>👥 Miembros</h1>`
 
-    html += `<div class="card">
-        <h3>🔄 Cambios de nombre</h3>
-        <div id="panel-cambios-nombre"><p style="color:var(--muted); font-style:italic">Sin cambios registrados</p></div>
+    html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0">🔄 Cambios de nombre</h3>
+        <button class="btn-tracker" onclick="abrirDrawerCambios()">Ver historial</button>
     </div>`
 
 
@@ -394,10 +394,41 @@ function mostrarMiembros(members, carteras = {}) {
     html += `</div>`
     contenido.innerHTML = html
 
+    abrirDrawerCambios(false)
+}
+
+function hexToRgb(hex) {
+    if (!hex || hex.length < 7) return '160,128,64'
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `${r},${g},${b}`
+}
+
+function abrirDrawerCambios(abrir = true) {
+    let drawer = document.getElementById('drawer-cambios')
+    if (!drawer) {
+        drawer = document.createElement('div')
+        drawer.id = 'drawer-cambios'
+        drawer.innerHTML = `
+            <div id="drawer-overlay-cambios" onclick="cerrarDrawerCambios()" style="position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:998; display:none"></div>
+            <div id="drawer-panel-cambios" style="position:fixed; top:0; right:0; height:100vh; width:320px; background:var(--parchment); border-left:2px solid var(--border); padding:24px; z-index:999; transform:translateX(100%); transition:transform 0.3s ease; overflow-y:auto; box-shadow:-4px 0 20px rgba(0,0,0,0.3)">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(160,128,64,0.3); padding-bottom:12px">
+                    <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink)">🔄 Cambios de nombre</span>
+                    <button onclick="cerrarDrawerCambios()" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
+                </div>
+                <div id="drawer-cambios-contenido"><p style="color:var(--muted); font-style:italic; font-size:14px">Cargando...</p></div>
+            </div>`
+        document.body.appendChild(drawer)
+    }
+
     fetch('/clan/cambios_nombre').then(r => r.json()).then(cambios => {
-        if (!cambios || cambios.length === 0) return
-        const el = document.getElementById('panel-cambios-nombre')
+        const el = document.getElementById('drawer-cambios-contenido')
         if (!el) return
+        if (!cambios || cambios.length === 0) {
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:14px">Sin cambios registrados</p>`
+            return
+        }
         let h = ''
         cambios.forEach(c => {
             const fecha = c.created_at ? c.created_at.slice(0,10).split('-').reverse().join('-') : 'N/A'
@@ -409,15 +440,22 @@ function mostrarMiembros(members, carteras = {}) {
             </div>`
         })
         el.innerHTML = h
-    }).catch(() => {})
+    }).catch(() => {
+        const el = document.getElementById('drawer-cambios-contenido')
+        if (el) el.innerHTML = `<p style="color:var(--red); font-size:14px">Error al cargar</p>`
+    })
+
+    if (abrir) {
+        document.getElementById('drawer-overlay-cambios').style.display = 'block'
+        document.getElementById('drawer-panel-cambios').style.transform = 'translateX(0)'
+    }
 }
 
-function hexToRgb(hex) {
-    if (!hex || hex.length < 7) return '160,128,64'
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-    return `${r},${g},${b}`
+function cerrarDrawerCambios() {
+    const overlay = document.getElementById('drawer-overlay-cambios')
+    const panel = document.getElementById('drawer-panel-cambios')
+    if (overlay) overlay.style.display = 'none'
+    if (panel) panel.style.transform = 'translateX(100%)'
 }
 
 function toggleParticipacion(playerId, estadoActual) {
