@@ -307,6 +307,8 @@ async function hacerLogin() {
     const data = await res.json()
     if (data.ok) {
         window.location.href = '/clan/'
+    } else if (data.suspendido) {
+        mostrarMsg('login-msg', '⛔ Cuenta temporalmente suspendida', 'error')
     } else if (data.pendiente) {
         mostrarMsg('login-msg', '⏳ Tu cuenta está pendiente de aprobación', 'pendiente')
     } else {

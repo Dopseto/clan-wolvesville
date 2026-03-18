@@ -82,6 +82,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     html += `</div>`
 
     html += `<div class="card"><h3>📢 Anuncios</h3>
+        ${(rolActual === 'admin' || rolActual === 'lider') ? `
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
             <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">Manual</button>
             <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">Automático</button>
@@ -97,7 +98,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
                     <p style="font-size:14px; color:var(--ink-light)">${msg}</p>
                 </div>`).join('')}
             <button class="btn-primary" style="margin-top:8px" onclick="publicarAutoAnuncio()">📢 Publicar seleccionado</button>
-        </div>
+        </div>` : ''}
     </div>`
 
     html += `<div class="card"><h3>📜 Historial de anuncios</h3>`
@@ -118,7 +119,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     html += `<div class="card">
         <h3>🔄 Registro de donaciones</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
-            <button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>
+            ${(rolActual === 'admin' || rolActual === 'lider') ? `<button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>` : ''}
             <button class="btn-tracker" onclick="abrirModalDonaciones()">📋 Ver registro completo</button>
             <span id="sync-info-inicio" style="font-size:12px; color:var(--muted); font-style:italic"></span>
         </div>
@@ -258,12 +259,16 @@ function mostrarMiembros(members, carteras = {}) {
 
     html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0">🔄 Cambios de nombre</h3>
-        <button class="btn-tracker" onclick="abrirDrawerCambios()">Ver historial</button>
+        <div style="display:flex; gap:8px; align-items:center">
+            ${(rolActual === 'admin' || rolActual === 'lider') ? `<button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); padding:6px 14px; font-size:10px" onclick="abrirModalClean()">🧹 Clean</button>` : ''}
+            <button class="btn-tracker" onclick="abrirDrawerCambios()">Ver historial</button>
+        </div>
     </div>`
 
 
 
-    // Panel de acciones masivas
+    // Panel de acciones masivas - solo para admin y lider
+    if (rolActual === 'admin' || rolActual === 'lider') {
     html += `
     <div class="card">
         <h3>⚡ Acciones masivas</h3>
@@ -289,6 +294,7 @@ function mostrarMiembros(members, carteras = {}) {
             </div>
         </div>
     </div>`
+    }
 
 
     html += `<div style="display:flex; flex-direction:column; gap:16px">`
@@ -326,11 +332,15 @@ function mostrarMiembros(members, carteras = {}) {
 
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px">
                     <span style="font-family:Cinzel,serif; font-size:11px; color:var(--ink-light); letter-spacing:0.5px">MISIÓN</span>
+                    ${(rolActual === 'admin' || rolActual === 'lider') ? `
                     <div onclick="toggleParticipacion('${m.playerId}', ${participa})"
                          id="toggle-${m.playerId}"
                          style="width:44px; height:24px; border-radius:12px; background:${participa ? '#2d6a1e' : 'var(--muted)'}; cursor:pointer; position:relative; transition:background 0.3s; border:1px solid rgba(0,0,0,0.1); flex-shrink:0">
                         <div style="width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:2px; left:${participa ? '22px' : '2px'}; transition:left 0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2)" id="toggle-ball-${m.playerId}"></div>
-                    </div>
+                    </div>` : `
+                    <div style="width:44px; height:24px; border-radius:12px; background:${participa ? '#2d6a1e' : 'var(--muted)'}; position:relative; border:1px solid rgba(0,0,0,0.1); flex-shrink:0; opacity:0.7">
+                        <div style="width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:2px; left:${participa ? '22px' : '2px'}; box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div>
+                    </div>`}
                     <span style="font-size:12px; color:${participa ? '#2d6a1e' : 'var(--muted)'}; font-style:italic" id="toggle-label-${m.playerId}">${participa ? 'Activo' : 'Inactivo'}</span>
                 </div>
 
@@ -680,13 +690,15 @@ async function cargarSesion() {
 
     const topbarUser = document.getElementById('topbar-username')
     if (topbarUser) topbarUser.textContent = data.username
-    
+
     // Mostrar nombre de usuario y botón logout en sidebar
     const footer = document.querySelector('.sidebar-footer')
     if (footer) {
+        const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : ''
+        const rolColor = data.rol === 'admin' ? 'var(--accent)' : data.rol === 'lider' ? '#9b5e1a' : ''
         footer.innerHTML = `
             <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:8px">${data.username}</p>
-            ${data.rol === 'admin' ? '<p style="color:var(--accent); font-size:9px; letter-spacing:1px; margin-bottom:10px">✦ ADMIN ✦</p>' : ''}
+            ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:10px">${rolLabel}</p>` : ''}
             <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
                 onmouseover="this.style.background='rgba(139,32,16,0.15)'; this.style.color='#c87060'"
                 onmouseout="this.style.background='transparent'; this.style.color='rgba(160,100,60,0.6)'">
@@ -742,11 +754,14 @@ function mostrarAdmin(usuarios) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>🛡️ Panel de administración</h1>`
 
-    const pendientes = usuarios.filter(u => !u.aprobado)
-    const aprobados = usuarios.filter(u => u.aprobado)
+    const pendientes = usuarios.filter(u => !u.aprobado && u.rol !== 'admin')
+    const lideres = usuarios.filter(u => u.aprobado && u.rol === 'lider')
+    const miembros = usuarios.filter(u => u.aprobado && u.rol === 'miembro')
+    const admins = usuarios.filter(u => u.aprobado && u.rol === 'admin')
 
+    // Solicitudes pendientes / desactivados
     if (pendientes.length > 0) {
-        html += `<div class="card"><h3>⏳ Solicitudes pendientes</h3>`
+        html += `<div class="card"><h3>⏳ Pendientes / Desactivados</h3>`
         pendientes.forEach(u => {
             html += `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
@@ -754,9 +769,9 @@ function mostrarAdmin(usuarios) {
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
                     <span style="font-size:12px; color:var(--muted); margin-left:8px">${u.created_at ? u.created_at.slice(0,10) : ''}</span>
                 </div>
-                <div style="display:flex; gap:8px">
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px" onclick="gestionarUsuario(${u.id}, true)">✓ Aprobar</button>
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">✗ Rechazar</button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap">
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px" onclick="toggleAcceso(${u.id}, true, '${u.username}')">✓ Activar</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">✗ Eliminar</button>
                 </div>
             </div>`
         })
@@ -765,30 +780,108 @@ function mostrarAdmin(usuarios) {
         html += `<div class="card"><p style="color:var(--muted); font-style:italic">No hay solicitudes pendientes ✓</p></div>`
     }
 
-    html += `<div class="card"><h3>👥 Usuarios aprobados</h3>`
-    if (aprobados.length === 0) {
-        html += `<p style="color:var(--muted); font-style:italic">No hay usuarios aprobados aún</p>`
-    } else {
-        aprobados.forEach(u => {
-            const esAdmin = u.rol === 'admin'
+    // Admin
+    if (admins.length > 0) {
+        html += `<div class="card"><h3>🛡️ Administradores</h3>`
+        admins.forEach(u => {
             const conectado = estaConectado(u.ultima_actividad)
             const luz = conectado
-                ? `<span title="Conectado" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
-                : `<span title="Desconectado" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
+                ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
+                : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
             html += `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
                 <div style="display:flex; align-items:center">
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
-                    ${esAdmin ? '<span style="font-size:10px; color:var(--accent); margin-left:8px; font-family:Cinzel,serif">ADMIN</span>' : ''}
+                    <span style="font-size:10px; color:var(--accent); margin-left:8px; font-family:Cinzel,serif">ADMIN</span>
                     <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR') : 'Nunca')}</span>
                 </div>
-                ${!esAdmin ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">Revocar acceso</button>` : ''}
+            </div>`
+        })
+        html += `</div>`
+    }
+
+    // Líderes
+    html += `<div class="card"><h3>👑 Líderes</h3>`
+    if (lideres.length === 0) {
+        html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay líderes</p>`
+    } else {
+        lideres.forEach(u => {
+            const conectado = estaConectado(u.ultima_actividad)
+            const luz = conectado
+                ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
+                : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center">
+                    ${luz}
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR') : 'Nunca')}</span>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap">
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>
+                </div>
             </div>`
         })
     }
     html += `</div>`
+
+    // Miembros
+    html += `<div class="card"><h3>🐺 Miembros</h3>`
+    if (miembros.length === 0) {
+        html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay miembros</p>`
+    } else {
+        miembros.forEach(u => {
+            const conectado = estaConectado(u.ultima_actividad)
+            const luz = conectado
+                ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
+                : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center">
+                    ${luz}
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR') : 'Nunca')}</span>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap">
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>
+                </div>
+            </div>`
+        })
+    }
+    html += `</div>`
+
     contenido.innerHTML = html
+}
+
+function cambiarRol(id, nuevoRol, username) {
+    const texto = nuevoRol === 'lider' ? `¿Subir a ${username} a Líder?` : `¿Bajar a ${username} a Miembro?`
+    if (!confirm(texto)) return
+    fetch(`/admin/usuarios/${id}/rol`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rol: nuevoRol })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) { mostrarToast(`✓ Rol actualizado`); cargarAdmin() }
+        else mostrarToast('Error: ' + data.error, 'error')
+    })
+}
+
+function toggleAcceso(id, activar, username) {
+    const texto = activar ? `¿Activar acceso de ${username}?` : `¿Desactivar acceso de ${username}?`
+    if (!confirm(texto)) return
+    fetch(`/admin/usuarios/${id}/aprobar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aprobado: activar })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) { mostrarToast(activar ? `✓ ${username} activado` : `✓ ${username} desactivado`); cargarAdmin() }
+        else mostrarToast('Error: ' + data.error, 'error')
+    })
 }
 
 function gestionarUsuario(id, aprobar) {
@@ -824,4 +917,75 @@ function guardarCartera(playerId, username) {
         if (data.ok) mostrarToast('✓ Cartera guardada')
         else mostrarToast('Error: ' + data.error, 'error')
     }).catch(() => mostrarToast('Error al guardar', 'error'))
+}
+
+function abrirModalClean() {
+    let modal = document.getElementById('modal-clean')
+    if (!modal) {
+        modal = document.createElement('div')
+        modal.id = 'modal-clean'
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:998; display:flex; align-items:center; justify-content:center; padding:20px'
+        modal.innerHTML = `
+            <div style="background:var(--parchment); border:2px solid var(--border); border-radius:4px; padding:28px; width:100%; max-width:500px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(160,128,64,0.3); padding-bottom:12px">
+                    <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink)">🧹 Limpiar ex-miembros</span>
+                    <button onclick="document.getElementById('modal-clean').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
+                </div>
+                <div id="modal-clean-contenido" style="overflow-y:auto; flex:1">
+                    <p style="color:var(--muted); font-style:italic; font-size:14px">Cargando...</p>
+                </div>
+            </div>`
+        modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none' })
+        document.body.appendChild(modal)
+    } else {
+        modal.style.display = 'flex'
+    }
+
+    fetch('/clan/ex-miembros').then(r => r.json()).then(ex => {
+        const el = document.getElementById('modal-clean-contenido')
+        if (!el) return
+        if (!ex || ex.length === 0) {
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:14px">✓ No hay ex-miembros con cartera.</p>`
+            return
+        }
+        let h = `<p style="font-size:13px; color:var(--muted); margin-bottom:16px; font-style:italic">Estos jugadores ya no están en el clan pero tienen cartera guardada:</p>`
+        h += `<button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); margin-bottom:16px; width:100%" onclick="eliminarTodosExMiembros()">🗑️ Eliminar todos (${ex.length})</button>`
+        ex.forEach(c => {
+            h += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(160,128,64,0.2)">
+                <div>
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink); font-size:14px">${c.username || c.player_id}</span>
+                    <span style="font-size:12px; color:var(--muted); margin-left:8px">🥇 ${c.oro || 0} · 💎 ${c.gemas || 0}</span>
+                </div>
+                <button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); padding:5px 12px; font-size:10px"
+                    onclick="eliminarExMiembro('${c.player_id}', '${c.username || c.player_id}', this.closest('div[style]'))">Eliminar</button>
+            </div>`
+        })
+        el.innerHTML = h
+    }).catch(() => {
+        const el = document.getElementById('modal-clean-contenido')
+        if (el) el.innerHTML = `<p style="color:var(--red); font-size:14px">Error al cargar</p>`
+    })
+}
+
+function eliminarExMiembro(playerId, username, fila) {
+    fetch(`/clan/carteras/${playerId}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                mostrarToast(`✓ ${username} eliminado`)
+                if (fila) fila.remove()
+            } else mostrarToast('Error: ' + data.error, 'error')
+        }).catch(() => mostrarToast('Error al eliminar', 'error'))
+}
+
+function eliminarTodosExMiembros() {
+    if (!confirm('¿Eliminar las carteras de todos los ex-miembros?')) return
+    fetch('/clan/ex-miembros', { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                mostrarToast(`✓ ${data.eliminados} cartera(s) eliminada(s)`)
+                document.getElementById('modal-clean').style.display = 'none'
+            } else mostrarToast('Error: ' + data.error, 'error')
+        }).catch(() => mostrarToast('Error al eliminar', 'error'))
 }

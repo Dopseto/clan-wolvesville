@@ -77,7 +77,7 @@ def actualizar_jugador(id_jugador, campos):
     supabase_request("PATCH", f"jugadores?id=eq.{id_jugador}", campos)
 
 # =================== USUARIOS ===================
-def crear_usuario_supabase(username, password_hash, rol="user", aprobado=False):
+def crear_usuario_supabase(username, password_hash, rol="miembro", aprobado=False):
     return supabase_request("POST", "usuarios", {"username": username, "password": password_hash, "rol": rol, "aprobado": aprobado})
 
 def buscar_usuario(username):
@@ -135,8 +135,16 @@ def upsert_cartera(player_id, username, oro=0, gemas=0):
     with urllib.request.urlopen(req, body) as response:
         response.read()
     
-def actualizar_cartera(player_id, campos):
-    supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
+def eliminar_cartera(player_id):
+    supabase_request("DELETE", f"carteras?player_id=eq.{player_id}")
+
+def obtener_ex_miembros(members):
+    """Devuelve carteras de jugadores que ya no están en el clan."""
+    carteras = supabase_request("GET", "carteras?select=*")
+    ids_actuales = {m.get("playerId") for m in members}
+    return [c for c in carteras if c["player_id"] not in ids_actuales]
+
+
 
 def inicializar_carteras(members):
     """Crea filas en carteras para miembros que no las tienen aún."""
@@ -457,6 +465,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(cargar_carteras())
                 return
 
+            if parsed.path == "/clan/ex-miembros":
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                self.send_json(obtener_ex_miembros(members))
+                return
+
             if parsed.path == "/clan/cambios_nombre":
                 self.send_json(obtener_cambios_nombre())
                 return
@@ -568,7 +581,10 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Usuario o contraseña incorrectos"})
                     return
                 if not usuario["aprobado"]:
-                    self.send_json({"pendiente": True, "error": "Cuenta pendiente de aprobación"})
+                    if usuario.get("ultima_actividad"):
+                        self.send_json({"suspendido": True, "error": "Cuenta temporalmente suspendida"})
+                    else:
+                        self.send_json({"pendiente": True, "error": "Cuenta pendiente de aprobación"})
                     return
                 token = crear_sesion(usuario["username"], usuario["rol"])
                 actualizar_actividad(usuario["username"])
@@ -616,6 +632,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/clan/announcements":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
                 mensaje = data.get("message", "").strip()
                 if mensaje:
                     post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": mensaje})
@@ -625,6 +644,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/clan/sincronizar":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
                 resultado = sincronizar_donaciones()
                 self.send_json(resultado)
                 return
@@ -655,6 +677,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/clan/members/all/participate":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
                 participar = data.get("participateInQuests", True)
                 min_gold = data.get("minGold", None)
                 min_gems = data.get("minGems", None)
@@ -680,6 +705,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path.startswith("/clan/members/") and parsed.path.endswith("/participate"):
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
                 member_id = parsed.path.split("/clan/members/")[1].replace("/participate", "")
                 put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": data.get("participateInQuests", True)})
                 self.send_json({"ok": True})
@@ -712,7 +740,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path.startswith("/clan/carteras/"):
-                if sesion["rol"] != "admin":
+                if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 player_id = parsed.path.split("/clan/carteras/")[1]
@@ -746,6 +774,26 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 eliminar_usuario(parsed.path.split("/admin/usuarios/")[1])
                 self.send_json({"ok": True})
+                return
+
+            if parsed.path.startswith("/clan/carteras/"):
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                player_id = parsed.path.split("/clan/carteras/")[1]
+                eliminar_cartera(player_id)
+                self.send_json({"ok": True})
+                return
+
+            if parsed.path == "/clan/ex-miembros":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                ex = obtener_ex_miembros(members)
+                for c in ex:
+                    eliminar_cartera(c["player_id"])
+                self.send_json({"ok": True, "eliminados": len(ex)})
                 return
 
             if parsed.path.startswith("/clan/announcements/"):
