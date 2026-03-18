@@ -214,7 +214,7 @@ function cargarMiembros() {
         fetch('/clan/members').then(r => r.json()),
         fetch('/clan/carteras').then(r => r.json())
     ]).then(([members, carteras]) => {
-        const membrosReales = members.filter(m => m.status !== 'invited')
+        const membrosReales = members.filter(m => m.status !== 'INVITED') 
         miembrosCache = membrosReales
         // Crear carteras para miembros que no tienen una todavía
         membrosReales.forEach(m => {
