@@ -120,39 +120,34 @@ def cargar_carteras():
 # la siguiente "def upsert_cartera" fue de prueba para ver si funcionaba que agregue miembros a la lista de las carteras.
 # la "def upsert_cartera" que fue reemplazada por la actual era def upsert_cartera(player_id, username, oro, gemas): supabase_request("POST", "carteras", {"player_id": player_id, "username": username, "oro": oro, "gemas": gemas})
 def upsert_cartera(player_id, username, oro=0, gemas=0):
-    try:
-        # Intentar insertar nueva
-        url = f"{SUPABASE_URL}/rest/v1/carteras"
-        req = urllib.request.Request(url, method="POST")
-        req.add_header("apikey", SUPABASE_KEY)
-        req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
-        req.add_header("Content-Type", "application/json")
-        req.add_header("Prefer", "return=representation,resolution=ignore-duplicates")
-        body = json.dumps({"player_id": player_id, "username": username, "oro": oro, "gemas": gemas}).encode("utf-8")
-        with urllib.request.urlopen(req, body) as response:
-            response.read()
-    except:
-        pass
+    url = f"{SUPABASE_URL}/rest/v1/carteras"
+    req = urllib.request.Request(url, method="POST")
+    req.add_header("apikey", SUPABASE_KEY)
+    req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "resolution=ignore-duplicates,return=minimal")
+    body = json.dumps({
+        "player_id": player_id,
+        "username": username,
+        "oro": oro,
+        "gemas": gemas
+    }).encode("utf-8")
+    with urllib.request.urlopen(req, body) as response:
+        response.read()
     
 def actualizar_cartera(player_id, campos):
     supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
 
 def inicializar_carteras(members):
     """Crea filas en carteras para miembros que no las tienen aún."""
-    try:
-        carteras = cargar_carteras()
-        for m in members:
-            player_id = m.get("playerId")
-            username = m.get("username", "")
-            if player_id and player_id not in carteras:
-                try:
-                    upsert_cartera(player_id, username, 0, 0)
-                    carteras[player_id] = {"oro": 0, "gemas": 0}
-                except:
-                    pass
-        return carteras
-    except:
-        return {}
+    carteras = cargar_carteras()
+    for m in members:
+        player_id = m.get("playerId")
+        username = m.get("username", "")
+        if player_id and player_id not in carteras:
+            upsert_cartera(player_id, username, 0, 0)
+            carteras[player_id] = {"oro": 0, "gemas": 0}
+    return carteras
 
 # =================== CONFIG ===================
 FECHA_INICIO = "2026-03-17T00:00:00Z"
