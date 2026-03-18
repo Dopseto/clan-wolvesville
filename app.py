@@ -90,6 +90,9 @@ def listar_usuarios():
 def aprobar_usuario(user_id, aprobado):
     supabase_request("PATCH", f"usuarios?id=eq.{user_id}", {"aprobado": aprobado})
 
+def cambiar_rol_usuario(user_id, rol):
+    supabase_request("PATCH", f"usuarios?id=eq.{user_id}", {"rol": rol})
+
 def eliminar_usuario(user_id):
     supabase_request("DELETE", f"usuarios?id=eq.{user_id}")
 
@@ -673,6 +676,19 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 user_id = parsed.path.split("/admin/usuarios/")[1].replace("/aprobar", "")
                 aprobar_usuario(user_id, data.get("aprobado", True))
+                self.send_json({"ok": True})
+                return
+
+            if parsed.path.startswith("/admin/usuarios/") and parsed.path.endswith("/rol"):
+                if sesion["rol"] != "admin":
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                user_id = parsed.path.split("/admin/usuarios/")[1].replace("/rol", "")
+                nuevo_rol = data.get("rol", "miembro")
+                if nuevo_rol not in ("miembro", "lider"):
+                    self.send_json({"error": "Rol inválido"})
+                    return
+                cambiar_rol_usuario(user_id, nuevo_rol)
                 self.send_json({"ok": True})
                 return
 
