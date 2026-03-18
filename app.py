@@ -647,12 +647,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ok": True})
                 return
 
-            if parsed.path.startswith("/clan/members/") and parsed.path.endswith("/participate"):
-                member_id = parsed.path.split("/clan/members/")[1].replace("/participate", "")
-                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": data.get("participateInQuests", True)})
-                self.send_json({"ok": True})
-                return
-
             if parsed.path == "/clan/members/all/participate":
                 participar = data.get("participateInQuests", True)
                 min_gold = data.get("minGold", None)
@@ -666,7 +660,7 @@ class Handler(BaseHTTPRequestHandler):
                         cartera = carteras.get(pid, {"oro": 0, "gemas": 0})
                         cumple = True
                         if min_gold is not None and (cartera.get("oro") or 0) < min_gold: cumple = False
-                        if min_gems is not None and (cartera.get("gemas") or 0) < min_gems: cumple = False 
+                        if min_gems is not None and (cartera.get("gemas") or 0) < min_gems: cumple = False
                         if cumple:
                             try:
                                 put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{pid}/participateInQuests", {"participateInQuests": participar})
@@ -676,6 +670,12 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/all/participateInQuests", {"participateInQuests": participar})
                     self.send_json({"ok": True})
+                return
+
+            if parsed.path.startswith("/clan/members/") and parsed.path.endswith("/participate"):
+                member_id = parsed.path.split("/clan/members/")[1].replace("/participate", "")
+                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": data.get("participateInQuests", True)})
+                self.send_json({"ok": True})
                 return
 
         except urllib.error.HTTPError as e:
