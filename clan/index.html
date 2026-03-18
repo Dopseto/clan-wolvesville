@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Desert Howl</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Almendra:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
@@ -508,9 +509,92 @@
 
         a { color: var(--accent-dark); text-decoration: none; }
         a:hover { text-decoration: underline; }
+
+        /* =================== MÓVIL =================== */
+        #topbar-mobile { display: none; }
+        #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; overflow: auto; }
+
+            #topbar-mobile {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 48px;
+                background: #1e1408;
+                border-bottom: 1px solid var(--accent-dark);
+                padding: 0 14px;
+                z-index: 100;
+            }
+
+            #topbar-mobile .topbar-left { display: flex; align-items: center; gap: 10px; }
+
+            #btn-hamburguesa {
+                background: none; border: none; cursor: pointer;
+                padding: 4px 6px; font-size: 20px;
+                color: var(--accent-light); line-height: 1;
+            }
+
+            #topbar-title {
+                font-family: 'Cinzel', serif; font-size: 13px;
+                font-weight: 700; color: var(--accent-light); letter-spacing: 2px;
+            }
+
+            #topbar-username {
+                font-family: 'Cinzel', serif; font-size: 10px;
+                color: rgba(160,128,80,0.7); letter-spacing: 1px;
+            }
+
+            #sidebar {
+                position: fixed; top: 0; left: 0;
+                height: 100vh; width: 220px;
+                z-index: 101; min-height: unset;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            #sidebar.abierto { transform: translateX(0); }
+            #sidebar-overlay.visible { display: block; }
+
+            #contenido-wrapper {
+                padding: 12px 10px;
+                padding-top: 60px;
+                overflow-y: auto;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            #contenido { padding: 20px 16px; overflow-y: visible; }
+
+            h1 { font-size: 18px; margin-bottom: 16px; }
+            h3 { font-size: 10px; }
+            .card { padding: 14px 16px; margin-bottom: 14px; }
+            .stat-valor { font-size: 20px; }
+            .stat-label { font-size: 10px; }
+            .grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+            td { padding: 7px 8px; font-size: 12px; }
+            th { padding: 7px 8px; font-size: 9px; }
+            .anuncio-autor { font-size: 12px; }
+            .anuncio-msg { font-size: 13px; }
+            .corner-ornament { display: none; }
+            .toast { bottom: 16px; right: 12px; left: 12px; text-align: center; }
+        }
     </style>
 </head>
 <body>
+
+<div id="sidebar-overlay" onclick="cerrarSidebar()"></div>
+
+<div id="topbar-mobile">
+    <div class="topbar-left">
+        <button id="btn-hamburguesa" onclick="toggleSidebar()">☰</button>
+        <span id="topbar-title">🐺 CLAN</span>
+    </div>
+    <span id="topbar-username"></span>
+</div>
 
 <div id="sidebar">
     <div class="sidebar-header">
@@ -568,6 +652,23 @@
 
 <div class="toast" id="toast"></div>
 
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('abierto')
+    document.getElementById('sidebar-overlay').classList.toggle('visible')
+}
+function cerrarSidebar() {
+    document.getElementById('sidebar').classList.remove('abierto')
+    document.getElementById('sidebar-overlay').classList.remove('visible')
+}
+// Cerrar sidebar al navegar en móvil
+const _navBtns = document.querySelectorAll('.nav-btn')
+_navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (window.innerWidth <= 768) cerrarSidebar()
+    })
+})
+</script>
 <script src="/clan/script.js"></script>
 </body>
 </html>

@@ -645,6 +645,9 @@ async function cargarSesion() {
     const data = await res.json()
     rolActual = data.rol
 
+    const topbarUser = document.getElementById('topbar-username')
+    if (topbarUser) topbarUser.textContent = data.username
+    
     // Mostrar nombre de usuario y botón logout en sidebar
     const footer = document.querySelector('.sidebar-footer')
     if (footer) {
