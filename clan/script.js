@@ -273,6 +273,13 @@ function mostrarMiembros(members, carteras = {}) {
 
     let html = `<h1>👥 Miembros</h1>`
 
+    html += `<div class="card">
+        <h3>🔄 Cambios de nombre</h3>
+        <div id="panel-cambios-nombre"><p style="color:var(--muted); font-style:italic">Sin cambios registrados</p></div>
+    </div>`
+
+
+
     // Panel de acciones masivas
     html += `
     <div class="card">
@@ -386,6 +393,23 @@ function mostrarMiembros(members, carteras = {}) {
 
     html += `</div>`
     contenido.innerHTML = html
+
+    fetch('/clan/cambios_nombre').then(r => r.json()).then(cambios => {
+        if (!cambios || cambios.length === 0) return
+        const el = document.getElementById('panel-cambios-nombre')
+        if (!el) return
+        let h = ''
+        cambios.forEach(c => {
+            const fecha = c.created_at ? c.created_at.slice(0,10).split('-').reverse().join('-') : 'N/A'
+            h += `<div class="anuncio">
+                <span class="anuncio-autor">${c.nombre_anterior}</span>
+                <span style="color:var(--muted); margin:0 6px">→</span>
+                <span class="anuncio-autor">${c.nombre_nuevo}</span>
+                <span class="anuncio-fecha">${fecha}</span>
+            </div>`
+        })
+        el.innerHTML = h
+    }).catch(() => {})
 }
 
 function hexToRgb(hex) {

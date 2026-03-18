@@ -149,6 +149,17 @@ def inicializar_carteras(members):
             carteras[player_id] = {"oro": 0, "gemas": 0}
     return carteras
 
+# =====================registrar quien se cambia el nombre en la sección "miembros"=========================
+def registrar_cambio_nombre(player_id, nombre_anterior, nombre_nuevo):
+    supabase_request("POST", "cambios_nombre", {
+        "player_id": player_id,
+        "nombre_anterior": nombre_anterior,
+        "nombre_nuevo": nombre_nuevo
+    })
+
+def obtener_cambios_nombre():
+    return supabase_request("GET", "cambios_nombre?select=*&order=created_at.desc")
+
 # =================== CONFIG ===================
 FECHA_INICIO = "2026-03-17T00:00:00Z"
 
@@ -204,7 +215,14 @@ def sincronizar_donaciones():
             row = carteras_por_player_id[pid]
             nuevo_oro = row.get("oro", 0) + montos["gold"]
             nuevo_gemas = row.get("gemas", 0) + montos["gems"]
-            supabase_request("PATCH", f"carteras?player_id=eq.{pid}", {"oro": nuevo_oro, "gemas": nuevo_gemas})
+            username_guardado = row.get("username", "")
+            if username_guardado and username_guardado != username:
+                registrar_cambio_nombre(pid, username_guardado, username)
+            supabase_request("PATCH", f"carteras?player_id=eq.{pid}", {
+                "oro": nuevo_oro,
+                "gemas": nuevo_gemas,
+                "username": username
+            })
             procesadas += 1
 
     ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -430,6 +448,10 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/clan/carteras":
                 self.send_json(cargar_carteras())
+                return
+
+            if parsed.path == "/clan/cambios_nombre":
+                self.send_json(obtener_cambios_nombre())
                 return
 
             if parsed.path == "/clan/sincronizar/info":
