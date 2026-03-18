@@ -187,15 +187,24 @@ def sincronizar_donaciones():
         sumas[username]["gems"] += entry.get("gems", 0) or 0
 
     carteras_rows = supabase_request("GET", "carteras?select=*")
-    carteras_por_username = {row["username"]: row for row in carteras_rows}
+    carteras_por_player_id = {row["player_id"]: row for row in carteras_rows}
+
+    # Mapear playerId por username desde el ledger
+    player_id_por_username = {}
+    for entry in nuevas:
+        pid = entry.get("playerId")
+        uname = entry.get("playerUsername", "")
+        if pid and uname:
+            player_id_por_username[uname] = pid
 
     procesadas = 0
     for username, montos in sumas.items():
-        if username in carteras_por_username:
-            row = carteras_por_username[username]
+        pid = player_id_por_username.get(username)
+        if pid and pid in carteras_por_player_id:
+            row = carteras_por_player_id[pid]
             nuevo_oro = row.get("oro", 0) + montos["gold"]
             nuevo_gemas = row.get("gemas", 0) + montos["gems"]
-            supabase_request("PATCH", f"carteras?player_id=eq.{row['player_id']}", {"oro": nuevo_oro, "gemas": nuevo_gemas})
+            supabase_request("PATCH", f"carteras?player_id=eq.{pid}", {"oro": nuevo_oro, "gemas": nuevo_gemas})
             procesadas += 1
 
     ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
