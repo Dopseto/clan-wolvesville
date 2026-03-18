@@ -266,8 +266,11 @@ function mostrarMiembros(members, carteras = {}) {
     const LEADER_ID = '304dec10-4074-40ff-884d-392099bacdf1'
     members.sort((a, b) => {
         const rango = m => m.playerId === LEADER_ID ? 0 : m.isCoLeader ? 1 : 2
-        return rango(a) - rango(b)
+        const diff = rango(a) - rango(b)
+        if (diff !== 0) return diff
+        return (a.username || '').localeCompare(b.username || '', 'es', { sensitivity: 'base' })
     })
+    }
 
     let html = `<h1>👥 Miembros</h1>`
 
