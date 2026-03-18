@@ -115,28 +115,11 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     }
     html += `</div>`
 
-    html += `<div class="card"><h3>🏦 Donaciones recientes</h3>`
-    if (ledger && ledger.length > 0) {
-        html += `<table><tr><th>Jugador</th><th>Tipo</th><th>Cantidad</th><th>Fecha</th></tr>`
-        ledger.slice(0, 20).forEach(d => {
-            const fecha = d.creationTime ? d.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
-            html += `<tr>
-                <td>${d.playerUsername || 'N/A'}</td>
-                <td>${d.type || 'N/A'}</td>
-                <td>${d.gold ? d.gold + ' 🥇' : ''} ${d.gems ? d.gems + ' 💎' : ''}</td>
-                <td>${fecha}</td>
-            </tr>`
-        })
-        html += `</table>`
-    } else {
-        html += `<p style="color:var(--muted); font-style:italic">No hay donaciones registradas</p>`
-    }
-    html += `</div>`
-
     html += `<div class="card">
         <h3>🔄 Registro de donaciones</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
             <button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>
+            <button class="btn-tracker" onclick="abrirModalDonaciones()">📋 Ver registro completo</button>
             <span id="sync-info-inicio" style="font-size:12px; color:var(--muted); font-style:italic"></span>
         </div>
         <div id="sync-registro"></div>
@@ -561,23 +544,23 @@ function sincronizarDonaciones(origen = 'miembros') {
     })
 }
 
-function cargarRegistroDonaciones(desdefecha) {
+function cargarRegistroDonaciones() {
     fetch('/clan/ledger').then(r => r.json()).then(ledger => {
         const el = document.getElementById('sync-registro')
         if (!el) return
 
-        // Filtrar solo desde la fecha de inicio
         const FECHA_INICIO = '2026-03-17T00:00:00Z'
-        const desde = FECHA_INICIO
+        const hace14dias = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+        const desde = hace14dias > FECHA_INICIO ? hace14dias : FECHA_INICIO
         const recientes = ledger.filter(d => d.creationTime && d.creationTime >= desde)
 
         if (recientes.length === 0) {
-            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay donaciones registradas desde el inicio del seguimiento.</p>`
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay donaciones en los últimos 14 días.</p>`
             return
         }
 
         let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Fecha</th></tr>`
-        recientes.slice(0, 50).forEach(d => {
+        recientes.forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
             const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
             html += `<tr>
@@ -590,6 +573,56 @@ function cargarRegistroDonaciones(desdefecha) {
         html += `</table>`
         el.innerHTML = html
     }).catch(() => {})
+}
+
+function abrirModalDonaciones() {
+    let modal = document.getElementById('modal-donaciones')
+    if (!modal) {
+        modal = document.createElement('div')
+        modal.id = 'modal-donaciones'
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:998; display:flex; align-items:center; justify-content:center; padding:20px'
+        modal.innerHTML = `
+            <div style="background:var(--parchment); border:2px solid var(--border); border-radius:4px; padding:28px; width:100%; max-width:600px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(160,128,64,0.3); padding-bottom:12px">
+                    <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink)">📋 Registro completo de donaciones</span>
+                    <button onclick="document.getElementById('modal-donaciones').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
+                </div>
+                <div id="modal-donaciones-contenido" style="overflow-y:auto; flex:1">
+                    <p style="color:var(--muted); font-style:italic; font-size:14px">Cargando...</p>
+                </div>
+            </div>`
+        modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none' })
+        document.body.appendChild(modal)
+    } else {
+        modal.style.display = 'flex'
+    }
+
+    fetch('/clan/ledger').then(r => r.json()).then(ledger => {
+        const el = document.getElementById('modal-donaciones-contenido')
+        if (!el) return
+        const FECHA_INICIO = '2026-03-17T00:00:00Z'
+        const todos = ledger.filter(d => d.creationTime && d.creationTime >= FECHA_INICIO)
+        if (todos.length === 0) {
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:14px">Sin registros.</p>`
+            return
+        }
+        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Fecha</th></tr>`
+        todos.forEach(d => {
+            const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
+            const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
+            html += `<tr>
+                <td style="font-family:Cinzel,serif; font-weight:600">${d.playerUsername || 'N/A'}</td>
+                <td>${d.gold ? `<span style="color:var(--accent-dark)">🥇 +${d.gold}</span>` : '—'}</td>
+                <td>${d.gems ? `<span style="color:#7b2da8">💎 +${d.gems}</span>` : '—'}</td>
+                <td style="font-size:12px; color:var(--muted)">${fecha} ${hora}</td>
+            </tr>`
+        })
+        html += `</table>`
+        el.innerHTML = html
+    }).catch(() => {
+        const el = document.getElementById('modal-donaciones-contenido')
+        if (el) el.innerHTML = `<p style="color:var(--red); font-size:14px">Error al cargar</p>`
+    })
 }
 
 // =================== LOGS ===================
