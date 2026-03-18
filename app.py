@@ -117,6 +117,8 @@ def cargar_carteras():
         carteras[row["player_id"]] = {"oro": row.get("oro", 0), "gemas": row.get("gemas", 0)}
     return carteras
 
+# la siguiente "def upsert_cartera" fue de prueba para ver si funcionaba que agregue miembros a la lista de las carteras.
+# la "def upsert_cartera" que fue reemplazada por la actual era def upsert_cartera(player_id, username, oro, gemas): supabase_request("POST", "carteras", {"player_id": player_id, "username": username, "oro": oro, "gemas": gemas})
 def upsert_cartera(player_id, username, oro=0, gemas=0):
     try:
         # Intentar insertar nueva

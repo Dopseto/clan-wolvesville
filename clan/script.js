@@ -234,6 +234,7 @@ function cargarMiembros() {
     })
 }
 
+
 function cargarAvatares(members) {
     members.forEach(m => {
         const playerId = m.playerId
@@ -262,8 +263,11 @@ function mostrarMiembros(members, carteras = {}) {
         return
     }
 
-    const orden = { 'LEADER': 0, 'CO_LEADER': 1, 'MEMBER': 2 }
-    members.sort((a, b) => (orden[a.clanRole] ?? 3) - (orden[b.clanRole] ?? 3))
+    const LEADER_ID = '304dec10-4074-40ff-884d-392099bacdf1'
+    members.sort((a, b) => {
+        const rango = m => m.playerId === LEADER_ID ? 0 : m.isCoLeader ? 1 : 2
+        return rango(a) - rango(b)
+    })
 
     let html = `<h1>👥 Miembros</h1>`
 
@@ -304,8 +308,13 @@ function mostrarMiembros(members, carteras = {}) {
         const goldDonado = cartera.oro
         const gemsDonado = cartera.gemas
         const xpSemana = m.xpDurations?.week || 0
-        const rolColor = m.clanRole === 'LEADER' ? '#c47a2a' : m.clanRole === 'CO_LEADER' ? '#9b5e1a' : 'var(--muted)'
-        const rolTexto = m.clanRole === 'LEADER' ? '👑 Líder' : m.clanRole === 'CO_LEADER' ? '⭐ Co-líder' : '🐺 Miembro'
+        const esLider = m.playerId === LEADER_ID
+        const esCoLider = !esLider && m.isCoLeader === true
+        const rolBadge = esLider
+            ? `<span style="font-size:11px; font-weight:600; background:#FAEEDA; color:#633806; border:1px solid #EF9F27; border-radius:3px; padding:2px 9px; font-family:Cinzel,serif; letter-spacing:0.5px">👑 Líder</span>`
+            : esCoLider
+            ? `<span style="font-size:11px; font-weight:600; background:#f2e8c9; color:#5a3c1e; border:1px solid #c9b87a; border-radius:3px; padding:2px 9px; font-family:Cinzel,serif; letter-spacing:0.5px">⭐ Co-líder</span>`
+            : `<span style="font-size:11px; font-weight:600; background:rgba(160,128,64,0.12); color:var(--muted); border:1px solid rgba(160,128,64,0.3); border-radius:3px; padding:2px 9px; font-family:Cinzel,serif; letter-spacing:0.5px">🐺 Miembro</span>`
 
         html += `
         <div class="card" style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap">
@@ -314,11 +323,13 @@ function mostrarMiembros(members, carteras = {}) {
                     style="display:none; width:80px; height:80px; object-fit:contain; border-radius:8px; border:2px solid var(--parchment-shadow); background:rgba(255,252,235,0.5)">
                 <div id="avatar-placeholder-${m.playerId}"
                     style="width:80px; height:80px; border-radius:8px; border:2px solid var(--parchment-shadow); background:rgba(160,128,64,0.2); display:flex; align-items:center; justify-content:center; font-family:Cinzel,serif; font-size:22px; font-weight:700; color:var(--ink)">${(m.username || '?')[0].toUpperCase()}</div>
-                <p style="font-size:10px; color:${rolColor}; margin-top:6px; font-family:Cinzel,serif; letter-spacing:0.5px">${rolTexto}</p>
             </div>
 
             <div style="flex:1; min-width:160px">
-                <p style="font-family:Cinzel,serif; font-size:16px; font-weight:700; color:var(--ink); margin-bottom:4px">${m.username || 'N/A'}</p>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap">
+                    <p style="font-family:Cinzel,serif; font-size:16px; font-weight:700; color:var(--ink); margin:0">${m.username || 'N/A'}</p>
+                    ${rolBadge}
+                </div>
                 <p style="font-size:13px; color:var(--muted); margin-bottom:12px">Nivel ${nivel} &nbsp;·&nbsp; XP semana: ${xpSemana}</p>
 
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px">
