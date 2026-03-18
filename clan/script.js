@@ -270,7 +270,6 @@ function mostrarMiembros(members, carteras = {}) {
         if (diff !== 0) return diff
         return (a.username || '').localeCompare(b.username || '', 'es', { sensitivity: 'base' })
     })
-    }
 
     let html = `<h1>👥 Miembros</h1>`
 
