@@ -89,7 +89,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
         </div>` : ''}
     </div>`
 
-    // HISTORIAL DE ANUNCIOS con scroll
+    // HISTORIAL con scroll
     html += `<div class="card"><h3>📜 Historial de anuncios</h3>
         <div style="max-height:280px; overflow-y:auto; padding-right:4px">`
     if (anuncios && anuncios.length > 0) {
@@ -126,7 +126,8 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
     html += `<div class="card"><h3>🗳️ Misiones disponibles</h3>`
     if (available && available.length > 0) {
         const votosMap = votes && votes.votes ? votes.votes : {}
-        html += `<div style="display:flex; flex-wrap:wrap; gap:14px; justify-content:flex-start">`
+        const shuffleVotos = votes && votes.shuffleVotes ? votes.shuffleVotes.length : 0
+        html += `<div style="display:flex; flex-wrap:wrap; gap:14px; justify-content:flex-start; margin-bottom:16px">`
         available.forEach(q => {
             const qid = q.id
             const votantes = votosMap[qid] ? votosMap[qid].length : 0
@@ -135,22 +136,28 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
             const imagen = q.promoImageUrl || ''
             html += `
             <div id="quest-card-${qid}"
-                style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; background:rgba(255,252,235,0.5); border:2px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; width:130px"
+                style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; background:rgba(255,252,235,0.5); border:2px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; width:160px"
                 onclick="seleccionarMision('${qid}')"
                 onmouseover="if(!this.classList.contains('selected')) { this.style.borderColor='var(--accent)'; this.style.background='rgba(196,122,42,0.08)' }"
                 onmouseout="if(!this.classList.contains('selected')) { this.style.borderColor='rgba(160,128,64,0.3)'; this.style.background='rgba(255,252,235,0.5)' }">
                 ${imagen
-                    ? `<img src="${imagen}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3)">`
-                    : `<div style="width:100px; height:100px; border-radius:4px; background:rgba(160,128,64,0.2); display:flex; align-items:center; justify-content:center; font-size:36px">⚔️</div>`
+                    ? `<img src="${imagen}" style="width:140px; height:140px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3)">`
+                    : `<div style="width:140px; height:140px; border-radius:4px; background:rgba(160,128,64,0.2); display:flex; align-items:center; justify-content:center; font-size:40px">⚔️</div>`
                 }
                 <p style="font-size:12px; color:var(--muted); text-align:center">${costoLabel}</p>
                 <p style="font-size:11px; color:var(--ink-light); text-align:center">🗳️ ${votantes} voto${votantes !== 1 ? 's' : ''}</p>
             </div>`
         })
         html += `</div>`
+        html += `<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">`
         if (rolActual === 'admin' || rolActual === 'lider') {
-            html += `<button class="btn-primary" style="margin-top:16px" onclick="confirmarIniciarMision()">⚔️ Iniciar misión seleccionada</button>`
+            html += `<button class="btn-primary" onclick="confirmarIniciarMision()">⚔️ Iniciar misión seleccionada</button>`
+            html += `<div style="display:flex; flex-direction:column; align-items:center; gap:4px">
+                <button class="btn-primary" id="btn-shuffle" style="background:linear-gradient(180deg,#4a2e7a,#2e1a5a)" onclick="hacerShuffle()">🔀 Shuffle</button>
+                <span style="font-size:11px; color:var(--muted); font-style:italic">🗳️ ${shuffleVotos} voto${shuffleVotos !== 1 ? 's' : ''}</span>
+            </div>`
         }
+        html += `</div>`
     } else {
         html += `<p style="color:var(--muted); font-style:italic">No hay misiones disponibles</p>`
     }
@@ -196,14 +203,26 @@ function seleccionarMision(questId) {
     misionSeleccionada = questId
 }
 
+function hacerShuffle() {
+    if (!confirm('⚠️ El shuffle gasta oro o gemas del clan. ¿Estás seguro?')) return
+    const btn = document.getElementById('btn-shuffle')
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Shuffleando...' }
+    fetch('/clan/quests/shuffle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) { mostrarToast('✓ Misiones shuffleadas'); setTimeout(() => cargarInicio(), 1000) }
+            else { mostrarToast('Error: ' + (data.error || 'No se pudo hacer shuffle'), 'error'); if (btn) { btn.disabled = false; btn.textContent = '🔀 Shuffle' } }
+        }).catch(() => { mostrarToast('Error al hacer shuffle', 'error'); if (btn) { btn.disabled = false; btn.textContent = '🔀 Shuffle' } })
+}
+
 function confirmarIniciarMision() {
     if (!misionSeleccionada) { mostrarToast('Seleccioná una misión primero', 'error'); return }
     const card = document.getElementById(`quest-card-${misionSeleccionada}`)
     if (!card) return
     const imagen = card.querySelector('img')?.src || ''
-    const infoTexts = card.querySelectorAll('p')
-    const costoLabel = infoTexts[0]?.textContent || ''
-    const votosLabel = infoTexts[1]?.textContent || ''
+    const parrafos = card.querySelectorAll('p')
+    const costoLabel = parrafos[0]?.textContent || ''
+    const votosLabel = parrafos[1]?.textContent || ''
     const activos = miembrosCache.filter(m => m.participateInClanQuests !== false)
 
     let modal = document.getElementById('modal-confirmar-mision')

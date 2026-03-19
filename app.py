@@ -673,7 +673,15 @@ class Handler(BaseHTTPRequestHandler):
                 if not quest_id:
                     self.send_json({"error": "questId requerido"})
                     return
-                result = post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/claim", {"questId": quest_id})
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/claim", {"questId": quest_id})
+                self.send_json({"ok": True})
+                return
+
+            if parsed.path == "/clan/quests/shuffle":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/available/shuffle", {})
                 self.send_json({"ok": True})
                 return
 
