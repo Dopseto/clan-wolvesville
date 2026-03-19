@@ -493,6 +493,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ultima_sincronizacion": ultima})
                 return
 
+            if parsed.path.startswith("/config/"):
+                clave = parsed.path.split("/config/")[1]
+                valor = get_config(clave) or ""
+                self.send_json({"clave": clave, "valor": valor})
+                return
+
             if parsed.path == "/jugadores":
                 self.send_json(cargar_jugadores())
                 return
@@ -682,6 +688,16 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/available/shuffle", {})
+                self.send_json({"ok": True})
+                return
+
+            if parsed.path.startswith("/config/"):
+                if sesion["rol"] != "admin":
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                clave = parsed.path.split("/config/")[1]
+                valor = data.get("valor", "")
+                set_config(clave, str(valor))
                 self.send_json({"ok": True})
                 return
 

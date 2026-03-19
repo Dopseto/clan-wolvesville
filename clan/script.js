@@ -32,6 +32,7 @@ function mostrarSeccion(seccion, btn = null) {
     else if (seccion === 'logs') cargarLogs()
     else if (seccion === 'stats') cargarStats()
     else if (seccion === 'admin') cargarAdmin()
+    else if (seccion === 'ajustes') cargarAjustes()
 }
 
 // =================== INICIO ===================
@@ -42,11 +43,17 @@ function cargarInicio() {
         fetch('/clan/announcements').then(r => r.json()),
         fetch('/clan/ledger').then(r => r.json()),
         fetch('/clan/quests/available').then(r => r.json()),
-        fetch('/clan/quests/votes').then(r => r.json())
-    ]).then(([info, quests, anuncios, ledger, available, votes]) => mostrarInicio(info, quests, anuncios, ledger, available, votes))
+        fetch('/clan/quests/votes').then(r => r.json()),
+        fetch('/config/costo_oro_mision').then(r => r.json()),
+        fetch('/config/costo_gemas_mision').then(r => r.json())
+    ]).then(([info, quests, anuncios, ledger, available, votes, cfgOro, cfgGemas]) => {
+        const costoOroDefault = parseInt(cfgOro.valor) || 700
+        const costoGemasDefault = parseInt(cfgGemas.valor) || 170
+        mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOroDefault, costoGemasDefault)
+    })
 }
 
-function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
+function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOroDefault = 700, costoGemasDefault = 170) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>${info.name || 'Clan'} <span class="tag">${info.tag || ''}</span></h1>`
 
@@ -161,16 +168,16 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
                 <div style="display:flex; align-items:center; gap:8px">
                     <span style="font-size:15px">🥇</span>
                     ${rolActual === 'admin'
-                        ? `<input type="number" id="costo-oro" value="700" min="0" style="width:90px; padding:5px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--accent-dark)">`
-                        : `<span style="font-family:Cinzel,serif; font-size:15px; font-weight:700; color:var(--accent-dark)">700</span>`
+                        ? `<input type="number" id="costo-oro" value="${costoOroDefault}" min="0" style="width:90px; padding:5px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--accent-dark); font-family:Cinzel,serif; font-size:14px; font-weight:700">`
+                        : `<span style="font-family:Cinzel,serif; font-size:15px; font-weight:700; color:var(--accent-dark)">${costoOroDefault}</span>`
                     }
                     <span style="font-size:12px; color:var(--muted)">oro</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px">
                     <span style="font-size:15px">💎</span>
                     ${rolActual === 'admin'
-                        ? `<input type="number" id="costo-gemas" value="170" min="0" style="width:90px; padding:5px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Cinzel,serif; font-size:14px; font-weight:700; color:#7b2da8">`
-                        : `<span style="font-family:Cinzel,serif; font-size:15px; font-weight:700; color:#7b2da8">170</span>`
+                        ? `<input type="number" id="costo-gemas" value="${costoGemasDefault}" min="0" style="width:90px; padding:5px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:#7b2da8; font-family:Cinzel,serif; font-size:14px; font-weight:700">`
+                        : `<span style="font-family:Cinzel,serif; font-size:15px; font-weight:700; color:#7b2da8">${costoGemasDefault}</span>`
                     }
                     <span style="font-size:12px; color:var(--muted)">gemas</span>
                 </div>
@@ -928,6 +935,14 @@ async function cargarSesion() {
             btn.onclick = function() { mostrarSeccion('admin', this) }
             navSection.appendChild(btn)
         }
+        if (navSection && !document.getElementById('btn-ajustes')) {
+            const btn = document.createElement('button')
+            btn.className = 'nav-btn'
+            btn.id = 'btn-ajustes'
+            btn.innerHTML = '<span class="nav-icon">⚙️</span> Ajustes'
+            btn.onclick = function() { mostrarSeccion('ajustes', this) }
+            navSection.appendChild(btn)
+        }
     }
 }
 
@@ -1192,4 +1207,80 @@ function eliminarTodosExMiembros() {
                 document.getElementById('modal-clean').style.display = 'none'
             } else mostrarToast('Error: ' + data.error, 'error')
         }).catch(() => mostrarToast('Error al eliminar', 'error'))
+}
+
+// =================== AJUSTES ===================
+function cargarAjustes() {
+    if (rolActual !== 'admin' && rolActual !== 'lider') {
+        document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
+        return
+    }
+    document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><p class="cargando">Cargando...</p>`
+    Promise.all([
+        fetch('/config/costo_oro_mision').then(r => r.json()),
+        fetch('/config/costo_gemas_mision').then(r => r.json())
+    ]).then(([cfgOro, cfgGemas]) => {
+        const contenido = document.getElementById('contenido')
+        let html = `<h1>⚙️ Ajustes</h1>`
+
+        html += `<div class="card">
+            <h3>⚔️ Costo de misiones</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
+                Estos valores son el costo por miembro activo al iniciar una misión. Son permanentes y se usan como valor predeterminado en la página de inicio.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:16px">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+                    <span style="font-size:18px">🥇</span>
+                    <div>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">ORO POR MISIÓN</p>
+                        ${rolActual === 'admin'
+                            ? `<input type="number" id="ajuste-costo-oro" value="${parseInt(cfgOro.valor) || 700}" min="0"
+                                style="width:120px; padding:7px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--accent-dark); font-family:Cinzel,serif; font-size:16px; font-weight:700">`
+                            : `<span style="font-family:Cinzel,serif; font-size:18px; font-weight:700; color:var(--accent-dark)">${parseInt(cfgOro.valor) || 700}</span>`
+                        }
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+                    <span style="font-size:18px">💎</span>
+                    <div>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">GEMAS POR MISIÓN</p>
+                        ${rolActual === 'admin'
+                            ? `<input type="number" id="ajuste-costo-gemas" value="${parseInt(cfgGemas.valor) || 170}" min="0"
+                                style="width:120px; padding:7px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:#7b2da8; font-family:Cinzel,serif; font-size:16px; font-weight:700">`
+                            : `<span style="font-family:Cinzel,serif; font-size:18px; font-weight:700; color:#7b2da8">${parseInt(cfgGemas.valor) || 170}</span>`
+                        }
+                    </div>
+                </div>
+                ${rolActual === 'admin' ? `
+                <button class="btn-primary" style="width:fit-content; margin-top:4px" onclick="guardarAjustesMision()">💾 Guardar cambios</button>
+                <p style="font-size:12px; color:var(--muted); font-style:italic">Los líderes pueden cambiar estos valores temporalmente desde la sección Inicio.</p>
+                ` : `<p style="font-size:12px; color:var(--muted); font-style:italic">Solo el administrador puede modificar estos valores permanentemente.</p>`}
+            </div>
+        </div>`
+
+        contenido.innerHTML = html
+    }).catch(() => {
+        document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><div class="card"><p style="color:var(--muted)">Error al cargar ajustes</p></div>`
+    })
+}
+
+function guardarAjustesMision() {
+    const oro = document.getElementById('ajuste-costo-oro')?.value
+    const gemas = document.getElementById('ajuste-costo-gemas')?.value
+    if (!oro || !gemas) return
+
+    Promise.all([
+        fetch('/config/costo_oro_mision', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ valor: oro })
+        }).then(r => r.json()),
+        fetch('/config/costo_gemas_mision', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ valor: gemas })
+        }).then(r => r.json())
+    ]).then(() => {
+        mostrarToast('✓ Ajustes guardados')
+    }).catch(() => mostrarToast('Error al guardar', 'error'))
 }
