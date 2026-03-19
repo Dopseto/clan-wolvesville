@@ -764,10 +764,7 @@ class Handler(BaseHTTPRequestHandler):
                 if data.get("oro") is not None: campos["oro"] = int(data["oro"])
                 if data.get("gemas") is not None: campos["gemas"] = int(data["gemas"])
                 if campos:
-                    try:
-                        actualizar_cartera(player_id, campos)
-                    except:
-                        upsert_cartera(player_id, data.get("username", ""), campos.get("oro", 0), campos.get("gemas", 0))
+                    actualizar_cartera(player_id, campos)
                 self.send_json({"ok": True})
                 return
 
