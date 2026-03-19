@@ -186,16 +186,8 @@ def get_config(clave):
 
 def set_config(clave, valor):
     try:
-        url = f"{SUPABASE_URL}/rest/v1/config"
-        req = urllib.request.Request(url, method="POST")
-        req.add_header("apikey", SUPABASE_KEY)
-        req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
-        req.add_header("Content-Type", "application/json")
-        req.add_header("Prefer", "resolution=merge-duplicates,return=minimal")
-        body = json.dumps({"clave": clave, "valor": valor}).encode("utf-8")
-        with urllib.request.urlopen(req, body) as response:
-            result = response.read()
-            print(f"[CONFIG] Guardado ok: {clave} = {valor} | respuesta: {result}")
+        supabase_request("PATCH", f"config?clave=eq.{clave}", {"valor": valor})
+        print(f"[CONFIG] Guardado ok: {clave} = {valor}")
     except Exception as e:
         print(f"[CONFIG] ERROR al guardar {clave}: {e}")
 
