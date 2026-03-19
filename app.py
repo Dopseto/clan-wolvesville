@@ -239,6 +239,84 @@ def set_config(clave, valor):
     except Exception as e:
         print(f"[CONFIG] ERROR al guardar {clave}: {e}")
 
+# =================== COMANDOS DE CHAT ===================
+LEADER_ID = "304dec10-4074-40ff-884d-392099bacdf1"  # ID del líder del clan
+
+def obtener_comandos_bot():
+    return supabase_request("GET", "comandos_bot?select=*&order=id.asc")
+
+def es_lider_o_colider(player_id):
+    """Verifica si un jugador es líder o co-líder del clan."""
+    try:
+        members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members")
+        for m in members:
+            if m.get("playerId") == player_id:
+                return m.get("isCoLeader", False) or player_id == LEADER_ID
+    except:
+        pass
+    return player_id == LEADER_ID
+
+def procesar_comandos_chat():
+    """Lee el chat del clan y responde a comandos según configuración en comandos_bot."""
+    try:
+        ultima = get_config("ultima_lectura_chat") or "2000-01-01T00:00:00.000Z"
+        mensajes = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/chat")
+        nuevos = [m for m in mensajes if m.get("date", "") > ultima]
+        if not nuevos:
+            return
+
+        ultima_nueva = max(m.get("date", "") for m in nuevos)
+
+        # Cargar configuración de comandos
+        comandos = obtener_comandos_bot()
+        cfg = {c["nombre"]: c["acceso"] for c in comandos}
+
+        carteras_rows = supabase_request("GET", "carteras?select=*")
+        carteras_por_pid = {r["player_id"]: r for r in carteras_rows}
+        carteras_por_username = {r["username"].lower(): r for r in carteras_rows if r.get("username")}
+
+        for m in nuevos:
+            msg = (m.get("msg") or "").strip()
+            pid = m.get("playerId", "")
+            if m.get("isSystem"): continue
+
+            # !cartera
+            if msg.lower() == "!cartera":
+                acceso = cfg.get("!cartera", "desactivado")
+                if acceso == "desactivado": continue
+                if acceso == "lideres" and not es_lider_o_colider(pid): continue
+                cartera = carteras_por_pid.get(pid)
+                if cartera:
+                    respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
+                else:
+                    respuesta = "[Bot] No encontré tu cartera. Asegurate de estar en el clan."
+                try:
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+                except Exception as e:
+                    print(f"[CHAT BOT] Error al responder !cartera: {e}")
+
+            # !info @usuario
+            elif msg.lower().startswith("!info @"):
+                acceso = cfg.get("!info @", "desactivado")
+                if acceso == "desactivado": continue
+                if acceso == "lideres" and not es_lider_o_colider(pid): continue
+                objetivo = msg[7:].strip().lower()
+                cartera = carteras_por_username.get(objetivo)
+                if cartera:
+                    respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
+                else:
+                    respuesta = f"[Bot] No encontré la cartera de @{objetivo}."
+                try:
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+                except Exception as e:
+                    print(f"[CHAT BOT] Error al responder !info: {e}")
+
+        set_config("ultima_lectura_chat", ultima_nueva)
+        print(f"[CHAT BOT] Procesados {len(nuevos)} mensajes nuevos")
+
+    except Exception as e:
+        print(f"[CHAT BOT] Error general: {e}")
+
 def sincronizar_donaciones():
     ultima = get_config("ultima_sincronizacion") or FECHA_INICIO
     ledger = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger")
@@ -458,6 +536,7 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/auth/ping":
                 actualizar_actividad(sesion["username"])
                 verificar_y_publicar_anuncios()
+                procesar_comandos_chat()
                 self.send_json({"ok": True})
                 return
 
@@ -531,6 +610,10 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/ajustes/anuncios_auto":
                 self.send_json(obtener_anuncios_auto())
+                return
+
+            if parsed.path == "/comandos":
+                self.send_json(obtener_comandos_bot())
                 return
 
             if parsed.path == "/clan/sincronizar/info":
@@ -758,6 +841,19 @@ class Handler(BaseHTTPRequestHandler):
                     data.get("dia_semana", 0),
                     data.get("hora_gmt", "20:00")
                 )
+                self.send_json({"ok": True})
+                return
+
+            if parsed.path.startswith("/comandos/"):
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                cmd_id = parsed.path.split("/comandos/")[1]
+                acceso = data.get("acceso", "desactivado")
+                if acceso not in ("todos", "lideres", "desactivado"):
+                    self.send_json({"error": "Acceso inválido"})
+                    return
+                supabase_request("PATCH", f"comandos_bot?id=eq.{cmd_id}", {"acceso": acceso})
                 self.send_json({"ok": True})
                 return
 

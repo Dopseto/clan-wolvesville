@@ -33,6 +33,7 @@ function mostrarSeccion(seccion, btn = null) {
     else if (seccion === 'stats') cargarStats()
     else if (seccion === 'admin') cargarAdmin()
     else if (seccion === 'ajustes') cargarAjustes()
+    else if (seccion === 'comandos') cargarComandos()
 }
 
 // =================== INICIO ===================
@@ -924,7 +925,7 @@ let rolActual = null
 
 async function cargarSesion() {
     // Ping de actividad cada 2 minutos
-    setInterval(() => fetch('/auth/ping').catch(() => {}), 2 * 60 * 1000)
+    setInterval(() => fetch('/auth/ping').catch(() => {}), 15 * 1000)
     const res = await fetch('/auth/me')
     if (res.status === 401) {
         window.location.href = '/'
@@ -975,6 +976,14 @@ async function cargarSesion() {
             btn.id = 'btn-ajustes'
             btn.innerHTML = '<span class="nav-icon">⚙️</span> Ajustes'
             btn.onclick = function() { mostrarSeccion('ajustes', this) }
+            navSection.appendChild(btn)
+        }
+        if (navSection && !document.getElementById('btn-comandos')) {
+            const btn = document.createElement('button')
+            btn.className = 'nav-btn'
+            btn.id = 'btn-comandos'
+            btn.innerHTML = '<span class="nav-icon">🤖</span> Comandos'
+            btn.onclick = function() { mostrarSeccion('comandos', this) }
             navSection.appendChild(btn)
         }
     }
@@ -1402,4 +1411,65 @@ function guardarAnuncioAuto(id) {
         if (data.ok) mostrarToast(`✓ Anuncio guardado`)
         else mostrarToast('Error: ' + data.error, 'error')
     }).catch(() => mostrarToast('Error al guardar', 'error'))
+}
+
+// =================== COMANDOS BOT ===================
+function cargarComandos() {
+    if (rolActual !== 'admin' && rolActual !== 'lider') {
+        document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
+        return
+    }
+    document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><p class="cargando">Cargando...</p>`
+    fetch('/comandos').then(r => r.json()).then(comandos => {
+        const contenido = document.getElementById('contenido')
+        let html = `<h1>🤖 Comandos del bot</h1>`
+        html += `<div class="card">
+            <h3>⚙️ Configuración de comandos</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
+                Controlá quién puede usar cada comando en el chat del clan. Los cambios se aplican de inmediato.
+            </p>`
+
+        if (!comandos || comandos.length === 0) {
+            html += `<p style="color:var(--muted); font-style:italic">No hay comandos configurados</p>`
+        } else {
+            comandos.forEach(c => {
+                const acceso = c.acceso || 'desactivado'
+                const colorEstado = acceso === 'todos' ? '#2d6a1e' : acceso === 'lideres' ? '#c47a2a' : '#8b2010'
+                const textoEstado = acceso === 'todos' ? '✅ Todos' : acceso === 'lideres' ? '👑 Solo líderes' : '❌ Desactivado'
+                html += `
+                <div style="padding:16px 0; border-bottom:1px solid rgba(160,128,64,0.2)">
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px">
+                        <div>
+                            <p style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px">${c.nombre}</p>
+                            <p style="font-size:13px; color:var(--muted); margin-bottom:8px">${c.descripcion || ''}</p>
+                            <span style="font-family:Cinzel,serif; font-size:11px; font-weight:600; color:${colorEstado}; background:rgba(0,0,0,0.05); border-radius:3px; padding:2px 8px; border:1px solid ${colorEstado}40">${textoEstado}</span>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+                            <button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#2d6a1e,#1a4a10)"
+                                onclick="cambiarAccesoComando(${c.id}, 'todos')">✅ Todos</button>
+                            <button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)"
+                                onclick="cambiarAccesoComando(${c.id}, 'lideres')">👑 Solo líderes</button>
+                            <button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)"
+                                onclick="cambiarAccesoComando(${c.id}, 'desactivado')">❌ Desactivar</button>
+                        </div>
+                    </div>
+                </div>`
+            })
+        }
+        html += `</div>`
+        contenido.innerHTML = html
+    }).catch(() => {
+        document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><div class="card"><p style="color:var(--muted)">Error al cargar</p></div>`
+    })
+}
+
+function cambiarAccesoComando(id, acceso) {
+    fetch(`/comandos/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acceso })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) { mostrarToast('✓ Comando actualizado'); cargarComandos() }
+        else mostrarToast('Error: ' + data.error, 'error')
+    }).catch(() => mostrarToast('Error al actualizar', 'error'))
 }
