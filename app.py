@@ -266,6 +266,7 @@ def procesar_comandos_chat():
             return
 
         ultima_nueva = max(m.get("date", "") for m in nuevos)
+        set_config("ultima_lectura_chat", ultima_nueva)  # guardar antes del loop para evitar reprocesar
 
         # Cargar configuración de comandos
         comandos = obtener_comandos_bot()
@@ -279,6 +280,7 @@ def procesar_comandos_chat():
             msg = (m.get("msg") or "").strip()
             pid = m.get("playerId", "")
             if m.get("isSystem"): continue
+            if pid == LEADER_ID: continue  # ignorar mensajes del bot (aparecen con el playerId del dueño de la API)
 
             # !cartera
             if msg.lower() == "!cartera":
@@ -311,7 +313,6 @@ def procesar_comandos_chat():
                 except Exception as e:
                     print(f"[CHAT BOT] Error al responder !info: {e}")
 
-        set_config("ultima_lectura_chat", ultima_nueva)
         print(f"[CHAT BOT] Procesados {len(nuevos)} mensajes nuevos")
 
     except Exception as e:
