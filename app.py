@@ -791,11 +791,26 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 player_id = parsed.path.split("/clan/carteras/")[1]
-                campos = {}
-                if data.get("oro") is not None: campos["oro"] = int(data["oro"])
-                if data.get("gemas") is not None: campos["gemas"] = int(data["gemas"])
-                if campos:
-                    actualizar_cartera(player_id, campos)
+                restar = data.get("restar", False)
+                if restar:
+                    # Modo descuento: restar el monto de la cartera actual
+                    rows = supabase_request("GET", f"carteras?player_id=eq.{player_id}&select=oro,gemas")
+                    if rows:
+                        actual_oro = rows[0].get("oro", 0) or 0
+                        actual_gemas = rows[0].get("gemas", 0) or 0
+                        campos = {}
+                        if data.get("oro") is not None:
+                            campos["oro"] = actual_oro + int(data["oro"])  # oro viene negativo
+                        if data.get("gemas") is not None:
+                            campos["gemas"] = actual_gemas + int(data["gemas"])  # gemas viene negativo
+                        if campos:
+                            actualizar_cartera(player_id, campos)
+                else:
+                    campos = {}
+                    if data.get("oro") is not None: campos["oro"] = int(data["oro"])
+                    if data.get("gemas") is not None: campos["gemas"] = int(data["gemas"])
+                    if campos:
+                        actualizar_cartera(player_id, campos)
                 self.send_json({"ok": True})
                 return
 

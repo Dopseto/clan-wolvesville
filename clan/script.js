@@ -135,7 +135,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
             const costoLabel = esPorGemas ? `💎 Gemas` : `🥇 Oro`
             const imagen = q.promoImageUrl || ''
             html += `
-            <div id="quest-card-${qid}"
+            <div id="quest-card-${qid}" data-gemas="${esPorGemas ? '1' : '0'}"
                 style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; background:rgba(255,252,235,0.5); border:2px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; width:160px"
                 onclick="seleccionarMision('${qid}')"
                 onmouseover="if(!this.classList.contains('selected')) { this.style.borderColor='var(--accent)'; this.style.background='rgba(196,122,42,0.08)' }"
@@ -149,9 +149,39 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
             </div>`
         })
         html += `</div>`
-        html += `<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">`
+
+        // Precio de la misión — visible para todos, editable solo para admin
+        // TODO: estos valores son temporales. En el futuro se moverán a una sección
+        // dedicada de configuración donde se calcularán automáticamente según
+        // la cantidad de miembros activos y otros parámetros del clan.
+        // Valores a reemplazar/mover: COSTO_ORO_DEFAULT (700) y COSTO_GEMAS_DEFAULT (170)
+        html += `<div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:16px">
+            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">COSTO POR MIEMBRO</p>
+            <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center">
+                <div style="display:flex; align-items:center; gap:8px">
+                    <span style="font-size:15px">🥇</span>
+                    ${rolActual === 'admin'
+                        ? `<input type="number" id="costo-oro" value="700" min="0" style="width:90px; padding:5px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--accent-dark)">`
+                        : `<span style="font-family:Cinzel,serif; font-size:15px; font-weight:700; color:var(--accent-dark)">700</span>`
+                    }
+                    <span style="font-size:12px; color:var(--muted)">oro</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px">
+                    <span style="font-size:15px">💎</span>
+                    ${rolActual === 'admin'
+                        ? `<input type="number" id="costo-gemas" value="170" min="0" style="width:90px; padding:5px 8px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Cinzel,serif; font-size:14px; font-weight:700; color:#7b2da8">`
+                        : `<span style="font-family:Cinzel,serif; font-size:15px; font-weight:700; color:#7b2da8">170</span>`
+                    }
+                    <span style="font-size:12px; color:var(--muted)">gemas</span>
+                </div>
+            </div>
+        </div>`
+
+        html += `<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start">`
         if (rolActual === 'admin' || rolActual === 'lider') {
-            html += `<button class="btn-primary" onclick="confirmarIniciarMision()">⚔️ Iniciar misión seleccionada</button>`
+            html += `<div style="display:flex; flex-direction:column; align-items:center; gap:4px">
+                <button class="btn-primary" onclick="confirmarIniciarMision()">⚔️ Iniciar misión seleccionada</button>
+            </div>`
             html += `<div style="display:flex; flex-direction:column; align-items:center; gap:4px">
                 <button class="btn-primary" id="btn-shuffle" style="background:linear-gradient(180deg,#4a2e7a,#2e1a5a)" onclick="hacerShuffle()">🔀 Shuffle</button>
                 <span style="font-size:11px; color:var(--muted); font-style:italic">🗳️ ${shuffleVotos} voto${shuffleVotos !== 1 ? 's' : ''}</span>
@@ -268,6 +298,17 @@ function iniciarMision() {
     if (!misionSeleccionada) return
     const btn = document.querySelector('#modal-confirmar-mision .btn-primary')
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Iniciando...' }
+
+    // Determinar si la misión es de oro o gemas
+    const card = document.getElementById(`quest-card-${misionSeleccionada}`)
+    const esPorGemas = card && card.dataset.gemas === '1'
+
+    // Leer costo según tipo (admin puede haberlo editado temporalmente)
+    const costoOroEl = document.getElementById('costo-oro')
+    const costoGemasEl = document.getElementById('costo-gemas')
+    const costoOro = costoOroEl ? parseInt(costoOroEl.value) || 700 : 700
+    const costoGemas = costoGemasEl ? parseInt(costoGemasEl.value) || 170 : 170
+
     fetch('/clan/quests/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -276,8 +317,22 @@ function iniciarMision() {
         if (data.ok) {
             mostrarToast('✓ ¡Misión iniciada!')
             document.getElementById('modal-confirmar-mision').style.display = 'none'
+
+            // Descontar carteras de miembros activos
+            const activos = miembrosCache.filter(m => m.participateInClanQuests !== false)
+            activos.forEach(m => {
+                fetch(`/clan/carteras/${m.playerId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(esPorGemas
+                        ? { gemas: -costoGemas, username: m.username, restar: true }
+                        : { oro: -costoOro, username: m.username, restar: true }
+                    )
+                }).catch(() => {})
+            })
+
             misionSeleccionada = null
-            cargarInicio()
+            setTimeout(() => cargarInicio(), 1000)
         } else {
             mostrarToast('Error: ' + (data.error || 'No se pudo iniciar'), 'error')
             if (btn) { btn.disabled = false; btn.textContent = '⚔️ Confirmar e iniciar' }
