@@ -76,8 +76,8 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     </div>`
 
     // ANUNCIOS
-    if (rolActual === 'admin' || rolActual === 'lider') {
-        html += `<div class="card"><h3>📢 Anuncios</h3>
+    html += `<div class="card"><h3>📢 Anuncios</h3>
+        ${(rolActual === 'admin' || rolActual === 'lider') ? `
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
             <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">Manual</button>
             <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">Automático</button>
@@ -89,9 +89,8 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         <div id="panel-auto" style="display:none">
             <p style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic">Anuncios programados desde Ajustes:</p>
             <div id="lista-anuncios-auto"><p style="color:var(--muted); font-style:italic; font-size:13px">Cargando...</p></div>
-        </div>
+        </div>` : ''}
     </div>`
-    }
 
     // HISTORIAL con scroll
     html += `<div class="card"><h3>📜 Historial de anuncios</h3>
@@ -874,12 +873,30 @@ function mostrarLogs(logs) {
     if (!logs || logs.length === 0) {
         html += `<p style="color:var(--muted); font-style:italic">No hay actividad registrada</p>`
     } else {
+        const visibles = logs.slice(0, 10)
+        const resto = logs.slice(10)
         html += `<table><tr><th>Fecha</th><th>Evento</th><th>Jugador</th></tr>`
-        logs.forEach(l => {
+        visibles.forEach(l => {
             const fecha = l.creationTime ? l.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
-            html += `<tr><td>${fecha}</td><td>${l.action || 'N/A'}</td><td>${l.playerUsername || 'N/A'}</td></tr>`
+            const jugador = l.playerUsername || 'Bot'
+            html += `<tr><td>${fecha}</td><td>${l.action || 'N/A'}</td><td>${jugador}</td></tr>`
         })
         html += `</table>`
+        if (resto.length > 0) {
+            html += `<div id="logs-extra" style="display:none"><table style="margin-top:0; border-top:none"><tr>` // sin header repetido
+            html += `</tr>`
+            resto.forEach(l => {
+                const fecha = l.creationTime ? l.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
+                const jugador = l.playerUsername || 'Bot'
+                html += `<tr><td>${fecha}</td><td>${l.action || 'N/A'}</td><td>${jugador}</td></tr>`
+            })
+            html += `</table></div>`
+            html += `<button class="btn-tracker" style="margin-top:12px" id="btn-ver-mas-logs"
+                onclick="
+                    document.getElementById('logs-extra').style.display='block';
+                    this.style.display='none'
+                ">Ver más (${resto.length} registros)</button>`
+        }
     }
     html += `</div>`
     contenido.innerHTML = html
