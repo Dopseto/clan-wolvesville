@@ -141,6 +141,9 @@ def upsert_cartera(player_id, username, oro=0, gemas=0):
 def eliminar_cartera(player_id):
     supabase_request("DELETE", f"carteras?player_id=eq.{player_id}")
 
+def actualizar_cartera(player_id, campos):
+    supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
+
 def obtener_ex_miembros(members):
     """Devuelve carteras de jugadores que ya no están en el clan."""
     carteras = supabase_request("GET", "carteras?select=*")
