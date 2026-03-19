@@ -68,7 +68,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
         </div>
     </div>`
 
-    // ANUNCIOS primero
+    // ANUNCIOS
     html += `<div class="card"><h3>📢 Anuncios</h3>
         ${(rolActual === 'admin' || rolActual === 'lider') ? `
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
@@ -89,9 +89,11 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
         </div>` : ''}
     </div>`
 
-    html += `<div class="card"><h3>📜 Historial de anuncios</h3>`
+    // HISTORIAL DE ANUNCIOS con scroll
+    html += `<div class="card"><h3>📜 Historial de anuncios</h3>
+        <div style="max-height:280px; overflow-y:auto; padding-right:4px">`
     if (anuncios && anuncios.length > 0) {
-        anuncios.slice(0, 5).forEach(a => {
+        anuncios.slice(0, 10).forEach(a => {
             const fecha = a.timestamp ? a.timestamp.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             html += `<div class="anuncio">
                 <span class="anuncio-autor">${a.author || 'N/A'}</span>
@@ -102,7 +104,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
     } else {
         html += `<p style="color:var(--muted); font-style:italic">No hay anuncios</p>`
     }
-    html += `</div>`
+    html += `</div></div>`
 
     // MISIÓN ACTIVA
     html += `<div class="card"><h3>⚔️ Misión activa</h3>`
@@ -124,7 +126,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
     html += `<div class="card"><h3>🗳️ Misiones disponibles</h3>`
     if (available && available.length > 0) {
         const votosMap = votes && votes.votes ? votes.votes : {}
-        html += `<div style="display:flex; flex-direction:column; gap:12px">`
+        html += `<div style="display:flex; flex-wrap:wrap; gap:14px; justify-content:flex-start">`
         available.forEach(q => {
             const qid = q.id
             const votantes = votosMap[qid] ? votosMap[qid].length : 0
@@ -132,15 +134,17 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
             const costoLabel = esPorGemas ? `💎 Gemas` : `🥇 Oro`
             const imagen = q.promoImageUrl || ''
             html += `
-            <div id="quest-card-${qid}" style="display:flex; gap:14px; align-items:center; padding:12px; background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s"
+            <div id="quest-card-${qid}"
+                style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; background:rgba(255,252,235,0.5); border:2px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; width:130px"
                 onclick="seleccionarMision('${qid}')"
-                onmouseover="this.style.borderColor='var(--accent)'; this.style.background='rgba(196,122,42,0.08)'"
+                onmouseover="if(!this.classList.contains('selected')) { this.style.borderColor='var(--accent)'; this.style.background='rgba(196,122,42,0.08)' }"
                 onmouseout="if(!this.classList.contains('selected')) { this.style.borderColor='rgba(160,128,64,0.3)'; this.style.background='rgba(255,252,235,0.5)' }">
-                ${imagen ? `<img src="${imagen}" style="width:60px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0; border:1px solid rgba(160,128,64,0.3)">` : `<div style="width:60px; height:60px; border-radius:4px; background:rgba(160,128,64,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px">⚔️</div>`}
-                <div style="flex:1">
-                    <p style="font-family:Cinzel,serif; font-weight:700; font-size:14px; color:var(--ink); margin-bottom:4px">${q.name || 'N/A'}</p>
-                    <p style="font-size:12px; color:var(--muted)">Costo: ${costoLabel} &nbsp;·&nbsp; 🗳️ ${votantes} voto${votantes !== 1 ? 's' : ''}</p>
-                </div>
+                ${imagen
+                    ? `<img src="${imagen}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3)">`
+                    : `<div style="width:100px; height:100px; border-radius:4px; background:rgba(160,128,64,0.2); display:flex; align-items:center; justify-content:center; font-size:36px">⚔️</div>`
+                }
+                <p style="font-size:12px; color:var(--muted); text-align:center">${costoLabel}</p>
+                <p style="font-size:11px; color:var(--ink-light); text-align:center">🗳️ ${votantes} voto${votantes !== 1 ? 's' : ''}</p>
             </div>`
         })
         html += `</div>`
@@ -178,13 +182,11 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
 let misionSeleccionada = null
 
 function seleccionarMision(questId) {
-    // Deseleccionar anterior
     document.querySelectorAll('[id^="quest-card-"]').forEach(el => {
         el.classList.remove('selected')
         el.style.borderColor = 'rgba(160,128,64,0.3)'
         el.style.background = 'rgba(255,252,235,0.5)'
     })
-    // Seleccionar nueva
     const card = document.getElementById(`quest-card-${questId}`)
     if (card) {
         card.classList.add('selected')
@@ -195,19 +197,13 @@ function seleccionarMision(questId) {
 }
 
 function confirmarIniciarMision() {
-    if (!misionSeleccionada) {
-        mostrarToast('Seleccioná una misión primero', 'error')
-        return
-    }
-
-    // Buscar datos de la misión seleccionada
+    if (!misionSeleccionada) { mostrarToast('Seleccioná una misión primero', 'error'); return }
     const card = document.getElementById(`quest-card-${misionSeleccionada}`)
     if (!card) return
-    const nombre = card.querySelector('p')?.textContent || 'N/A'
-    const infoText = card.querySelectorAll('p')[1]?.textContent || ''
     const imagen = card.querySelector('img')?.src || ''
-
-    // Miembros activos del cache
+    const infoTexts = card.querySelectorAll('p')
+    const costoLabel = infoTexts[0]?.textContent || ''
+    const votosLabel = infoTexts[1]?.textContent || ''
     const activos = miembrosCache.filter(m => m.participateInClanQuests !== false)
 
     let modal = document.getElementById('modal-confirmar-mision')
@@ -226,21 +222,19 @@ function confirmarIniciarMision() {
                 <button onclick="document.getElementById('modal-confirmar-mision').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
             </div>
             <div style="overflow-y:auto; flex:1">
-                <div style="display:flex; gap:14px; align-items:center; margin-bottom:16px; padding:12px; background:rgba(196,122,42,0.08); border:1px solid var(--accent); border-radius:var(--radius-sm)">
-                    ${imagen ? `<img src="${imagen}" style="width:70px; height:70px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">` : '<div style="width:70px; height:70px; border-radius:4px; background:rgba(160,128,64,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:28px">⚔️</div>'}
+                <div style="display:flex; gap:16px; align-items:center; margin-bottom:20px; padding:14px; background:rgba(196,122,42,0.08); border:1px solid var(--accent); border-radius:var(--radius-sm)">
+                    ${imagen ? `<img src="${imagen}" style="width:80px; height:80px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">` : '<div style="width:80px; height:80px; border-radius:4px; background:rgba(160,128,64,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:32px">⚔️</div>'}
                     <div>
-                        <p style="font-family:Cinzel,serif; font-weight:700; font-size:15px; color:var(--ink); margin-bottom:4px">${nombre}</p>
-                        <p style="font-size:13px; color:var(--muted)">${infoText}</p>
+                        <p style="font-size:14px; color:var(--ink); font-weight:600; margin-bottom:4px">${costoLabel}</p>
+                        <p style="font-size:13px; color:var(--muted)">${votosLabel}</p>
                     </div>
                 </div>
-                <div style="margin-bottom:16px">
-                    <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">MIEMBROS ACTIVOS (${activos.length})</p>
-                    <div style="display:flex; flex-wrap:wrap; gap:6px">
-                        ${activos.length > 0
-                            ? activos.map(m => `<span style="font-family:Cinzel,serif; font-size:11px; background:rgba(45,106,30,0.12); color:#2d6a1e; border:1px solid rgba(45,106,30,0.3); border-radius:3px; padding:3px 10px">✓ ${m.username}</span>`).join('')
-                            : `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay miembros activos</p>`
-                        }
-                    </div>
+                <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">MIEMBROS ACTIVOS (${activos.length})</p>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px">
+                    ${activos.length > 0
+                        ? activos.map(m => `<span style="font-family:Cinzel,serif; font-size:11px; background:rgba(45,106,30,0.12); color:#2d6a1e; border:1px solid rgba(45,106,30,0.3); border-radius:3px; padding:3px 10px">✓ ${m.username}</span>`).join('')
+                        : `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay miembros activos</p>`
+                    }
                 </div>
             </div>
             <div style="display:flex; gap:10px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(160,128,64,0.3)">
@@ -248,7 +242,6 @@ function confirmarIniciarMision() {
                 <button class="btn-tracker" style="flex:1" onclick="document.getElementById('modal-confirmar-mision').style.display='none'">Cancelar</button>
             </div>
         </div>`
-
     modal.style.display = 'flex'
 }
 
@@ -256,7 +249,6 @@ function iniciarMision() {
     if (!misionSeleccionada) return
     const btn = document.querySelector('#modal-confirmar-mision .btn-primary')
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Iniciando...' }
-
     fetch('/clan/quests/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
