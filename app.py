@@ -174,6 +174,54 @@ def registrar_cambio_nombre(player_id, nombre_anterior, nombre_nuevo):
 def obtener_cambios_nombre():
     return supabase_request("GET", "cambios_nombre?select=*&order=created_at.desc")
 
+# =================== ANUNCIOS AUTOMÁTICOS ===================
+def obtener_anuncios_auto():
+    return supabase_request("GET", "anuncios_auto?select=*&order=id.asc")
+
+def guardar_anuncio_auto(anuncio_id, mensaje, activo, dia_semana, hora_gmt):
+    supabase_request("PATCH", f"anuncios_auto?id=eq.{anuncio_id}", {
+        "mensaje": mensaje,
+        "activo": activo,
+        "dia_semana": int(dia_semana),
+        "hora_gmt": hora_gmt
+    })
+
+def marcar_publicado(anuncio_id):
+    ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    supabase_request("PATCH", f"anuncios_auto?id=eq.{anuncio_id}", {"ultima_publicacion": ahora})
+
+def verificar_y_publicar_anuncios():
+    """Verifica si hay anuncios automáticos que deban publicarse y los publica."""
+    try:
+        anuncios = obtener_anuncios_auto()
+        ahora = time.gmtime()
+        dia_hoy = ahora.tm_wday  # 0=lunes, 6=domingo
+        hora_actual = f"{ahora.tm_hour:02d}:{ahora.tm_min:02d}"
+
+        for a in anuncios:
+            if not a.get("activo"): continue
+            if not a.get("mensaje", "").strip(): continue
+            if a.get("dia_semana") != dia_hoy: continue
+            if a.get("hora_gmt", "") > hora_actual: continue  # aún no llegó la hora
+
+            # Verificar si ya fue publicado esta semana
+            ultima = a.get("ultima_publicacion")
+            if ultima:
+                ultima_t = time.strptime(ultima[:19], "%Y-%m-%dT%H:%M:%S")
+                dias_desde = (time.mktime(ahora) - time.mktime(ultima_t)) / 86400
+                if dias_desde < 6:  # publicado hace menos de 6 días = esta semana
+                    continue
+
+            # Publicar
+            try:
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": a["mensaje"]})
+                marcar_publicado(a["id"])
+                print(f"[ANUNCIO AUTO] Publicado: {a['mensaje'][:50]}")
+            except Exception as e:
+                print(f"[ANUNCIO AUTO] Error al publicar: {e}")
+    except Exception as e:
+        print(f"[ANUNCIO AUTO] Error general: {e}")
+
 # =================== CONFIG ===================
 FECHA_INICIO = "2026-03-17T00:00:00Z"
 
@@ -409,6 +457,7 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/auth/ping":
                 actualizar_actividad(sesion["username"])
+                verificar_y_publicar_anuncios()
                 self.send_json({"ok": True})
                 return
 
@@ -478,6 +527,10 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/clan/cambios_nombre":
                 self.send_json(obtener_cambios_nombre())
+                return
+
+            if parsed.path == "/ajustes/anuncios_auto":
+                self.send_json(obtener_anuncios_auto())
                 return
 
             if parsed.path == "/clan/sincronizar/info":
@@ -690,6 +743,21 @@ class Handler(BaseHTTPRequestHandler):
                 clave = parsed.path.split("/config/")[1]
                 valor = data.get("valor", "")
                 set_config(clave, str(valor))
+                self.send_json({"ok": True})
+                return
+
+            if parsed.path.startswith("/ajustes/anuncios_auto/"):
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                anuncio_id = parsed.path.split("/ajustes/anuncios_auto/")[1]
+                guardar_anuncio_auto(
+                    anuncio_id,
+                    data.get("mensaje", ""),
+                    data.get("activo", False),
+                    data.get("dia_semana", 0),
+                    data.get("hora_gmt", "20:00")
+                )
                 self.send_json({"ok": True})
                 return
 

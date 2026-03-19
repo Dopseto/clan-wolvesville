@@ -1218,11 +1218,14 @@ function cargarAjustes() {
     document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><p class="cargando">Cargando...</p>`
     Promise.all([
         fetch('/config/costo_oro_mision').then(r => r.json()),
-        fetch('/config/costo_gemas_mision').then(r => r.json())
-    ]).then(([cfgOro, cfgGemas]) => {
+        fetch('/config/costo_gemas_mision').then(r => r.json()),
+        fetch('/ajustes/anuncios_auto').then(r => r.json())
+    ]).then(([cfgOro, cfgGemas, anunciosAuto]) => {
         const contenido = document.getElementById('contenido')
+        const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
         let html = `<h1>⚙️ Ajustes</h1>`
 
+        // COSTO DE MISIONES
         html += `<div class="card">
             <h3>⚔️ Costo de misiones</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
@@ -1258,6 +1261,48 @@ function cargarAjustes() {
             </div>
         </div>`
 
+        // ANUNCIOS AUTOMÁTICOS
+        html += `<div class="card"><h3>📢 Anuncios automáticos</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
+                Los anuncios activos se publican automáticamente el día y hora indicados (hora GMT). Si la página no está abierta a esa hora exacta, se publicará la próxima vez que alguien la visite ese mismo día.
+            </p>`
+
+        anunciosAuto.forEach((a, i) => {
+            const activo = a.activo || false
+            const dia = a.dia_semana ?? 0
+            const hora = a.hora_gmt || '20:00'
+            html += `
+            <div style="padding:16px 0; border-bottom:1px solid rgba(160,128,64,0.2)">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap">
+                    <span style="font-family:Cinzel,serif; font-size:12px; font-weight:600; color:var(--ink)">Anuncio ${i + 1}</span>
+                    <div onclick="toggleAnuncioAuto(${a.id})"
+                         id="toggle-anuncio-${a.id}"
+                         style="width:44px; height:24px; border-radius:12px; background:${activo ? '#2d6a1e' : 'var(--muted)'}; cursor:pointer; position:relative; transition:background 0.3s; border:1px solid rgba(0,0,0,0.1); flex-shrink:0">
+                        <div style="width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:2px; left:${activo ? '22px' : '2px'}; transition:left 0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2)" id="toggle-anuncio-ball-${a.id}"></div>
+                    </div>
+                    <span style="font-size:12px; color:${activo ? '#2d6a1e' : 'var(--muted)'}; font-style:italic" id="toggle-anuncio-label-${a.id}">${activo ? 'Activo' : 'Inactivo'}</span>
+                </div>
+                <textarea id="anuncio-msg-${a.id}" placeholder="Escribí el mensaje del anuncio..."
+                    style="width:100%; padding:10px 14px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; resize:vertical; min-height:70px; outline:none; margin-bottom:10px">${a.mensaje || ''}</textarea>
+                <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:10px">
+                    <div>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:5px">DÍA</p>
+                        <select id="anuncio-dia-${a.id}" style="padding:6px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                            ${dias.map((d, idx) => `<option value="${idx}" ${idx === dia ? 'selected' : ''}>${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:5px">HORA (GMT)</p>
+                        <input type="time" id="anuncio-hora-${a.id}" value="${hora}"
+                            style="padding:6px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
+                    </div>
+                    ${a.ultima_publicacion ? `<p style="font-size:11px; color:var(--muted); font-style:italic; align-self:flex-end">Último envío: ${new Date(a.ultima_publicacion).toLocaleString('es-AR')}</p>` : ''}
+                </div>
+                <button class="btn-primary" style="padding:6px 16px; font-size:10px" onclick="guardarAnuncioAuto(${a.id})">💾 Guardar anuncio ${i + 1}</button>
+            </div>`
+        })
+        html += `</div>`
+
         contenido.innerHTML = html
     }).catch(() => {
         document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><div class="card"><p style="color:var(--muted)">Error al cargar ajustes</p></div>`
@@ -1282,5 +1327,44 @@ function guardarAjustesMision() {
         }).then(r => r.json())
     ]).then(() => {
         mostrarToast('✓ Ajustes guardados')
+    }).catch(() => mostrarToast('Error al guardar', 'error'))
+}
+
+function toggleAnuncioAuto(id) {
+    const toggle = document.getElementById(`toggle-anuncio-${id}`)
+    const ball = document.getElementById(`toggle-anuncio-ball-${id}`)
+    const label = document.getElementById(`toggle-anuncio-label-${id}`)
+    const activo = toggle.style.background.includes('#2d6a1e')
+    const nuevoEstado = !activo
+    toggle.style.background = nuevoEstado ? '#2d6a1e' : 'var(--muted)'
+    ball.style.left = nuevoEstado ? '22px' : '2px'
+    label.textContent = nuevoEstado ? 'Activo' : 'Inactivo'
+    label.style.color = nuevoEstado ? '#2d6a1e' : 'var(--muted)'
+    // Guardar el nuevo estado inmediatamente
+    const msg = document.getElementById(`anuncio-msg-${id}`)?.value || ''
+    const dia = document.getElementById(`anuncio-dia-${id}`)?.value || 0
+    const hora = document.getElementById(`anuncio-hora-${id}`)?.value || '20:00'
+    fetch(`/ajustes/anuncios_auto/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: msg, activo: nuevoEstado, dia_semana: parseInt(dia), hora_gmt: hora })
+    }).then(r => r.json()).then(data => {
+        if (!data.ok) mostrarToast('Error al cambiar estado', 'error')
+    }).catch(() => mostrarToast('Error al cambiar estado', 'error'))
+}
+
+function guardarAnuncioAuto(id) {
+    const msg = document.getElementById(`anuncio-msg-${id}`)?.value || ''
+    const dia = document.getElementById(`anuncio-dia-${id}`)?.value || 0
+    const hora = document.getElementById(`anuncio-hora-${id}`)?.value || '20:00'
+    const toggle = document.getElementById(`toggle-anuncio-${id}`)
+    const activo = toggle ? toggle.style.background.includes('#2d6a1e') : false
+    fetch(`/ajustes/anuncios_auto/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: msg, activo, dia_semana: parseInt(dia), hora_gmt: hora })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) mostrarToast(`✓ Anuncio guardado`)
+        else mostrarToast('Error: ' + data.error, 'error')
     }).catch(() => mostrarToast('Error al guardar', 'error'))
 }
