@@ -257,16 +257,27 @@ def es_lider_o_colider(player_id):
     return player_id == LEADER_ID
 
 def procesar_comandos_chat():
-    """Lee el chat del clan y responde a comandos según configuración en comandos_bot."""
+    """Lee el chat del clan y responde al último comando nuevo."""
     try:
         ultima = get_config("ultima_lectura_chat") or "2000-01-01T00:00:00.000Z"
         mensajes = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/chat")
-        nuevos = [m for m in mensajes if m.get("date", "") > ultima]
-        if not nuevos:
+        if not mensajes:
             return
 
-        ultima_nueva = max(m.get("date", "") for m in nuevos)
-        set_config("ultima_lectura_chat", ultima_nueva)  # guardar antes del loop para evitar reprocesar
+        # Solo procesar el último mensaje
+        ultimo = mensajes[-1]
+        if ultimo.get("date", "") <= ultima:
+            return
+
+        # Actualizar fecha antes de procesar
+        set_config("ultima_lectura_chat", ultimo.get("date", ""))
+
+        msg = (ultimo.get("msg") or "").strip()
+        pid = ultimo.get("playerId", "")
+
+        # Ignorar mensajes del sistema, del bot, o respuestas del bot
+        if ultimo.get("isSystem"): return
+        if msg.startswith("[Bot]"): return
 
         # Cargar configuración de comandos
         comandos = obtener_comandos_bot()
@@ -276,44 +287,38 @@ def procesar_comandos_chat():
         carteras_por_pid = {r["player_id"]: r for r in carteras_rows}
         carteras_por_username = {r["username"].lower(): r for r in carteras_rows if r.get("username")}
 
-        for m in nuevos:
-            msg = (m.get("msg") or "").strip()
-            pid = m.get("playerId", "")
-            if m.get("isSystem"): continue
-            if pid == LEADER_ID: continue  # ignorar mensajes del bot (aparecen con el playerId del dueño de la API)
+        # !cartera
+        if msg.lower() == "!cartera":
+            acceso = cfg.get("!cartera", "desactivado")
+            if acceso == "desactivado": return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
+            cartera = carteras_por_pid.get(pid)
+            if cartera:
+                respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
+            else:
+                respuesta = "[Bot] No encontré tu cartera. Asegurate de estar en el clan."
+            try:
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !cartera: {e}")
 
-            # !cartera
-            if msg.lower() == "!cartera":
-                acceso = cfg.get("!cartera", "desactivado")
-                if acceso == "desactivado": continue
-                if acceso == "lideres" and not es_lider_o_colider(pid): continue
-                cartera = carteras_por_pid.get(pid)
-                if cartera:
-                    respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
-                else:
-                    respuesta = "[Bot] No encontré tu cartera. Asegurate de estar en el clan."
-                try:
-                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
-                except Exception as e:
-                    print(f"[CHAT BOT] Error al responder !cartera: {e}")
+        # !info @usuario
+        elif msg.lower().startswith("!info @"):
+            acceso = cfg.get("!info @", "desactivado")
+            if acceso == "desactivado": return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
+            objetivo = msg[7:].strip().lower()
+            cartera = carteras_por_username.get(objetivo)
+            if cartera:
+                respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
+            else:
+                respuesta = f"[Bot] No encontré la cartera de @{objetivo}."
+            try:
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !info: {e}")
 
-            # !info @usuario
-            elif msg.lower().startswith("!info @"):
-                acceso = cfg.get("!info @", "desactivado")
-                if acceso == "desactivado": continue
-                if acceso == "lideres" and not es_lider_o_colider(pid): continue
-                objetivo = msg[7:].strip().lower()
-                cartera = carteras_por_username.get(objetivo)
-                if cartera:
-                    respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
-                else:
-                    respuesta = f"[Bot] No encontré la cartera de @{objetivo}."
-                try:
-                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
-                except Exception as e:
-                    print(f"[CHAT BOT] Error al responder !info: {e}")
-
-        print(f"[CHAT BOT] Procesados {len(nuevos)} mensajes nuevos")
+        print(f"[CHAT BOT] Último mensaje procesado: {msg[:50]}")
 
     except Exception as e:
         print(f"[CHAT BOT] Error general: {e}")
