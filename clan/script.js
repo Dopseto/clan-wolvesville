@@ -76,8 +76,8 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     </div>`
 
     // ANUNCIOS
-    html += `<div class="card"><h3>📢 Anuncios</h3>
-        ${(rolActual === 'admin' || rolActual === 'lider') ? `
+    if (rolActual === 'admin' || rolActual === 'lider') {
+        html += `<div class="card"><h3>📢 Anuncios</h3>
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
             <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">Manual</button>
             <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">Automático</button>
@@ -87,14 +87,11 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
             <button class="btn-primary" onclick="publicarAnuncio()">📢 Publicar</button>
         </div>
         <div id="panel-auto" style="display:none">
-            <p style="font-size:14px; color:var(--muted); margin-bottom:12px; font-style:italic">Seleccioná un mensaje pregrabado:</p>
-            ${ANUNCIOS_AUTO.map((msg, i) => `
-                <div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:all 0.2s" onclick="seleccionarAutoAnuncio(${i})" id="auto-${i}">
-                    <p style="font-size:14px; color:var(--ink-light)">${msg}</p>
-                </div>`).join('')}
-            <button class="btn-primary" style="margin-top:8px" onclick="publicarAutoAnuncio()">📢 Publicar seleccionado</button>
-        </div>` : ''}
+            <p style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic">Anuncios programados desde Ajustes:</p>
+            <div id="lista-anuncios-auto"><p style="color:var(--muted); font-style:italic; font-size:13px">Cargando...</p></div>
+        </div>
     </div>`
+    }
 
     // HISTORIAL con scroll
     html += `<div class="card"><h3>📜 Historial de anuncios</h3>
@@ -366,22 +363,42 @@ function switchTab(tab) {
         manual.style.display = 'none'; auto.style.display = 'block'
         btnManual.style.background = 'rgba(160,128,64,0.1)'; btnManual.style.color = 'var(--muted)'
         btnAuto.style.background = 'var(--accent)'; btnAuto.style.color = '#fff8e8'
+        cargarListaAnunciosAuto()
     }
 }
 
-function seleccionarAutoAnuncio(i) {
-    ANUNCIOS_AUTO.forEach((_, idx) => {
-        const el = document.getElementById(`auto-${idx}`)
-        if (el) { el.style.background = 'rgba(255,252,235,0.5)'; el.style.borderColor = 'rgba(160,128,64,0.3)' }
+function cargarListaAnunciosAuto() {
+    const el = document.getElementById('lista-anuncios-auto')
+    if (!el) return
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    fetch('/ajustes/anuncios_auto').then(r => r.json()).then(anuncios => {
+        if (!anuncios || anuncios.length === 0) {
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay anuncios configurados</p>`
+            return
+        }
+        let h = ''
+        anuncios.forEach((a, i) => {
+            const activo = a.activo || false
+            const dia = dias[a.dia_semana ?? 0] || 'N/A'
+            const hora = a.hora_gmt || '—'
+            const luz = activo
+                ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; flex-shrink:0"></span>`
+                : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; flex-shrink:0"></span>`
+            h += `<div style="display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2)">
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; padding-top:2px">
+                    ${luz}
+                    <span style="font-family:Cinzel,serif; font-size:11px; color:var(--muted)">Anuncio ${i + 1}</span>
+                </div>
+                <div style="flex:1">
+                    <p style="font-size:14px; color:var(--ink-light); margin-bottom:6px; line-height:1.5">${a.mensaje || '<em style="color:var(--muted)">Sin mensaje configurado</em>'}</p>
+                    <p style="font-size:11px; color:var(--muted); font-family:Cinzel,serif; letter-spacing:0.5px">${dia} · ${hora} GMT</p>
+                </div>
+            </div>`
+        })
+        el.innerHTML = h
+    }).catch(() => {
+        el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">Error al cargar</p>`
     })
-    const el = document.getElementById(`auto-${i}`)
-    if (el) { el.style.background = 'rgba(196,122,42,0.15)'; el.style.borderColor = 'var(--accent)' }
-    autoSeleccionado = i
-}
-
-function publicarAutoAnuncio() {
-    if (autoSeleccionado === null) { mostrarToast('Seleccioná un mensaje primero', 'error'); return }
-    enviarAnuncio(ANUNCIOS_AUTO[autoSeleccionado])
 }
 
 function publicarAnuncio() {
