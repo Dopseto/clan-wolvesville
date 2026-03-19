@@ -1276,7 +1276,7 @@ function cargarAjustes() {
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap">
                     <span style="font-family:Cinzel,serif; font-size:12px; font-weight:600; color:var(--ink)">Anuncio ${i + 1}</span>
                     <div onclick="toggleAnuncioAuto(${a.id})"
-                         id="toggle-anuncio-${a.id}"
+                         id="toggle-anuncio-${a.id}" data-activo="${activo ? '1' : '0'}"
                          style="width:44px; height:24px; border-radius:12px; background:${activo ? '#2d6a1e' : 'var(--muted)'}; cursor:pointer; position:relative; transition:background 0.3s; border:1px solid rgba(0,0,0,0.1); flex-shrink:0">
                         <div style="width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:2px; left:${activo ? '22px' : '2px'}; transition:left 0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2)" id="toggle-anuncio-ball-${a.id}"></div>
                     </div>
@@ -1334,8 +1334,9 @@ function toggleAnuncioAuto(id) {
     const toggle = document.getElementById(`toggle-anuncio-${id}`)
     const ball = document.getElementById(`toggle-anuncio-ball-${id}`)
     const label = document.getElementById(`toggle-anuncio-label-${id}`)
-    const activo = toggle.style.background.includes('#2d6a1e')
+    const activo = toggle.dataset.activo === '1'
     const nuevoEstado = !activo
+    toggle.dataset.activo = nuevoEstado ? '1' : '0'
     toggle.style.background = nuevoEstado ? '#2d6a1e' : 'var(--muted)'
     ball.style.left = nuevoEstado ? '22px' : '2px'
     label.textContent = nuevoEstado ? 'Activo' : 'Inactivo'
