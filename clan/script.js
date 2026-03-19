@@ -40,11 +40,13 @@ function cargarInicio() {
         fetch('/clan/info').then(r => r.json()),
         fetch('/clan/quests').then(r => r.json()),
         fetch('/clan/announcements').then(r => r.json()),
-        fetch('/clan/ledger').then(r => r.json())
-    ]).then(([info, quests, anuncios, ledger]) => mostrarInicio(info, quests, anuncios, ledger))
+        fetch('/clan/ledger').then(r => r.json()),
+        fetch('/clan/quests/available').then(r => r.json()),
+        fetch('/clan/quests/votes').then(r => r.json())
+    ]).then(([info, quests, anuncios, ledger, available, votes]) => mostrarInicio(info, quests, anuncios, ledger, available, votes))
 }
 
-function mostrarInicio(info, quests, anuncios, ledger) {
+function mostrarInicio(info, quests, anuncios, ledger, available, votes) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>${info.name || 'Clan'} <span class="tag">${info.tag || ''}</span></h1>`
 
@@ -66,21 +68,7 @@ function mostrarInicio(info, quests, anuncios, ledger) {
         </div>
     </div>`
 
-    html += `<div class="card"><h3>⚔️ Misión activa</h3>`
-    if (quests && quests.quest) {
-        const progreso = quests.currentValue || 0
-        const objetivo = quests.quest.targetValue || 1
-        const pct = Math.min(100, Math.round((progreso / objetivo) * 100))
-        html += `<p style="margin-bottom:8px"><b>${quests.quest.name || 'N/A'}</b></p>
-            <div style="background:rgba(160,128,64,0.2); border-radius:6px; height:10px; overflow:hidden; margin:10px 0; border:1px solid rgba(160,128,64,0.3)">
-                <div style="background:var(--accent); width:${pct}%; height:100%; border-radius:6px; transition:width 0.5s"></div>
-            </div>
-            <p style="font-size:14px; color:var(--muted)">${progreso} / ${objetivo} &nbsp;·&nbsp; Recompensa: ${quests.quest.goldReward || 0} 🥇</p>`
-    } else {
-        html += `<p style="color:var(--muted); font-style:italic">No hay misión activa</p>`
-    }
-    html += `</div>`
-
+    // ANUNCIOS primero
     html += `<div class="card"><h3>📢 Anuncios</h3>
         ${(rolActual === 'admin' || rolActual === 'lider') ? `
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
@@ -116,6 +104,54 @@ function mostrarInicio(info, quests, anuncios, ledger) {
     }
     html += `</div>`
 
+    // MISIÓN ACTIVA
+    html += `<div class="card"><h3>⚔️ Misión activa</h3>`
+    if (quests && quests.quest) {
+        const progreso = quests.currentValue || 0
+        const objetivo = quests.quest.targetValue || 1
+        const pct = Math.min(100, Math.round((progreso / objetivo) * 100))
+        html += `<p style="margin-bottom:8px"><b>${quests.quest.name || 'N/A'}</b></p>
+            <div style="background:rgba(160,128,64,0.2); border-radius:6px; height:10px; overflow:hidden; margin:10px 0; border:1px solid rgba(160,128,64,0.3)">
+                <div style="background:var(--accent); width:${pct}%; height:100%; border-radius:6px; transition:width 0.5s"></div>
+            </div>
+            <p style="font-size:14px; color:var(--muted)">${progreso} / ${objetivo} &nbsp;·&nbsp; Recompensa: ${quests.quest.goldReward || 0} 🥇</p>`
+    } else {
+        html += `<p style="color:var(--muted); font-style:italic">No hay misión activa</p>`
+    }
+    html += `</div>`
+
+    // MISIONES DISPONIBLES
+    html += `<div class="card"><h3>🗳️ Misiones disponibles</h3>`
+    if (available && available.length > 0) {
+        const votosMap = votes && votes.votes ? votes.votes : {}
+        html += `<div style="display:flex; flex-direction:column; gap:12px">`
+        available.forEach(q => {
+            const qid = q.id
+            const votantes = votosMap[qid] ? votosMap[qid].length : 0
+            const esPorGemas = q.purchasableWithGems === true
+            const costoLabel = esPorGemas ? `💎 Gemas` : `🥇 Oro`
+            const imagen = q.promoImageUrl || ''
+            html += `
+            <div id="quest-card-${qid}" style="display:flex; gap:14px; align-items:center; padding:12px; background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s"
+                onclick="seleccionarMision('${qid}')"
+                onmouseover="this.style.borderColor='var(--accent)'; this.style.background='rgba(196,122,42,0.08)'"
+                onmouseout="if(!this.classList.contains('selected')) { this.style.borderColor='rgba(160,128,64,0.3)'; this.style.background='rgba(255,252,235,0.5)' }">
+                ${imagen ? `<img src="${imagen}" style="width:60px; height:60px; object-fit:cover; border-radius:4px; flex-shrink:0; border:1px solid rgba(160,128,64,0.3)">` : `<div style="width:60px; height:60px; border-radius:4px; background:rgba(160,128,64,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px">⚔️</div>`}
+                <div style="flex:1">
+                    <p style="font-family:Cinzel,serif; font-weight:700; font-size:14px; color:var(--ink); margin-bottom:4px">${q.name || 'N/A'}</p>
+                    <p style="font-size:12px; color:var(--muted)">Costo: ${costoLabel} &nbsp;·&nbsp; 🗳️ ${votantes} voto${votantes !== 1 ? 's' : ''}</p>
+                </div>
+            </div>`
+        })
+        html += `</div>`
+        if (rolActual === 'admin' || rolActual === 'lider') {
+            html += `<button class="btn-primary" style="margin-top:16px" onclick="confirmarIniciarMision()">⚔️ Iniciar misión seleccionada</button>`
+        }
+    } else {
+        html += `<p style="color:var(--muted); font-style:italic">No hay misiones disponibles</p>`
+    }
+    html += `</div>`
+
     html += `<div class="card">
         <h3>🔄 Registro de donaciones</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
@@ -128,7 +164,6 @@ function mostrarInicio(info, quests, anuncios, ledger) {
 
     contenido.innerHTML = html
 
-    // Cargar info de última sincronización
     fetch('/clan/sincronizar/info').then(r => r.json()).then(data => {
         const el = document.getElementById('sync-info-inicio')
         if (el && data.ultima_sincronizacion) {
@@ -137,6 +172,109 @@ function mostrarInicio(info, quests, anuncios, ledger) {
         }
         cargarRegistroDonaciones()
     }).catch(() => {})
+}
+
+// =================== MISIONES DISPONIBLES ===================
+let misionSeleccionada = null
+
+function seleccionarMision(questId) {
+    // Deseleccionar anterior
+    document.querySelectorAll('[id^="quest-card-"]').forEach(el => {
+        el.classList.remove('selected')
+        el.style.borderColor = 'rgba(160,128,64,0.3)'
+        el.style.background = 'rgba(255,252,235,0.5)'
+    })
+    // Seleccionar nueva
+    const card = document.getElementById(`quest-card-${questId}`)
+    if (card) {
+        card.classList.add('selected')
+        card.style.borderColor = 'var(--accent)'
+        card.style.background = 'rgba(196,122,42,0.12)'
+    }
+    misionSeleccionada = questId
+}
+
+function confirmarIniciarMision() {
+    if (!misionSeleccionada) {
+        mostrarToast('Seleccioná una misión primero', 'error')
+        return
+    }
+
+    // Buscar datos de la misión seleccionada
+    const card = document.getElementById(`quest-card-${misionSeleccionada}`)
+    if (!card) return
+    const nombre = card.querySelector('p')?.textContent || 'N/A'
+    const infoText = card.querySelectorAll('p')[1]?.textContent || ''
+    const imagen = card.querySelector('img')?.src || ''
+
+    // Miembros activos del cache
+    const activos = miembrosCache.filter(m => m.participateInClanQuests !== false)
+
+    let modal = document.getElementById('modal-confirmar-mision')
+    if (!modal) {
+        modal = document.createElement('div')
+        modal.id = 'modal-confirmar-mision'
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:998; display:flex; align-items:center; justify-content:center; padding:20px'
+        modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none' })
+        document.body.appendChild(modal)
+    }
+
+    modal.innerHTML = `
+        <div style="background:var(--parchment); border:2px solid var(--border); border-radius:4px; padding:28px; width:100%; max-width:480px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(160,128,64,0.3); padding-bottom:12px">
+                <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink)">⚔️ Confirmar misión</span>
+                <button onclick="document.getElementById('modal-confirmar-mision').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
+            </div>
+            <div style="overflow-y:auto; flex:1">
+                <div style="display:flex; gap:14px; align-items:center; margin-bottom:16px; padding:12px; background:rgba(196,122,42,0.08); border:1px solid var(--accent); border-radius:var(--radius-sm)">
+                    ${imagen ? `<img src="${imagen}" style="width:70px; height:70px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">` : '<div style="width:70px; height:70px; border-radius:4px; background:rgba(160,128,64,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:28px">⚔️</div>'}
+                    <div>
+                        <p style="font-family:Cinzel,serif; font-weight:700; font-size:15px; color:var(--ink); margin-bottom:4px">${nombre}</p>
+                        <p style="font-size:13px; color:var(--muted)">${infoText}</p>
+                    </div>
+                </div>
+                <div style="margin-bottom:16px">
+                    <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">MIEMBROS ACTIVOS (${activos.length})</p>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px">
+                        ${activos.length > 0
+                            ? activos.map(m => `<span style="font-family:Cinzel,serif; font-size:11px; background:rgba(45,106,30,0.12); color:#2d6a1e; border:1px solid rgba(45,106,30,0.3); border-radius:3px; padding:3px 10px">✓ ${m.username}</span>`).join('')
+                            : `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay miembros activos</p>`
+                        }
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(160,128,64,0.3)">
+                <button class="btn-primary" style="flex:1" onclick="iniciarMision()">⚔️ Confirmar e iniciar</button>
+                <button class="btn-tracker" style="flex:1" onclick="document.getElementById('modal-confirmar-mision').style.display='none'">Cancelar</button>
+            </div>
+        </div>`
+
+    modal.style.display = 'flex'
+}
+
+function iniciarMision() {
+    if (!misionSeleccionada) return
+    const btn = document.querySelector('#modal-confirmar-mision .btn-primary')
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Iniciando...' }
+
+    fetch('/clan/quests/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questId: misionSeleccionada })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) {
+            mostrarToast('✓ ¡Misión iniciada!')
+            document.getElementById('modal-confirmar-mision').style.display = 'none'
+            misionSeleccionada = null
+            cargarInicio()
+        } else {
+            mostrarToast('Error: ' + (data.error || 'No se pudo iniciar'), 'error')
+            if (btn) { btn.disabled = false; btn.textContent = '⚔️ Confirmar e iniciar' }
+        }
+    }).catch(() => {
+        mostrarToast('Error al iniciar la misión', 'error')
+        if (btn) { btn.disabled = false; btn.textContent = '⚔️ Confirmar e iniciar' }
+    })
 }
 
 // =================== TABS ANUNCIOS ===================

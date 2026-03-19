@@ -455,6 +455,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active"))
                 return
 
+            if parsed.path == "/clan/quests/available":
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/available"))
+                return
+
+            if parsed.path == "/clan/quests/votes":
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/votes"))
+                return
+
             if parsed.path == "/clan/announcements":
                 self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements"))
                 return
@@ -655,6 +663,18 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 resultado = sincronizar_donaciones()
                 self.send_json(resultado)
+                return
+
+            if parsed.path == "/clan/quests/claim":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                quest_id = data.get("questId")
+                if not quest_id:
+                    self.send_json({"error": "questId requerido"})
+                    return
+                result = post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/claim", {"questId": quest_id})
+                self.send_json({"ok": True})
                 return
 
         except urllib.error.HTTPError as e:
