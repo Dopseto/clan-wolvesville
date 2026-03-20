@@ -962,6 +962,18 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
+            if parsed.path == "/clan/chat":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                mensaje = data.get("message", "").strip()
+                if mensaje:
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": mensaje})
+                    self.send_json({"ok": True})
+                else:
+                    self.send_json({"error": "Mensaje vacío"})
+                return
+
             if parsed.path == "/clan/announcements":
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)

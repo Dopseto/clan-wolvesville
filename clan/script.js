@@ -1708,7 +1708,7 @@ function aplicarPremios(premios) {
         fetch(`/clan/carteras/${p.pid}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ oro: p.oro })
+            body: JSON.stringify({ oro: p.oro, restar: true })
         }).then(r => r.json())
     )).then(() => {
         mostrarToast('✓ Recompensas entregadas')
