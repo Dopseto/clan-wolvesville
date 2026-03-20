@@ -1262,8 +1262,9 @@ function cargarAjustes() {
     Promise.all([
         fetch('/config/costo_oro_mision').then(r => r.json()),
         fetch('/config/costo_gemas_mision').then(r => r.json()),
-        fetch('/ajustes/anuncios_auto').then(r => r.json())
-    ]).then(([cfgOro, cfgGemas, anunciosAuto]) => {
+        fetch('/ajustes/anuncios_auto').then(r => r.json()),
+        fetch('/config/mensaje_bienvenida').then(r => r.json()).catch(() => ({ valor: '' }))
+    ]).then(([cfgOro, cfgGemas, anunciosAuto, cfgBienvenida]) => {
         const contenido = document.getElementById('contenido')
         const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
         let html = `<h1>⚙️ Ajustes</h1>`
@@ -1302,6 +1303,18 @@ function cargarAjustes() {
                 <p style="font-size:12px; color:var(--muted); font-style:italic">Los líderes pueden cambiar estos valores temporalmente desde la sección Inicio.</p>
                 ` : `<p style="font-size:12px; color:var(--muted); font-style:italic">Solo el administrador puede modificar estos valores permanentemente.</p>`}
             </div>
+        </div>`
+
+        // MENSAJE DE BIENVENIDA
+        html += `<div class="card">
+            <h3>🐺 Mensaje de bienvenida</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
+                Este mensaje lo envía el bot en el chat del clan cuando un nuevo jugador se une.
+                Podés usar <b>{username}</b> para incluir su nombre.
+            </p>
+            <textarea id="ajuste-bienvenida" placeholder="Ej: ¡Bienvenido/a al clan, {username}! 🐺"
+                style="width:100%; padding:10px 14px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; resize:vertical; min-height:70px; outline:none; margin-bottom:12px">${cfgBienvenida.valor || ''}</textarea>
+            <button class="btn-primary" style="width:fit-content" onclick="guardarMensajeBienvenida()">💾 Guardar mensaje</button>
         </div>`
 
         // ANUNCIOS AUTOMÁTICOS
@@ -1461,6 +1474,18 @@ function cargarComandos() {
     }).catch(() => {
         document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><div class="card"><p style="color:var(--muted)">Error al cargar</p></div>`
     })
+}
+
+function guardarMensajeBienvenida() {
+    const msg = document.getElementById('ajuste-bienvenida')?.value || ''
+    fetch('/config/mensaje_bienvenida', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valor: msg })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) mostrarToast('✓ Mensaje de bienvenida guardado')
+        else mostrarToast('Error: ' + data.error, 'error')
+    }).catch(() => mostrarToast('Error al guardar', 'error'))
 }
 
 function cambiarAccesoComando(id, acceso) {

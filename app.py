@@ -534,7 +534,8 @@ def detectar_nuevos_miembros():
 
             # Mensaje de bienvenida en el chat
             try:
-                bienvenida = f"[Bot] ¡Bienvenido/a al clan, {username}! 🐺"
+                plantilla = get_config("mensaje_bienvenida") or "[Bot] ¡Bienvenido/a al clan, {username}! 🐺"
+                bienvenida = plantilla.replace("{username}", username)
                 post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": bienvenida})
             except Exception as e:
                 print(f"[NUEVO MIEMBRO] Error al enviar bienvenida a {username}: {e}")
