@@ -1319,8 +1319,10 @@ function cargarAjustes() {
         fetch('/config/premio_pct_2').then(r => r.json()).catch(() => ({ valor: '10' })),
         fetch('/config/premio_pct_3').then(r => r.json()).catch(() => ({ valor: '5' })),
         fetch('/config/multa_xp_minimo').then(r => r.json()).catch(() => ({ valor: '0' })),
-        fetch('/config/multa_pct').then(r => r.json()).catch(() => ({ valor: '50' }))
-    ]).then(([cfgOro, cfgGemas, anunciosAuto, cfgBienvenida, cfgP1, cfgP2, cfgP3, cfgMultaXp, cfgMultaPct]) => {
+        fetch('/config/multa_pct').then(r => r.json()).catch(() => ({ valor: '50' })),
+        fetch('/config/mensaje_premio').then(r => r.json()).catch(() => ({ valor: '' })),
+        fetch('/config/mensaje_multa').then(r => r.json()).catch(() => ({ valor: '' }))
+    ]).then(([cfgOro, cfgGemas, anunciosAuto, cfgBienvenida, cfgP1, cfgP2, cfgP3, cfgMultaXp, cfgMultaPct, cfgMsgPremio, cfgMsgMulta]) => {
         const contenido = document.getElementById('contenido')
         const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
         let html = `<h1>⚙️ Ajustes</h1>`
@@ -1417,6 +1419,17 @@ function cargarAjustes() {
                             style="width:100px; padding:7px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--red); font-family:Cinzel,serif; font-size:16px; font-weight:700">
                         <span style="font-size:13px; color:var(--muted)">% del costo de misión</span>
                     </div>
+                </div>
+                <div>
+                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">MENSAJE AL ENTREGAR RECOMPENSAS</p>
+                    <p style="font-size:12px; color:var(--muted); font-style:italic; margin-bottom:6px">Variables: <b>{username1}</b>, <b>{username2}</b>, <b>{username3}</b>, <b>{recompensa1}</b>, <b>{recompensa2}</b>, <b>{recompensa3}</b></p>
+                    <textarea id="ajuste-msg-premio" placeholder="Ej: ¡Felicitaciones {username1}, {username2} y {username3}! 🏆"
+                        style="width:100%; padding:10px 14px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; resize:vertical; min-height:70px; outline:none">${cfgMsgPremio.valor || ''}</textarea>
+                </div>
+                <div>
+                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">MENSAJE AL APLICAR MULTAS</p>
+                    <textarea id="ajuste-msg-multa" placeholder="Ej: Se han aplicado multas a quienes no cumplieron el mínimo de XP. ⚠️"
+                        style="width:100%; padding:10px 14px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; resize:vertical; min-height:70px; outline:none">${cfgMsgMulta.valor || ''}</textarea>
                 </div>
                 <button class="btn-primary" style="width:fit-content" onclick="guardarAjustesPremiosMultas()">💾 Guardar cambios</button>
             </div>
@@ -1599,12 +1612,16 @@ function guardarAjustesPremiosMultas() {
     const pct3 = document.getElementById('ajuste-premio-pct-3')?.value || '5'
     const xp = document.getElementById('ajuste-multa-xp')?.value || '0'
     const pctMulta = document.getElementById('ajuste-multa-pct')?.value || '50'
+    const msgPremio = document.getElementById('ajuste-msg-premio')?.value || ''
+    const msgMulta = document.getElementById('ajuste-msg-multa')?.value || ''
     Promise.all([
         fetch('/config/premio_pct_1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: pct1 }) }).then(r => r.json()),
         fetch('/config/premio_pct_2', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: pct2 }) }).then(r => r.json()),
         fetch('/config/premio_pct_3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: pct3 }) }).then(r => r.json()),
         fetch('/config/multa_xp_minimo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: xp }) }).then(r => r.json()),
-        fetch('/config/multa_pct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: pctMulta }) }).then(r => r.json())
+        fetch('/config/multa_pct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: pctMulta }) }).then(r => r.json()),
+        fetch('/config/mensaje_premio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: msgPremio }) }).then(r => r.json()),
+        fetch('/config/mensaje_multa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ valor: msgMulta }) }).then(r => r.json())
     ]).then(() => mostrarToast('✓ Ajustes guardados'))
     .catch(() => mostrarToast('Error al guardar', 'error'))
 }
@@ -1632,18 +1649,13 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
         // Panel premios
         let htmlPremios = ''
         if (imagenMision) {
-            const recompensas = ultima.quest?.rewards || []
             const xpTotal = ultima.xp || 0
             htmlPremios += `<div style="display:flex; gap:16px; margin-bottom:16px; padding:12px 16px; background:rgba(160,128,64,0.1); border:1px solid rgba(160,128,64,0.25); border-radius:var(--radius-sm); flex-wrap:wrap; align-items:flex-start">
-                <img src="${imagenMision}" style="width:120px; height:120px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">
+                <img src="${imagenMision}" style="width:180px; height:180px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">
                 <div style="display:flex; flex-direction:column; gap:6px">
                     <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px">ÚLTIMA MISIÓN COMPLETADA</p>
                     <p style="font-size:13px; color:var(--ink-light)">${fechaMision}</p>
                     <p style="font-size:13px; color:var(--muted)">XP total del clan: <b style="color:var(--ink)">${xpTotal.toLocaleString()}</b></p>
-                    ${recompensas.length > 0 ? `<p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-top:4px">RECOMPENSAS</p>
-                    <div style="display:flex; flex-wrap:wrap; gap:6px">
-                        ${recompensas.map(r => `<span style="font-size:12px; background:rgba(160,128,64,0.15); border:1px solid rgba(160,128,64,0.3); border-radius:3px; padding:2px 8px; color:var(--ink-light)">${r.type === 'GOLD' ? '🥇' : r.type === 'GEM' ? '💎' : '🎁'} ${r.amount || 1}${r.avatarItemId ? ' · ' + r.avatarItemId : ''}</span>`).join('')}
-                    </div>` : ''}
                 </div>
             </div>`
         }
@@ -1656,7 +1668,7 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
                 htmlPremios += `<tr><td>${medallas[i]}</td><td>${p.username || p.playerId}</td><td>${p.xp || 0}</td><td>+🥇 ${premiosOro[i]}</td></tr>`
             })
             htmlPremios += `</table>`
-            const premiosPorId = top3.map((p, i) => ({ pid: p.playerId, oro: premiosOro[i] }))
+            const premiosPorId = top3.map((p, i) => ({ pid: p.playerId, username: p.username || p.playerId, oro: premiosOro[i] }))
             htmlPremios += `<button class="btn-primary" style="margin-top:14px" onclick="aplicarPremios(${JSON.stringify(premiosPorId)})">🏆 Entregar recompensas</button>`
         }
         document.getElementById('panel-premios').innerHTML = htmlPremios
@@ -1690,6 +1702,7 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
 function aplicarPremios(premios) {
     const resumen = premios.map((p, i) => `${['1ro','2do','3ro'][i]}: 🥇 ${p.oro}`).join(' · ')
     if (!confirm(`¿Entregar recompensas?\n${resumen}`)) return
+    // Primero entregar el oro
     Promise.all(premios.map(p =>
         fetch(`/clan/carteras/${p.pid}`, {
             method: 'PATCH',
@@ -1700,6 +1713,25 @@ function aplicarPremios(premios) {
         mostrarToast('✓ Recompensas entregadas')
         const btn = document.querySelector('#panel-premios button')
         if (btn) { btn.disabled = true; btn.textContent = '✓ Ya entregado' }
+        // Luego enviar mensaje al chat si está configurado
+        fetch('/config/mensaje_premio').then(r => r.json()).then(cfg => {
+            let msg = cfg.valor || ''
+            if (!msg) return
+            // Reemplazar variables con los datos reales
+            const usernames = premios.map(p => p.username || p.pid)
+            const oros = premios.map(p => p.oro)
+            msg = msg.replace(/{username1}/g, usernames[0] || '')
+                     .replace(/{username2}/g, usernames[1] || '')
+                     .replace(/{username3}/g, usernames[2] || '')
+                     .replace(/{recompensa1}/g, oros[0] !== undefined ? `🥇 ${oros[0]}` : '')
+                     .replace(/{recompensa2}/g, oros[1] !== undefined ? `🥇 ${oros[1]}` : '')
+                     .replace(/{recompensa3}/g, oros[2] !== undefined ? `🥇 ${oros[2]}` : '')
+            fetch('/clan/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            }).catch(() => {})
+        }).catch(() => {})
     }).catch(() => mostrarToast('Error al entregar recompensas', 'error'))
 }
 
@@ -1715,6 +1747,16 @@ function aplicarMultas(playerIds, multaOro) {
         mostrarToast('✓ Multas aplicadas')
         const btn = document.querySelector('#panel-multas button')
         if (btn) { btn.disabled = true; btn.textContent = '✓ Ya aplicado' }
+        // Enviar mensaje al chat si está configurado
+        fetch('/config/mensaje_multa').then(r => r.json()).then(cfg => {
+            const msg = cfg.valor || ''
+            if (!msg) return
+            fetch('/clan/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            }).catch(() => {})
+        }).catch(() => {})
     }).catch(() => mostrarToast('Error al aplicar multas', 'error'))
 }
 
