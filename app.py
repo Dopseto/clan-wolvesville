@@ -275,8 +275,8 @@ def procesar_comandos_chat():
         if not mensajes:
             return
 
-        # Solo procesar el último mensaje
-        ultimo = mensajes[-1]
+        # Solo procesar el mensaje más reciente (el primero de la lista)
+        ultimo = mensajes[0]
         if ultimo.get("date", "") <= ultima:
             return
 
@@ -286,9 +286,8 @@ def procesar_comandos_chat():
         msg = (ultimo.get("msg") or "").strip()
         pid = ultimo.get("playerId", "")
 
-        # Ignorar mensajes del sistema, del bot (tienen playerBotId), o respuestas del bot
+        # Ignorar mensajes del sistema, del bot, o respuestas del bot
         if ultimo.get("isSystem"): return
-        if "playerBotId" in ultimo: return
         if msg.startswith("[Bot]"): return
 
         # Cargar configuración de comandos
@@ -611,10 +610,6 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/clan/logs":
                 self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs"))
-                return
-
-            if parsed.path == "/clan/chat":
-                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/chat"))
                 return
 
             if parsed.path == "/clan/carteras":
