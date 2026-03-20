@@ -762,6 +762,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/votes"))
                 return
 
+            if parsed.path == "/clan/quests/history":
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/history"))
+                return
+
             if parsed.path == "/clan/announcements":
                 self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements"))
                 return
