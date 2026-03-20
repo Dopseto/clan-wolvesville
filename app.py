@@ -254,7 +254,8 @@ def set_config(clave, valor):
 LEADER_ID = "304dec10-4074-40ff-884d-392099bacdf1"  # ID del líder del clan
 
 def obtener_comandos_bot():
-    return supabase_request("GET", "comandos_bot?select=*&order=id.asc")
+    rows = supabase_request("GET", "comandos_bot?select=*&order=id.asc")
+    return sorted(rows, key=lambda c: (0 if c["nombre"] == "!comandos" else 1, c["id"]))
 
 def es_lider_o_colider(player_id):
     """Verifica si un jugador es líder o co-líder del clan."""
@@ -334,9 +335,9 @@ def procesar_comandos_chat():
             acceso = cfg.get("!comandos", "desactivado")
             if acceso == "desactivado": return
             if acceso == "lideres" and not es_lider_o_colider(pid): return
-            activos = [c["nombre"] for c in comandos if c.get("acceso") != "desactivado"]
+            activos = [c["nombre"] for c in sorted(comandos, key=lambda c: (0 if c["nombre"] == "!comandos" else 1, c["id"])) if c.get("acceso") != "desactivado"]
             if activos:
-                respuesta = "[Bot] Comandos disponibles: " + " · ".join(activos)
+                respuesta = "[Bot] Comandos disponibles:\n" + "\n".join(activos)
             else:
                 respuesta = "[Bot] No hay comandos activos en este momento."
             try:
