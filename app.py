@@ -329,6 +329,99 @@ def procesar_comandos_chat():
             except Exception as e:
                 print(f"[CHAT BOT] Error al responder !info: {e}")
 
+        # !comandos
+        elif msg.lower() == "!comandos":
+            acceso = cfg.get("!comandos", "desactivado")
+            if acceso == "desactivado": return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
+            activos = [c["nombre"] for c in comandos if c.get("acceso") != "desactivado"]
+            if activos:
+                respuesta = "[Bot] Comandos disponibles: " + " · ".join(activos)
+            else:
+                respuesta = "[Bot] No hay comandos activos en este momento."
+            try:
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !comandos: {e}")
+
+        # !donarOro @usuario cantidad
+        elif msg.lower().startswith("!donaroro "):
+            acceso = cfg.get("!donarOro", "desactivado")
+            if acceso == "desactivado": return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
+            partes = msg.split()
+            # Formato esperado: !donarOro @usuario cantidad
+            if len(partes) != 3 or not partes[1].startswith("@"):
+                respuesta = "[Bot] Uso correcto: !donarOro @usuario cantidad"
+            else:
+                destinatario = partes[1][1:].lower()  # quitar el @
+                try:
+                    cantidad = int(partes[2])
+                    if cantidad <= 0:
+                        respuesta = "[Bot] La cantidad debe ser mayor a 0."
+                    else:
+                        cartera_origen = carteras_por_pid.get(pid)
+                        cartera_destino = carteras_por_username.get(destinatario)
+                        if not cartera_origen:
+                            respuesta = "[Bot] No encontré tu cartera."
+                        elif not cartera_destino:
+                            respuesta = f"[Bot] No encontré la cartera de @{destinatario}."
+                        elif cartera_origen["player_id"] == cartera_destino["player_id"]:
+                            respuesta = "[Bot] No podés donarte a vos mismo."
+                        elif (cartera_origen.get("oro") or 0) < cantidad:
+                            respuesta = f"[Bot] Fondos insuficientes. Tu saldo actual: 🥇 {cartera_origen.get('oro', 0)} oro."
+                        else:
+                            nuevo_origen = (cartera_origen.get("oro") or 0) - cantidad
+                            nuevo_destino = (cartera_destino.get("oro") or 0) + cantidad
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_origen['player_id']}", {"oro": nuevo_origen})
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_destino['player_id']}", {"oro": nuevo_destino})
+                            respuesta = f"[Bot] ✅ {cartera_origen['username']} donó 🥇 {cantidad} oro a {cartera_destino['username']}. Saldo restante: 🥇 {nuevo_origen}."
+                except ValueError:
+                    respuesta = "[Bot] La cantidad debe ser un número entero."
+            try:
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !donarOro: {e}")
+
+        # !donarGemas @usuario cantidad
+        elif msg.lower().startswith("!donargemas "):
+            acceso = cfg.get("!donarGemas", "desactivado")
+            if acceso == "desactivado": return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
+            partes = msg.split()
+            # Formato esperado: !donarGemas @usuario cantidad
+            if len(partes) != 3 or not partes[1].startswith("@"):
+                respuesta = "[Bot] Uso correcto: !donarGemas @usuario cantidad"
+            else:
+                destinatario = partes[1][1:].lower()  # quitar el @
+                try:
+                    cantidad = int(partes[2])
+                    if cantidad <= 0:
+                        respuesta = "[Bot] La cantidad debe ser mayor a 0."
+                    else:
+                        cartera_origen = carteras_por_pid.get(pid)
+                        cartera_destino = carteras_por_username.get(destinatario)
+                        if not cartera_origen:
+                            respuesta = "[Bot] No encontré tu cartera."
+                        elif not cartera_destino:
+                            respuesta = f"[Bot] No encontré la cartera de @{destinatario}."
+                        elif cartera_origen["player_id"] == cartera_destino["player_id"]:
+                            respuesta = "[Bot] No podés donarte a vos mismo."
+                        elif (cartera_origen.get("gemas") or 0) < cantidad:
+                            respuesta = f"[Bot] Fondos insuficientes. Tu saldo actual: 💎 {cartera_origen.get('gemas', 0)} gemas."
+                        else:
+                            nuevo_origen = (cartera_origen.get("gemas") or 0) - cantidad
+                            nuevo_destino = (cartera_destino.get("gemas") or 0) + cantidad
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_origen['player_id']}", {"gemas": nuevo_origen})
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_destino['player_id']}", {"gemas": nuevo_destino})
+                            respuesta = f"[Bot] ✅ {cartera_origen['username']} donó 💎 {cantidad} gemas a {cartera_destino['username']}. Saldo restante: 💎 {nuevo_origen}."
+                except ValueError:
+                    respuesta = "[Bot] La cantidad debe ser un número entero."
+            try:
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !donarGemas: {e}")
+
         print(f"[CHAT BOT] Último mensaje procesado: {msg[:50]}")
 
     except Exception as e:
