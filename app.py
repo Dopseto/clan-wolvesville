@@ -547,6 +547,84 @@ def detectar_nuevos_miembros():
     except Exception as e:
         print(f"[NUEVO MIEMBRO] Error general: {e}")
 
+
+# =================== PARTICIPACIÓN EN MISIONES ===================
+def registrar_participacion_mision():
+    """Detecta si hay una nueva misión activa y registra quién participa y quién no."""
+    try:
+        quest_data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active")
+        if not quest_data or not quest_data.get("quest"):
+            return  # No hay misión activa
+
+        quest = quest_data.get("quest", {})
+        mission_id = quest.get("id", "")
+        if not mission_id:
+            return
+
+        # Verificar si ya registramos esta misión
+        ultima = get_config("ultima_mision_registrada")
+        if ultima == mission_id:
+            return  # Ya fue procesada
+
+        # Fecha de inicio de la misión
+        tier_start = quest_data.get("tierStartTime", "")
+        mission_date = tier_start[:10] if tier_start else time.strftime("%Y-%m-%d", time.gmtime())
+
+        # Obtener participantes actuales de la misión
+        participants = quest_data.get("participants", [])
+        ids_participantes = {p.get("playerId") for p in participants if p.get("playerId")}
+
+        # Obtener todos los miembros del clan
+        members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members")
+        if not members:
+            return
+
+        # Obtener fechas de ingreso desde los logs para no registrar misiones previas al ingreso
+        logs = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
+        fecha_ingreso = {}
+        for log in (logs or []):
+            if log.get("action", "").upper() == "PLAYER_JOINED":
+                pid = log.get("playerId", "")
+                fecha = log.get("creationTime", "")[:10]
+                if pid and fecha:
+                    # Guardar la fecha de ingreso más reciente para cada jugador
+                    if pid not in fecha_ingreso or fecha > fecha_ingreso[pid]:
+                        fecha_ingreso[pid] = fecha
+
+        # Registrar participación para cada miembro
+        for m in members:
+            pid = m.get("playerId", "")
+            username = m.get("username", "")
+            if not pid:
+                continue
+
+            # Si el miembro se unió después del inicio de esta misión, no registrar
+            ingreso = fecha_ingreso.get(pid, "")
+            if ingreso and ingreso > mission_date:
+                continue
+
+            participo = pid in ids_participantes
+
+            # Verificar si ya existe el registro para este jugador en esta misión
+            existente = supabase_request("GET", f"participacion?player_id=eq.{pid}&mission_id=eq.{mission_id}&select=id")
+            if existente:
+                continue  # Ya registrado
+
+            supabase_request("POST", "participacion", {
+                "player_id": pid,
+                "username": username,
+                "mission_id": mission_id,
+                "mission_date": mission_date,
+                "participo": participo
+            })
+
+        # Marcar misión como registrada
+        set_config("ultima_mision_registrada", mission_id)
+        print(f"[PARTICIPACION] Misión {mission_id} registrada — {len(members)} miembros procesados")
+
+    except Exception as e:
+        print(f"[PARTICIPACION] Error: {e}")
+
 # =================== API WOLVESVILLE ===================
 def consultar_api(url):
     req = urllib.request.Request(url)
@@ -716,6 +794,7 @@ class Handler(BaseHTTPRequestHandler):
                 verificar_y_publicar_anuncios()
                 procesar_comandos_chat()
                 detectar_nuevos_miembros()
+                registrar_participacion_mision()
                 self.send_json({"ok": True})
                 return
 
@@ -764,6 +843,11 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/clan/quests/history":
                 self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/history"))
+                return
+
+            if parsed.path == "/clan/estadisticas":
+                rows = supabase_request("GET", "participacion?select=*&order=mission_date.asc")
+                self.send_json(rows)
                 return
 
             if parsed.path == "/clan/announcements":

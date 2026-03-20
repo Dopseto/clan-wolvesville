@@ -944,9 +944,113 @@ function mostrarLogs(logs) {
 
 // =================== STATS ===================
 function cargarStats() {
-    document.getElementById('contenido').innerHTML = `
-        <h1>📊 Estadísticas</h1>
-        <div class="card"><p style="color:var(--muted); font-style:italic">Próximamente...</p></div>`
+    const contenido = document.getElementById('contenido')
+    contenido.innerHTML = `<h1>📊 Estadísticas</h1><p class="cargando">Cargando...</p>`
+
+    Promise.all([
+        fetch('/clan/estadisticas').then(r => r.json()),
+        fetch('/clan/members').then(r => r.json())
+    ]).then(([rows, members]) => {
+        const miembrosActuales = new Set(members.map(m => m.playerId))
+
+        // Agrupar por player_id
+        const porJugador = {}
+        rows.forEach(r => {
+            if (!porJugador[r.player_id]) {
+                porJugador[r.player_id] = { username: r.username, misiones: [] }
+            }
+            porJugador[r.player_id].misiones.push({
+                mission_id: r.mission_id,
+                mission_date: r.mission_date,
+                participo: r.participo
+            })
+        })
+
+        // Obtener lista de misiones únicas ordenadas
+        const misionesUnicas = [...new Set(rows.map(r => r.mission_date))].sort()
+
+        if (misionesUnicas.length === 0) {
+            contenido.innerHTML = `<h1>📊 Estadísticas</h1>
+                <div class="card"><p style="color:var(--muted); font-style:italic">Aún no hay misiones registradas. Los datos se empezarán a guardar con la próxima misión activa.</p></div>`
+            return
+        }
+
+        // Calcular % participación y ordenar
+        const jugadores = Object.entries(porJugador).map(([pid, data]) => {
+            const total = data.misiones.length
+            const participadas = data.misiones.filter(m => m.participo).length
+            const pct = total > 0 ? Math.round(participadas / total * 100) : 0
+            return { pid, username: data.username, misiones: data.misiones, total, participadas, pct, enClan: miembrosActuales.has(pid) }
+        }).sort((a, b) => b.pct - a.pct)
+
+        const colorPct = pct => pct >= 80 ? '#2d6a1e' : pct >= 60 ? '#8b6914' : pct >= 40 ? '#c47a2a' : pct >= 20 ? '#8b2010' : '#5a3c1e'
+        const labelPct = pct => pct >= 80 ? 'EXCELENTE' : pct >= 60 ? 'BUENO' : pct >= 40 ? 'REGULAR' : pct >= 20 ? 'MALO' : 'PÉSIMO'
+
+        let html = `<h1>📊 Estadísticas</h1>`
+
+        // Leyenda
+        html += `<div class="card">
+            <h3>📋 Participación en misiones</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:14px">
+                Registro de participación desde que el bot comenzó a trackear. Hacé click en un miembro para ver su historial.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px">
+                <span style="font-size:12px; color:var(--muted)">
+                    <span style="color:#2d6a1e">●</span> Excelente (80-100%)
+                    <span style="color:#8b6914; margin-left:8px">●</span> Bueno (60-79%)
+                    <span style="color:#c47a2a; margin-left:8px">●</span> Regular (40-59%)
+                    <span style="color:#8b2010; margin-left:8px">●</span> Malo (20-39%)
+                    <span style="color:#5a3c1e; margin-left:8px">●</span> Pésimo (0-19%)
+                </span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">`
+
+        jugadores.forEach(j => {
+            const color = colorPct(j.pct)
+            const label = labelPct(j.pct)
+            const opacidad = j.enClan ? '1' : '0.5'
+            html += `
+            <div style="border:1px solid rgba(160,128,64,0.25); border-radius:var(--radius-sm); overflow:hidden; opacity:${opacidad}">
+                <div onclick="toggleHistorial('hist-${j.pid}')"
+                    style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; background:rgba(${j.enClan ? '160,128,64' : '100,80,40'},0.08)">
+                    <div>
+                        <span style="font-family:Cinzel,serif; font-size:13px; font-weight:600; color:var(--ink)">${j.username}</span>
+                        ${!j.enClan ? `<span style="font-size:10px; color:var(--muted); margin-left:8px; font-style:italic">(ya no en el clan)</span>` : ''}
+                        <p style="font-size:12px; color:var(--muted); margin-top:2px">${j.participadas} de ${j.total} misiones</p>
+                    </div>
+                    <div style="text-align:right">
+                        <span style="font-family:Cinzel,serif; font-size:18px; font-weight:700; color:${color}">${j.pct}%</span>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:${color}; letter-spacing:1px">${label}</p>
+                    </div>
+                </div>
+                <div id="hist-${j.pid}" style="display:none; padding:12px 16px; border-top:1px solid rgba(160,128,64,0.2); background:rgba(255,252,235,0.3)">
+                    <div style="display:flex; flex-direction:column; gap:6px">
+                        ${j.misiones.sort((a,b) => b.mission_date.localeCompare(a.mission_date)).map(m => {
+                            const fecha = m.mission_date.split('-').reverse().join('-')
+                            return `<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:3px; background:rgba(${m.participo ? '45,106,30' : '139,32,16'},0.08); border:1px solid rgba(${m.participo ? '45,106,30' : '139,32,16'},0.2)">
+                                <span style="font-size:13px; color:var(--ink)">${fecha}</span>
+                                <span style="font-size:12px; font-family:Cinzel,serif; color:${m.participo ? '#2d6a1e' : '#8b2010'}">
+                                    ${m.participo ? '✓ Participó' : '✗ No participó'}
+                                </span>
+                            </div>`
+                        }).join('')}
+                    </div>
+                </div>
+            </div>`
+        })
+
+        html += `</div></div>`
+        contenido.innerHTML = html
+
+    }).catch(() => {
+        document.getElementById('contenido').innerHTML = `<h1>📊 Estadísticas</h1>
+            <div class="card"><p style="color:var(--muted)">Error al cargar estadísticas</p></div>`
+    })
+}
+
+function toggleHistorial(id) {
+    const el = document.getElementById(id)
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'
 }
 
 // =================== TRACKER ===================
