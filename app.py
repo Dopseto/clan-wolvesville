@@ -342,7 +342,11 @@ def procesar_comandos_chat():
             acceso = cfg.get("!comandos", "desactivado")
             if acceso == "desactivado": return
             if acceso == "lideres" and not es_lider_o_colider(pid): return
-            activos = [c["nombre"] for c in sorted(comandos, key=lambda c: (0 if c["nombre"] == "!comandos" else 1, c["id"])) if c.get("acceso") != "desactivado"]
+            activos = [
+                c["nombre"] + (" (solo líderes)" if c.get("acceso") == "lideres" else "")
+                for c in sorted(comandos, key=lambda c: (0 if c["nombre"] == "!comandos" else 1, c["id"]))
+                if c.get("acceso") != "desactivado"
+            ]
             if activos:
                 respuesta = "[Bot] Comandos disponibles:\n" + "\n".join(activos)
             else:
