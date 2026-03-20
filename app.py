@@ -304,7 +304,14 @@ def procesar_comandos_chat():
             acceso = cfg.get("!cartera", "desactivado")
             if acceso == "desactivado": return
             if acceso == "lideres" and not es_lider_o_colider(pid): return
-            cartera = carteras_por_pid.get(pid)
+            # Sincronizar donaciones antes de mostrar el saldo
+            try:
+                sincronizar_donaciones()
+            except Exception as e:
+                print(f"[CHAT BOT] Error al sincronizar en !cartera: {e}")
+            # Releer la cartera ya actualizada
+            cartera_actualizada = supabase_request("GET", f"carteras?player_id=eq.{pid}&select=*")
+            cartera = cartera_actualizada[0] if cartera_actualizada else None
             if cartera:
                 respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
             else:
