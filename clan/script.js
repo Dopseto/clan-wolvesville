@@ -1632,11 +1632,18 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
         // Panel premios
         let htmlPremios = ''
         if (imagenMision) {
-            htmlPremios += `<div style="display:flex; align-items:center; gap:14px; margin-bottom:16px; padding:10px 14px; background:rgba(160,128,64,0.1); border:1px solid rgba(160,128,64,0.25); border-radius:var(--radius-sm)">
-                <img src="${imagenMision}" style="width:60px; height:60px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">
-                <div>
-                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:4px">ÚLTIMA MISIÓN COMPLETADA</p>
+            const recompensas = ultima.quest?.rewards || []
+            const xpTotal = ultima.xp || 0
+            htmlPremios += `<div style="display:flex; gap:16px; margin-bottom:16px; padding:12px 16px; background:rgba(160,128,64,0.1); border:1px solid rgba(160,128,64,0.25); border-radius:var(--radius-sm); flex-wrap:wrap; align-items:flex-start">
+                <img src="${imagenMision}" style="width:120px; height:120px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">
+                <div style="display:flex; flex-direction:column; gap:6px">
+                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px">ÚLTIMA MISIÓN COMPLETADA</p>
                     <p style="font-size:13px; color:var(--ink-light)">${fechaMision}</p>
+                    <p style="font-size:13px; color:var(--muted)">XP total del clan: <b style="color:var(--ink)">${xpTotal.toLocaleString()}</b></p>
+                    ${recompensas.length > 0 ? `<p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-top:4px">RECOMPENSAS</p>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px">
+                        ${recompensas.map(r => `<span style="font-size:12px; background:rgba(160,128,64,0.15); border:1px solid rgba(160,128,64,0.3); border-radius:3px; padding:2px 8px; color:var(--ink-light)">${r.type === 'GOLD' ? '🥇' : r.type === 'GEM' ? '💎' : '🎁'} ${r.amount || 1}${r.avatarItemId ? ' · ' + r.avatarItemId : ''}</span>`).join('')}
+                    </div>` : ''}
                 </div>
             </div>`
         }
