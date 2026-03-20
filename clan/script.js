@@ -1668,8 +1668,8 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
                 htmlPremios += `<tr><td>${medallas[i]}</td><td>${p.username || p.playerId}</td><td>${p.xp || 0}</td><td>+🥇 ${premiosOro[i]}</td></tr>`
             })
             htmlPremios += `</table>`
-            const premiosPorId = top3.map((p, i) => ({ pid: p.playerId, username: p.username || p.playerId, oro: premiosOro[i] }))
-            htmlPremios += `<button class="btn-primary" style="margin-top:14px" onclick="aplicarPremios(${JSON.stringify(premiosPorId)})">🏆 Entregar recompensas</button>`
+            window._premiosPendientes = top3.map((p, i) => ({ pid: p.playerId, username: p.username || p.playerId, oro: premiosOro[i] }))
+            htmlPremios += `<button class="btn-primary" style="margin-top:14px" onclick="aplicarPremios(window._premiosPendientes)">🏆 Entregar recompensas</button>`
         }
         document.getElementById('panel-premios').innerHTML = htmlPremios
 
@@ -1688,7 +1688,8 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
                     htmlMultas += `<tr><td>${p.username || p.playerId}</td><td style="color:var(--red)">${p.xp || 0}</td><td>${multaXpMin}</td><td>-🥇 ${multaOroCalculado}</td></tr>`
                 })
                 htmlMultas += `</table>`
-                htmlMultas += `<button class="btn-primary" style="margin-top:14px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="aplicarMultas(${JSON.stringify(multados.map(p => p.playerId))}, ${multaOroCalculado})">⚠️ Aplicar multas</button>`
+                window._multasPendientes = { playerIds: multados.map(p => p.playerId), oro: multaOroCalculado }
+                htmlMultas += `<button class="btn-primary" style="margin-top:14px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="aplicarMultas(window._multasPendientes.playerIds, window._multasPendientes.oro)">⚠️ Aplicar multas</button>`
             }
         }
         document.getElementById('panel-multas').innerHTML = htmlMultas
