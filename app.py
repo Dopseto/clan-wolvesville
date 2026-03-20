@@ -186,9 +186,13 @@ def guardar_anuncio_auto(anuncio_id, mensaje, activo, dia_semana, hora_gmt):
         "hora_gmt": hora_gmt
     })
 
-def marcar_publicado(anuncio_id):
+def marcar_publicado(anuncio_id, dia, hora):
     ahora = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    supabase_request("PATCH", f"anuncios_auto?id=eq.{anuncio_id}", {"ultima_publicacion": ahora})
+    supabase_request("PATCH", f"anuncios_auto?id=eq.{anuncio_id}", {
+        "ultima_publicacion": ahora,
+        "ultimo_dia_publicado": dia,
+        "ultima_hora_publicada": hora
+    })
 
 def verificar_y_publicar_anuncios():
     """Verifica si hay anuncios automáticos que deban publicarse y los publica."""
@@ -197,6 +201,7 @@ def verificar_y_publicar_anuncios():
         ahora = time.gmtime()
         dia_hoy = ahora.tm_wday  # 0=lunes, 6=domingo
         hora_actual = f"{ahora.tm_hour:02d}:{ahora.tm_min:02d}"
+        fecha_hoy = time.strftime("%Y-%m-%d", ahora)
 
         for a in anuncios:
             if not a.get("activo"): continue
@@ -204,18 +209,24 @@ def verificar_y_publicar_anuncios():
             if a.get("dia_semana") != dia_hoy: continue
             if a.get("hora_gmt", "") > hora_actual: continue  # aún no llegó la hora
 
-            # Verificar si ya fue publicado esta semana
+            # Verificar si ya fue publicado con esta misma configuración hoy
             ultima = a.get("ultima_publicacion")
+            ultimo_dia = a.get("ultimo_dia_publicado")
+            ultima_hora = a.get("ultima_hora_publicada")
+            dia_actual = a.get("dia_semana")
+            hora_programada = a.get("hora_gmt", "")
+
             if ultima:
-                ultima_t = time.strptime(ultima[:19], "%Y-%m-%dT%H:%M:%S")
-                dias_desde = (time.mktime(ahora) - time.mktime(ultima_t)) / 86400
-                if dias_desde < 6:  # publicado hace menos de 6 días = esta semana
+                ultima_fecha = ultima[:10]  # YYYY-MM-DD
+                # Si fue publicado hoy Y con la misma configuración de día/hora, no repetir
+                if ultima_fecha == fecha_hoy and ultimo_dia == dia_actual and ultima_hora == hora_programada:
                     continue
+                # Si fue publicado hoy pero la configuración cambió, publicar de nuevo
 
             # Publicar
             try:
                 post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": a["mensaje"]})
-                marcar_publicado(a["id"])
+                marcar_publicado(a["id"], dia_actual, hora_programada)
                 print(f"[ANUNCIO AUTO] Publicado: {a['mensaje'][:50]}")
             except Exception as e:
                 print(f"[ANUNCIO AUTO] Error al publicar: {e}")
