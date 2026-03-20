@@ -986,7 +986,10 @@ async function cargarSesion() {
             btn.onclick = function() { mostrarSeccion('admin', this) }
             navSection.appendChild(btn)
         }
-        // Tracker al final, solo para admin/lider
+    }
+    // Tracker solo para admin
+    if (data.rol === 'admin') {
+        const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-tracker')) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
