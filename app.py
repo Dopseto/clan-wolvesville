@@ -286,8 +286,9 @@ def procesar_comandos_chat():
         msg = (ultimo.get("msg") or "").strip()
         pid = ultimo.get("playerId", "")
 
-        # Ignorar mensajes del sistema, del bot, o respuestas del bot
+        # Ignorar mensajes del sistema, del bot (tienen playerBotId), o respuestas del bot
         if ultimo.get("isSystem"): return
+        if "playerBotId" in ultimo: return
         if msg.startswith("[Bot]"): return
 
         # Cargar configuración de comandos
