@@ -424,8 +424,10 @@ function cargarMiembros() {
     contenido.innerHTML = `<h1>👥 Miembros</h1><p class="cargando">Cargando miembros...</p>`
     Promise.all([
         fetch('/clan/members').then(r => r.json()),
-        fetch('/clan/carteras').then(r => r.json())
-    ]).then(([members, carteras]) => {
+        fetch('/clan/carteras').then(r => r.json()),
+        fetch('/config/costo_oro_mision').then(r => r.json()).catch(() => ({ valor: '700' })),
+        fetch('/config/costo_gemas_mision').then(r => r.json()).catch(() => ({ valor: '170' }))
+    ]).then(([members, carteras, cfgOro, cfgGemas]) => {
         const membrosReales = members.filter(m => m.status !== 'INVITED') 
         miembrosCache = membrosReales
         // Crear carteras para miembros que no tienen una todavía
@@ -439,7 +441,7 @@ function cargarMiembros() {
                 carteras[m.playerId] = { oro: 0, gemas: 0 }
             }
         })
-        mostrarMiembros(membrosReales, carteras)
+        mostrarMiembros(membrosReales, carteras, parseInt(cfgOro.valor) || 700, parseInt(cfgGemas.valor) || 170)
         cargarAvatares(membrosReales)
     }).catch(() => {
         contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted)">Error al cargar miembros</p></div>`
@@ -468,7 +470,7 @@ function cargarAvatares(members) {
     })
 }
 
-function mostrarMiembros(members, carteras = {}) {
+function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 170) {
     const contenido = document.getElementById('contenido')
     if (!members || members.length === 0) {
         contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted); font-style:italic">No hay miembros</p></div>`
@@ -509,13 +511,13 @@ function mostrarMiembros(members, carteras = {}) {
             <div style="display:flex; flex-direction:column; gap:12px">
                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
                     <span style="font-size:13px; color:var(--ink-light); min-width:16px">🥇</span>
-                    <input type="number" id="filtroOro" placeholder="Oro mínimo (ej: 500)" min="0"
+                    <input type="number" id="filtroOro" value="${costoOro}" min="0"
                         style="flex:1; min-width:160px; max-width:220px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
                     <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('oro')">✅ Activar con este oro</button>
                 </div>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
                     <span style="font-size:13px; color:var(--ink-light); min-width:16px">💎</span>
-                    <input type="number" id="filtroGemas" placeholder="Gemas mínimas (ej: 10)" min="0"
+                    <input type="number" id="filtroGemas" value="${costoGemas}" min="0"
                         style="flex:1; min-width:160px; max-width:220px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
                     <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('gemas')">✅ Activar con estas gemas</button>
                 </div>
