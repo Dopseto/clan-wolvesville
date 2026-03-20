@@ -500,7 +500,7 @@ def detectar_nuevos_miembros():
         # Filtrar solo logs nuevos con evento player_joined
         nuevos_ingresos = [
             l for l in logs
-            if l.get("creationTime", "") > ultima and l.get("action") == "player_joined"
+            if l.get("creationTime", "") > ultima and l.get("action", "").upper() == "PLAYER_JOINED"
         ]
 
         if not nuevos_ingresos:
