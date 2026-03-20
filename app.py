@@ -487,6 +487,61 @@ def sincronizar_donaciones():
 
     return {"ok": True, "procesadas": procesadas, "mensaje": f"{procesadas} cartera(s) actualizada(s)", "donaciones": nuevas}
 
+
+# =================== DETECCIÓN DE NUEVOS MIEMBROS ===================
+def detectar_nuevos_miembros():
+    """Revisa los logs del clan, detecta player_joined y crea cartera + bienvenida."""
+    try:
+        ultima = get_config("ultimo_log_procesado") or "2000-01-01T00:00:00.000Z"
+        logs = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
+        if not logs:
+            return
+
+        # Filtrar solo logs nuevos con evento player_joined
+        nuevos_ingresos = [
+            l for l in logs
+            if l.get("creationTime", "") > ultima and l.get("action") == "player_joined"
+        ]
+
+        if not nuevos_ingresos:
+            # Actualizar marca de tiempo con el log más reciente igual
+            ultimo_log = max(logs, key=lambda l: l.get("creationTime", ""))
+            ultima_fecha = ultimo_log.get("creationTime", "")
+            if ultima_fecha > ultima:
+                set_config("ultimo_log_procesado", ultima_fecha)
+            return
+
+        # Actualizar marca de tiempo al log más reciente procesado
+        ultima_nueva = max(l.get("creationTime", "") for l in nuevos_ingresos)
+        set_config("ultimo_log_procesado", ultima_nueva)
+
+        # Cargar carteras existentes para no crear duplicados
+        carteras_existentes = supabase_request("GET", "carteras?select=player_id")
+        ids_con_cartera = {r["player_id"] for r in carteras_existentes}
+
+        for log in nuevos_ingresos:
+            username = log.get("playerUsername", "")
+            player_id = log.get("playerId", "")
+
+            if not player_id or not username:
+                continue
+
+            # Crear cartera si no existe
+            if player_id not in ids_con_cartera:
+                upsert_cartera(player_id, username, 0, 0)
+                ids_con_cartera.add(player_id)
+                print(f"[NUEVO MIEMBRO] Cartera creada para {username}")
+
+            # Mensaje de bienvenida en el chat
+            try:
+                bienvenida = f"[Bot] ¡Bienvenido/a al clan, {username}! 🐺"
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": bienvenida})
+            except Exception as e:
+                print(f"[NUEVO MIEMBRO] Error al enviar bienvenida a {username}: {e}")
+
+    except Exception as e:
+        print(f"[NUEVO MIEMBRO] Error general: {e}")
+
 # =================== API WOLVESVILLE ===================
 def consultar_api(url):
     req = urllib.request.Request(url)
@@ -655,6 +710,7 @@ class Handler(BaseHTTPRequestHandler):
                 actualizar_actividad(sesion["username"])
                 verificar_y_publicar_anuncios()
                 procesar_comandos_chat()
+                detectar_nuevos_miembros()
                 self.send_json({"ok": True})
                 return
 
