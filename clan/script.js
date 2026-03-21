@@ -1121,6 +1121,10 @@ async function cargarSesion() {
             btn.onclick = function() { mostrarSeccion('ajustes', this) }
             navSection.appendChild(btn)
         }
+    }
+    // Admin solo para admin
+    if (data.rol === 'admin') {
+        const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-admin')) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
@@ -1129,7 +1133,6 @@ async function cargarSesion() {
             btn.onclick = function() { mostrarSeccion('admin', this) }
             navSection.appendChild(btn)
         }
-    }
     // Tracker solo para admin
     if (data.rol === 'admin') {
         const navSection = document.querySelector('.nav-section')
@@ -1151,7 +1154,7 @@ async function cerrarSesion() {
 
 // =================== PANEL ADMIN ===================
 function cargarAdmin() {
-    if (rolActual !== 'admin' && rolActual !== 'lider') {
+    if (rolActual !== 'admin') {
         document.getElementById('contenido').innerHTML = `<h1>🛡️ Admin</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
         return
     }
