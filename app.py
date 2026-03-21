@@ -1152,6 +1152,22 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
+            if parsed.path == "/admin/resetear-password":
+                if sesion["rol"] != "admin":
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                username = data.get("username", "").strip()
+                nueva_password = data.get("nueva_password", "")
+                if not username or not nueva_password:
+                    self.send_json({"error": "Datos incompletos"})
+                    return
+                if len(nueva_password) < 4:
+                    self.send_json({"error": "La contraseña debe tener al menos 4 caracteres"})
+                    return
+                supabase_request("PATCH", f"usuarios?username=eq.{username}", {"password": hash_password(nueva_password)})
+                self.send_json({"ok": True})
+                return
+
             if parsed.path.startswith("/admin/usuarios/") and parsed.path.endswith("/aprobar"):
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)

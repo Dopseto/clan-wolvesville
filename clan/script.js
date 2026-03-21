@@ -231,7 +231,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     }
 
     html += `<div class="card">
-        <h3>🔄 Registro de donaciones <span style="font-family:Almendra,serif; font-size:11px; font-weight:400; color:var(--muted); font-style:italic; letter-spacing:0">— últimos 14 días</span></h3>
+        <h3>🔄 Registro de donaciones</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
             ${(rolActual === 'admin' || rolActual === 'lider') ? `<button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>` : ''}
             <button class="btn-tracker" onclick="abrirModalDonaciones()">📋 Ver registro completo</button>
@@ -1238,6 +1238,7 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
@@ -1265,6 +1266,7 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
@@ -1874,4 +1876,19 @@ function cambiarAccesoComando(id, acceso) {
         if (data.ok) { mostrarToast('✓ Comando actualizado'); cargarComandos() }
         else mostrarToast('Error: ' + data.error, 'error')
     }).catch(() => mostrarToast('Error al actualizar', 'error'))
+}
+
+function resetearPassword(username) {
+    const nueva = prompt(`Nueva contraseña temporal para ${username}:`)
+    if (!nueva) return
+    if (nueva.length < 4) { mostrarToast('La contraseña debe tener al menos 4 caracteres', 'error'); return }
+    if (!confirm(`¿Resetear la contraseña de ${username}?`)) return
+    fetch('/admin/resetear-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, nueva_password: nueva })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) mostrarToast(`✓ Contraseña de ${username} reseteada`)
+        else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+    }).catch(() => mostrarToast('Error al resetear', 'error'))
 }
