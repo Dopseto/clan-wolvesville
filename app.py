@@ -1223,7 +1223,7 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 user_id = parsed.path.split("/admin/usuarios/")[1].replace("/rol", "")
                 nuevo_rol = data.get("rol", "miembro")
-                if nuevo_rol not in ("miembro", "lider"):
+                if nuevo_rol not in ("miembro", "lider", "espectador"):
                     self.send_json({"error": "Rol inválido"})
                     return
                 cambiar_rol_usuario(user_id, nuevo_rol)

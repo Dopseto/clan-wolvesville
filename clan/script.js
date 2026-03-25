@@ -1083,8 +1083,8 @@ async function cargarSesion() {
     // Mostrar nombre de usuario y botón logout en sidebar
     const footer = document.querySelector('.sidebar-footer')
     if (footer) {
-        const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : ''
-        const rolColor = data.rol === 'admin' ? 'var(--accent)' : data.rol === 'lider' ? '#9b5e1a' : ''
+        const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : data.rol === 'espectador' ? '✦ ESPECTADOR ✦' : ''
+        const rolColor = data.rol === 'admin' ? 'var(--accent)' : data.rol === 'lider' ? '#9b5e1a' : data.rol === 'espectador' ? '#4a6b8a' : ''
         footer.innerHTML = `
             <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:8px">${data.username}</p>
             ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:10px">${rolLabel}</p>` : ''}
@@ -1100,6 +1100,23 @@ async function cargarSesion() {
     const btnTracker = document.getElementById('btn-tracker')
     if (btnTracker) {
         if (data.rol !== 'admin') btnTracker.style.display = 'none'
+    }
+
+    // Si es espectador, deshabilitar todos los controles con CSS global
+    if (data.rol === 'espectador') {
+        const style = document.createElement('style')
+        style.id = 'espectador-style'
+        style.textContent = `
+            #contenido button,
+            #contenido input,
+            #contenido textarea,
+            #contenido select {
+                pointer-events: none !important;
+                opacity: 0.5 !important;
+                cursor: not-allowed !important;
+            }
+        `
+        document.head.appendChild(style)
     }
 
     // Agregar botones en nav según rol — orden: Comandos, Ajustes, Admin, Tracker
@@ -1174,6 +1191,7 @@ function mostrarAdmin(usuarios) {
     const pendientes = usuarios.filter(u => !u.aprobado && u.rol !== 'admin')
     const lideres = usuarios.filter(u => u.aprobado && u.rol === 'lider')
     const miembros = usuarios.filter(u => u.aprobado && u.rol === 'miembro')
+    const espectadores = usuarios.filter(u => u.aprobado && u.rol === 'espectador')
     const admins = usuarios.filter(u => u.aprobado && u.rol === 'admin')
 
     // Solicitudes pendientes / desactivados
@@ -1265,6 +1283,36 @@ function mostrarAdmin(usuarios) {
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#2a5e8b,#1a3e6b)" onclick="cambiarRol(${u.id}, 'espectador', '${u.username}')">👁 Hacer Espectador</button>` : ''}
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
+                </div>
+            </div>`
+        })
+    }
+    html += `</div>`
+
+    // Espectadores
+    html += `<div class="card"><h3>👁 Espectadores</h3>`
+    if (espectadores.length === 0) {
+        html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay espectadores</p>`
+    } else {
+        espectadores.forEach(u => {
+            const conectado = estaConectado(u.ultima_actividad)
+            const luz = conectado
+                ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
+                : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center">
+                    ${luz}
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
+                    <span style="font-size:10px; color:#4a6b8a; margin-left:8px; font-family:Cinzel,serif">ESPECTADOR</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap">
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
@@ -1278,7 +1326,7 @@ function mostrarAdmin(usuarios) {
 }
 
 function cambiarRol(id, nuevoRol, username) {
-    const texto = nuevoRol === 'lider' ? `¿Subir a ${username} a Líder?` : `¿Bajar a ${username} a Miembro?`
+    const texto = nuevoRol === 'lider' ? `¿Subir a ${username} a Líder?` : nuevoRol === 'espectador' ? `¿Convertir a ${username} en Espectador?` : `¿Bajar a ${username} a Miembro?`
     if (!confirm(texto)) return
     fetch(`/admin/usuarios/${id}/rol`, {
         method: 'PUT',
