@@ -1660,6 +1660,24 @@ function cargarComandos() {
     fetch('/comandos').then(r => r.json()).then(comandos => {
         const contenido = document.getElementById('contenido')
         let html = `<h1>🤖 Comandos del bot</h1>`
+
+        // Formulario nuevo comando personalizado
+        html += `<div class="card">
+            <h3>➕ Agregar comando personalizado</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">El bot responderá automáticamente cuando alguien escriba el comando en el chat.</p>
+            <div style="display:flex; flex-direction:column; gap:12px">
+                <div>
+                    <label style="font-family:Cinzel,serif; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px">Nombre del comando</label>
+                    <input id="nuevo-cmd-nombre" type="text" placeholder="!ejemplo" style="width:100%; padding:9px 12px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none"/>
+                </div>
+                <div>
+                    <label style="font-family:Cinzel,serif; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px">Respuesta del bot</label>
+                    <textarea id="nuevo-cmd-respuesta" placeholder="Escribí el mensaje que responderá el bot..." style="width:100%; padding:9px 12px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none; resize:vertical; min-height:70px"></textarea>
+                </div>
+                <button class="btn-primary" style="align-self:flex-start" onclick="guardarComandoPersonalizado()">💾 Guardar comando</button>
+            </div>
+        </div>`
+
         html += `<div class="card">
             <h3>⚙️ Configuración de comandos</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
@@ -1688,6 +1706,7 @@ function cargarComandos() {
                                 onclick="cambiarAccesoComando(${c.id}, 'lideres')">👑 Solo líderes</button>
                             <button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)"
                                 onclick="cambiarAccesoComando(${c.id}, 'desactivado')">❌ Desactivar</button>
+                            ${c.personalizado ? `<button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#4a1a1a,#2a0a0a)" onclick="eliminarComandoPersonalizado(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>` : ''}
                         </div>
                     </div>
                 </div>`
@@ -1891,4 +1910,32 @@ function resetearPassword(username) {
         if (data.ok) mostrarToast(`✓ Contraseña de ${username} reseteada`)
         else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
     }).catch(() => mostrarToast('Error al resetear', 'error'))
+}
+
+function guardarComandoPersonalizado() {
+    const nombre = document.getElementById('nuevo-cmd-nombre').value.trim()
+    const respuesta = document.getElementById('nuevo-cmd-respuesta').value.trim()
+    if (!nombre || !respuesta) { mostrarToast('Completá nombre y respuesta', 'error'); return }
+    if (!nombre.startsWith('!')) { mostrarToast('El nombre debe empezar con !', 'error'); return }
+    fetch('/comandos/nuevo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, respuesta })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) {
+            mostrarToast(`✓ Comando ${nombre} creado`)
+            document.getElementById('nuevo-cmd-nombre').value = ''
+            document.getElementById('nuevo-cmd-respuesta').value = ''
+            cargarComandos()
+        } else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+    }).catch(() => mostrarToast('Error al crear comando', 'error'))
+}
+
+function eliminarComandoPersonalizado(id, nombre) {
+    if (!confirm(`¿Eliminar el comando ${nombre}? Esta acción no se puede deshacer.`)) return
+    fetch(`/comandos/${id}`, { method: 'DELETE' })
+        .then(r => r.json()).then(data => {
+            if (data.ok) { mostrarToast(`✓ Comando ${nombre} eliminado`); cargarComandos() }
+            else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+        }).catch(() => mostrarToast('Error al eliminar', 'error'))
 }

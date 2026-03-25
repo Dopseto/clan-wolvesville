@@ -436,6 +436,20 @@ def procesar_comandos_chat():
 
         print(f"[CHAT BOT] Último mensaje procesado: {msg[:50]}")
 
+        # Comandos personalizados
+        for c in comandos:
+            if not c.get("personalizado") or not c.get("respuesta"):
+                continue
+            if msg.lower() == c["nombre"].lower():
+                acceso = c.get("acceso", "desactivado")
+                if acceso == "desactivado": break
+                if acceso == "lideres" and not es_lider_o_colider(pid): break
+                try:
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": f"[Bot] {c['respuesta']}"})
+                except Exception as e:
+                    print(f"[CHAT BOT] Error al responder comando personalizado {c['nombre']}: {e}")
+                break
+
     except Exception as e:
         print(f"[CHAT BOT] Error general: {e}")
 
@@ -1123,6 +1137,32 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ok": True})
                 return
 
+            if parsed.path == "/comandos/nuevo":
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                nombre = data.get("nombre", "").strip()
+                respuesta_cmd = data.get("respuesta", "").strip()
+                if not nombre or not respuesta_cmd:
+                    self.send_json({"error": "Nombre y respuesta son obligatorios"})
+                    return
+                if not nombre.startswith("!"):
+                    self.send_json({"error": "El nombre debe empezar con !"})
+                    return
+                existentes = supabase_request("GET", f"comandos_bot?nombre=eq.{nombre}&select=id")
+                if existentes:
+                    self.send_json({"error": f"Ya existe un comando con el nombre {nombre}"})
+                    return
+                supabase_request("POST", "comandos_bot", {
+                    "nombre": nombre,
+                    "descripcion": respuesta_cmd[:60] + ("..." if len(respuesta_cmd) > 60 else ""),
+                    "respuesta": respuesta_cmd,
+                    "acceso": "todos",
+                    "personalizado": True
+                })
+                self.send_json({"ok": True})
+                return
+
             if parsed.path.startswith("/comandos/"):
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
@@ -1292,6 +1332,19 @@ class Handler(BaseHTTPRequestHandler):
             sesion = self.get_sesion()
             if not sesion:
                 self.send_json({"error": "No autorizado"}, 401)
+                return
+
+            if parsed.path.startswith("/comandos/"):
+                if sesion["rol"] not in ("admin", "lider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                cmd_id = parsed.path.split("/comandos/")[1]
+                cmd = supabase_request("GET", f"comandos_bot?id=eq.{cmd_id}&select=*")
+                if not cmd or not cmd[0].get("personalizado"):
+                    self.send_json({"error": "Solo se pueden eliminar comandos personalizados"})
+                    return
+                supabase_request("DELETE", f"comandos_bot?id=eq.{cmd_id}")
+                self.send_json({"ok": True})
                 return
 
             if parsed.path.startswith("/admin/usuarios/"):

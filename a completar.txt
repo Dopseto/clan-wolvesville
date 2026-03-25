@@ -1,4 +1,7 @@
-si alguien se va del clan, su base de datos de la cartera se borra instantaneamente?
-iniciar una mision resta el oro de las carteras automaticamente?
-es posible vincular para que el codigo detecte cuando es una mision que cuesta gemas y cuando cuesta oro? para evitar "iniciar mision de gemas -> descuenta oro de las carteras (en lugar de descontar gemas)"
-agregar comandos en el chat del clan, para que el bot detecte esas palabras claves y devuelva un resultado (en el mismo chat del clan)
+que la sesion no se cierre, guarde los datos del dispositivo para volver a iniciar mas rapido
+agregar comandos personalizados (yo agregar un comando cuando quiera bajo el nombre que quiera y que devuelva el texto que yo queira)
+arreglar estadisticas
+agregar filtro de orden a las estadisticas
+cambiar lo de "mision activa" en la sección inicio
+agregar rol "espectador" (acceso visual a todo pero los botones no reaccionan con ellos)
+arreglar registro de donaciones "nombre= N/A", "registro= +-*numero*"
