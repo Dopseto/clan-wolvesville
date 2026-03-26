@@ -207,8 +207,8 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     }
     html += `</div>`
 
-    // PREMIOS Y MULTAS (solo admin/lider)
-    if (rolActual === 'admin' || rolActual === 'lider') {
+    // PREMIOS Y MULTAS (admin, lider y espectador)
+    if (rolActual === 'admin' || rolActual === 'lider' || rolActual === 'espectador') {
         const premioOro1 = Math.round(costoOroDefault * premioPct1 / 100)
         const premioOro2 = Math.round(costoOroDefault * premioPct2 / 100)
         const premioOro3 = Math.round(costoOroDefault * premioPct3 / 100)
@@ -242,7 +242,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
 
     contenido.innerHTML = html
 
-    if (rolActual === 'admin' || rolActual === 'lider') {
+    if (rolActual === 'admin' || rolActual === 'lider' || rolActual === 'espectador') {
         cargarPremiosYMultas(costoOroDefault, premioPct1, premioPct2, premioPct3, multaXpMin, multaPct)
     }
 
@@ -1120,7 +1120,7 @@ async function cargarSesion() {
     }
 
     // Agregar botones en nav según rol — orden: Comandos, Ajustes, Admin, Tracker
-    if (data.rol === 'admin' || data.rol === 'lider') {
+    if (data.rol === 'admin' || data.rol === 'lider' || data.rol === 'espectador') {
         const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-comandos')) {
             const btn = document.createElement('button')
@@ -1139,8 +1139,8 @@ async function cargarSesion() {
             navSection.appendChild(btn)
         }
     }
-    // Admin y Tracker solo para admin
-    if (data.rol === 'admin') {
+    // Admin solo para admin y espectador (solo lectura para espectador)
+    if (data.rol === 'admin' || data.rol === 'espectador') {
         const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-admin')) {
             const btn = document.createElement('button')
@@ -1150,6 +1150,10 @@ async function cargarSesion() {
             btn.onclick = function() { mostrarSeccion('admin', this) }
             navSection.appendChild(btn)
         }
+    }
+    // Tracker solo para admin
+    if (data.rol === 'admin') {
+        const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-tracker')) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
@@ -1168,7 +1172,7 @@ async function cerrarSesion() {
 
 // =================== PANEL ADMIN ===================
 function cargarAdmin() {
-    if (rolActual !== 'admin') {
+    if (rolActual !== 'admin' && rolActual !== 'espectador') {
         document.getElementById('contenido').innerHTML = `<h1>🛡️ Admin</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
         return
     }
@@ -1459,7 +1463,7 @@ function eliminarTodosExMiembros() {
 
 // =================== AJUSTES ===================
 function cargarAjustes() {
-    if (rolActual !== 'admin' && rolActual !== 'lider') {
+    if (rolActual !== 'admin' && rolActual !== 'lider' && rolActual !== 'espectador') {
         document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
         return
     }
@@ -1700,7 +1704,7 @@ function guardarAnuncioAuto(id) {
 
 // =================== COMANDOS BOT ===================
 function cargarComandos() {
-    if (rolActual !== 'admin' && rolActual !== 'lider') {
+    if (rolActual !== 'admin' && rolActual !== 'lider' && rolActual !== 'espectador') {
         document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
         return
     }
