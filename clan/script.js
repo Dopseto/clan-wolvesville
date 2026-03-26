@@ -836,14 +836,23 @@ function cargarRegistroDonaciones() {
             return
         }
 
-        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Fecha</th></tr>`
+        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Descripción</th><th>Fecha</th></tr>`
         recientes.forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
             const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
+            const jugador = d.playerUsername || 'Bot'
+            const oro = d.gold != null && d.gold !== 0
+                ? `<span style="color:${d.gold < 0 ? 'var(--red)' : 'var(--accent-dark)'}">🥇 ${d.gold > 0 ? '+' : ''}${d.gold}</span>`
+                : '—'
+            const gemas = d.gems != null && d.gems !== 0
+                ? `<span style="color:${d.gems < 0 ? 'var(--red)' : '#7b2da8'}">💎 ${d.gems > 0 ? '+' : ''}${d.gems}</span>`
+                : '—'
+            const desc = d.description || d.action || d.type || '—'
             html += `<tr>
-                <td style="font-family:Cinzel,serif; font-weight:600">${d.playerUsername || 'N/A'}</td>
-                <td>${d.gold ? `<span style="color:var(--accent-dark)">🥇 +${d.gold}</span>` : '—'}</td>
-                <td>${d.gems ? `<span style="color:#7b2da8">💎 +${d.gems}</span>` : '—'}</td>
+                <td style="font-family:Cinzel,serif; font-weight:600">${jugador}</td>
+                <td>${oro}</td>
+                <td>${gemas}</td>
+                <td style="font-size:12px; color:var(--muted); font-style:italic">${desc}</td>
                 <td style="font-size:12px; color:var(--muted)">${fecha} ${hora}</td>
             </tr>`
         })
@@ -883,14 +892,23 @@ function abrirModalDonaciones() {
             el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:14px">Sin registros.</p>`
             return
         }
-        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Fecha</th></tr>`
+        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Descripción</th><th>Fecha</th></tr>`
         todos.forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
             const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
+            const jugador = d.playerUsername || 'Bot'
+            const oro = d.gold != null && d.gold !== 0
+                ? `<span style="color:${d.gold < 0 ? 'var(--red)' : 'var(--accent-dark)'}">🥇 ${d.gold > 0 ? '+' : ''}${d.gold}</span>`
+                : '—'
+            const gemas = d.gems != null && d.gems !== 0
+                ? `<span style="color:${d.gems < 0 ? 'var(--red)' : '#7b2da8'}">💎 ${d.gems > 0 ? '+' : ''}${d.gems}</span>`
+                : '—'
+            const desc = d.description || d.action || d.type || '—'
             html += `<tr>
-                <td style="font-family:Cinzel,serif; font-weight:600">${d.playerUsername || 'N/A'}</td>
-                <td>${d.gold ? `<span style="color:var(--accent-dark)">🥇 +${d.gold}</span>` : '—'}</td>
-                <td>${d.gems ? `<span style="color:#7b2da8">💎 +${d.gems}</span>` : '—'}</td>
+                <td style="font-family:Cinzel,serif; font-weight:600">${jugador}</td>
+                <td>${oro}</td>
+                <td>${gemas}</td>
+                <td style="font-size:12px; color:var(--muted); font-style:italic">${desc}</td>
                 <td style="font-size:12px; color:var(--muted)">${fecha} ${hora}</td>
             </tr>`
         })
