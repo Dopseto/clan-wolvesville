@@ -847,7 +847,7 @@ function cargarRegistroDonaciones() {
             const gemas = d.gems != null && d.gems !== 0
                 ? `<span style="color:${d.gems < 0 ? 'var(--red)' : '#7b2da8'}">💎 ${d.gems > 0 ? '+' : ''}${d.gems}</span>`
                 : '—'
-            const tipoMap = { 'DONATE': '-', 'QUEST_START': '⚔️ Misión iniciada', 'QUEST_REWARD': '🏆 Premio misión', 'SHUFFLE': '🔀 Shuffle', 'PURCHASE': '🛒 Compra' }
+            const tipoMap = { 'DONATE': '—', 'QUEST_START': '⚔️ Misión iniciada', 'QUEST_REWARD': '🏆 Premio misión', 'SHUFFLE': '🔀 Shuffle', 'PURCHASE': '🛒 Compra' }
             const tipoLabel = tipoMap[d.type] || (d.type || '')
             const comentario = d.comment ? d.comment.trim() : ''
             const desc = comentario ? `${tipoLabel ? tipoLabel + ' · ' : ''}${comentario}` : (tipoLabel || '—')
