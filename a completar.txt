@@ -1,7 +1,4 @@
-que la sesion no se cierre, guarde los datos del dispositivo para volver a iniciar mas rapido
-agregar comandos personalizados (yo agregar un comando cuando quiera bajo el nombre que quiera y que devuelva el texto que yo queira)
-arreglar estadisticas
+que la sesion no se cierre, guarde los datos del dispositivo para volver a iniciar mas rapidoarreglar estadisticas
 agregar filtro de orden a las estadisticas
 cambiar lo de "mision activa" en la sección inicio
-agregar rol "espectador" (acceso visual a todo pero los botones no reaccionan con ellos)
 arreglar registro de donaciones "nombre= N/A", "registro= +-*numero*"

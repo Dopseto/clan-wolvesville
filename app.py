@@ -17,23 +17,33 @@ base = os.path.dirname(os.path.abspath(__file__))
 SUPABASE_URL = "https://dtsjfrtofhvfjsqncsjl.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0c2pmcnRvZmh2ZmpzcW5jc2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQ5NTcsImV4cCI6MjA4OTIwMDk1N30.7IW5IMb-1aLdEUo6wq5L90vTZDmXbG9P9Kvd_cwosS0"
 
-# =================== SESIONES EN MEMORIA ===================
-sesiones = {}
-SESSION_DURATION = 60 * 60 * 8  # 8 horas
+# =================== SESIONES EN SUPABASE ===================
+SESSION_DURATION = 60 * 60 * 24 * 30  # 30 dias
 
 def crear_sesion(username, rol):
     token = secrets.token_hex(32)
-    sesiones[token] = {"username": username, "rol": rol, "expires": time.time() + SESSION_DURATION}
+    expires = int(time.time()) + SESSION_DURATION
+    try:
+        supabase_request("POST", "sesiones", {"token": token, "username": username, "rol": rol, "expires": expires})
+    except Exception as e:
+        print(f"[SESION] Error al crear sesion: {e}")
     return token
 
 def obtener_sesion(token):
-    if not token or token not in sesiones:
+    if not token:
         return None
-    s = sesiones[token]
-    if time.time() > s["expires"]:
-        del sesiones[token]
+    try:
+        rows = supabase_request("GET", f"sesiones?token=eq.{token}&select=*")
+        if not rows:
+            return None
+        s = rows[0]
+        if int(time.time()) > s["expires"]:
+            supabase_request("DELETE", f"sesiones?token=eq.{token}")
+            return None
+        return {"username": s["username"], "rol": s["rol"]}
+    except Exception as e:
+        print(f"[SESION] Error al obtener sesion: {e}")
         return None
-    return s
 
 def get_token_from_request(handler):
     cookie = handler.headers.get("Cookie", "")
@@ -1044,8 +1054,10 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/auth/logout":
                 token = get_token_from_request(self)
-                if token and token in sesiones:
-                    del sesiones[token]
+                if token:
+                    try:
+                        supabase_request("DELETE", f"sesiones?token=eq.{token}")
+                    except: pass
                 body = json.dumps({"ok": True}).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
