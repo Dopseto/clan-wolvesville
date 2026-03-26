@@ -1,4 +1,2 @@
-que la sesion no se cierre, guarde los datos del dispositivo para volver a iniciar mas rapidoarreglar estadisticas
 agregar filtro de orden a las estadisticas
 cambiar lo de "mision activa" en la sección inicio
-arreglar registro de donaciones "nombre= N/A", "registro= +-*numero*"
