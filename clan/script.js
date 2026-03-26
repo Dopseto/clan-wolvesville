@@ -850,7 +850,7 @@ function cargarRegistroDonaciones() {
             const tipoMap = { 'DONATE': '—', 'QUEST_START': '⚔️ Misión iniciada', 'QUEST_REWARD': '🏆 Premio misión', 'SHUFFLE': '🔀 Shuffle', 'PURCHASE': '🛒 Compra' }
             const tipoLabel = tipoMap[d.type] || (d.type || '')
             const comentario = d.comment ? d.comment.trim() : ''
-            const desc = comentario ? `${tipoLabel ? + ' · ' : ''}${comentario}` : (tipoLabel || '—')
+            const desc = comentario ? `${tipoLabel ? tipoLabel + '    ' : ''}${comentario}` : (tipoLabel || '—')
             html += `<tr>
                 <td style="font-family:Cinzel,serif; font-weight:600">${jugador}</td>
                 <td>${oro}</td>
