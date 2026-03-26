@@ -847,7 +847,10 @@ function cargarRegistroDonaciones() {
             const gemas = d.gems != null && d.gems !== 0
                 ? `<span style="color:${d.gems < 0 ? 'var(--red)' : '#7b2da8'}">💎 ${d.gems > 0 ? '+' : ''}${d.gems}</span>`
                 : '—'
-            const desc = d.description || d.action || d.type || '—'
+            const tipoMap = { 'DONATE': 'Donación', 'QUEST_START': '⚔️ Misión iniciada', 'QUEST_REWARD': '🏆 Premio misión', 'SHUFFLE': '🔀 Shuffle', 'PURCHASE': '🛒 Compra' }
+            const tipoLabel = tipoMap[d.type] || (d.type || '')
+            const comentario = d.comment ? d.comment.trim() : ''
+            const desc = comentario ? `${tipoLabel ? tipoLabel + ' · ' : ''}${comentario}` : (tipoLabel || '—')
             html += `<tr>
                 <td style="font-family:Cinzel,serif; font-weight:600">${jugador}</td>
                 <td>${oro}</td>
@@ -903,7 +906,10 @@ function abrirModalDonaciones() {
             const gemas = d.gems != null && d.gems !== 0
                 ? `<span style="color:${d.gems < 0 ? 'var(--red)' : '#7b2da8'}">💎 ${d.gems > 0 ? '+' : ''}${d.gems}</span>`
                 : '—'
-            const desc = d.description || d.action || d.type || '—'
+            const tipoMap = { 'DONATE': 'Donación', 'QUEST_START': '⚔️ Misión iniciada', 'QUEST_REWARD': '🏆 Premio misión', 'SHUFFLE': '🔀 Shuffle', 'PURCHASE': '🛒 Compra' }
+            const tipoLabel = tipoMap[d.type] || (d.type || '')
+            const comentario = d.comment ? d.comment.trim() : ''
+            const desc = comentario ? `${tipoLabel ? tipoLabel + ' · ' : ''}${comentario}` : (tipoLabel || '—')
             html += `<tr>
                 <td style="font-family:Cinzel,serif; font-weight:600">${jugador}</td>
                 <td>${oro}</td>
