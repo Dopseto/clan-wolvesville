@@ -845,7 +845,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not sesion or sesion["rol"] != "admin":
                     self.redirect("/")
                     return
-                body, ct = servir_archivo("admin/index.html", "text/html; charset=utf-8")
+                body, ct = servir_archivo("clan/index.html", "text/html; charset=utf-8")
                 self.send_html(body, ct)
                 return
 
@@ -853,7 +853,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not sesion or sesion["rol"] != "admin" or sesion.get("clan_id"):
                     self.send_json({"error": "No autorizado"}, 401)
                     return
-                body, ct = servir_archivo("panel/script.js", "application/javascript")
+                body, ct = servir_archivo("clan/script.js", "application/javascript")
                 self.send_html(body, ct)
                 return
 
