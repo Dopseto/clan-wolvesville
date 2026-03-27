@@ -1,5 +1,203 @@
 let seccionActual = 'inicio'
-let miembrosCache = [] // Guardamos los miembros para el filtro
+let miembrosCache = []
+let idiomaActual = 'es'
+
+// =================== TRADUCCIONES ===================
+const T = {
+    es: {
+        // Nav
+        inicio: 'Inicio', miembros: 'Miembros', logs: 'Actividad', stats: 'Estadísticas',
+        comandos: 'Comandos', ajustes: 'Ajustes', admin: 'Admin', tracker: 'Tracker',
+        cerrarSesion: 'Cerrar sesión',
+        // General
+        cargando: 'Cargando...', error: 'Error', guardar: 'Guardar', cancelar: 'Cancelar',
+        eliminar: 'Eliminar', activar: 'Activar', desactivar: 'Desactivar', confirmar: 'Confirmar',
+        sinPermisos: 'Sin permisos', noHay: 'No hay datos', verMas: 'Ver más',
+        // Inicio
+        descripcion: 'Descripción', sinDescripcion: 'Sin descripción',
+        recursos: 'Recursos del clan', miembrosCount: 'Miembros', xpTotal: 'XP Total',
+        idioma: 'Idioma', nivelMin: 'Nivel mínimo',
+        anuncios: 'Anuncios', historialAnuncios: 'Historial de anuncios',
+        manual: 'Manual', automatico: 'Automático',
+        publicar: 'Publicar', escribiAnuncio: 'Escribí tu anuncio acá...',
+        noAnuncios: 'No hay anuncios',
+        misionActiva: 'Misión activa', noMisionActiva: 'No hay misión activa',
+        misionesDisponibles: 'Misiones disponibles', noMisiones: 'No hay misiones disponibles',
+        iniciarseMision: 'Iniciar misión seleccionada', shuffle: 'Shuffle',
+        costoPorMiembro: 'COSTO POR MIEMBRO',
+        premios: 'Premios — Última misión', multas: 'Multas — Última misión',
+        registroDonaciones: 'Registro de donaciones', sincronizar: 'Sincronizar',
+        verRegistro: 'Ver registro completo', ultimaSync: 'Última sincronización:',
+        // Miembros
+        miembrosTitle: 'Miembros', cambiosNombre: 'Cambios de nombre',
+        verHistorial: 'Ver historial', accionesMasivas: 'Acciones masivas',
+        activarTodos: 'Activar todos', desactivarTodos: 'Desactivar todos',
+        activarPorCartera: 'ACTIVAR POR CARTERA:', cartera: 'CARTERA',
+        mision: 'MISIÓN', activo: 'Activo', inactivo: 'Inactivo',
+        oroTotal: 'Oro total', gemasTotal: 'Gemas total',
+        // Logs
+        actividadClan: 'Actividad del clan', fecha: 'Fecha', evento: 'Evento', jugador: 'Jugador',
+        noActividad: 'No hay actividad registrada',
+        // Stats
+        estadisticas: 'Estadísticas', participacionMisiones: 'Participación en misiones',
+        // Admin
+        panelAdmin: 'Panel de administración', pendientes: 'Pendientes / Desactivados',
+        noPendientes: 'No hay solicitudes pendientes ✓',
+        administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
+        miembrosRol: 'Miembros', espectadores: 'Espectadores',
+        enLinea: 'En línea', ultimaVez: 'Última vez:', nunca: 'Nunca',
+        subirLider: t('subirLider'), subirColider: t('subirColider'),
+        bajarColider: t('bajarColider'), bajarMiembro: t('bajarMiembro'),
+        bajarMiembro2: t('bajarMiembro2'), hacerEspectador: t('hacerEspectador'),
+        hacerMiembro: t('hacerMiembro'), resetearClave: t('resetearClave'),
+        // Tabla donaciones
+        jugadorCol: 'Jugador', oro: 'Oro', gemas: 'Gemas', descripcionCol: 'Descripción',
+        // Idioma
+        selectorIdioma: 'Idioma',
+    },
+    en: {
+        // Nav
+        inicio: 'Home', miembros: 'Members', logs: 'Activity', stats: 'Statistics',
+        comandos: 'Commands', ajustes: 'Settings', admin: 'Admin', tracker: 'Tracker',
+        cerrarSesion: 'Log out',
+        // General
+        cargando: 'Loading...', error: 'Error', guardar: 'Save', cancelar: 'Cancel',
+        eliminar: 'Delete', activar: 'Enable', desactivar: 'Disable', confirmar: 'Confirm',
+        sinPermisos: 'No permissions', noHay: 'No data', verMas: 'See more',
+        // Inicio
+        descripcion: 'Description', sinDescripcion: 'No description',
+        recursos: 'Clan resources', miembrosCount: 'Members', xpTotal: 'Total XP',
+        idioma: 'Language', nivelMin: 'Min level',
+        anuncios: 'Announcements', historialAnuncios: 'Announcement history',
+        manual: 'Manual', automatico: 'Automatic',
+        publicar: 'Publish', escribiAnuncio: 'Write your announcement here...',
+        noAnuncios: 'No announcements',
+        misionActiva: 'Active mission', noMisionActiva: 'No active mission',
+        misionesDisponibles: 'Available missions', noMisiones: 'No missions available',
+        iniciarseMision: 'Start selected mission', shuffle: 'Shuffle',
+        costoPorMiembro: 'COST PER MEMBER',
+        premios: 'Prizes — Last mission', multas: 'Fines — Last mission',
+        registroDonaciones: 'Donation log', sincronizar: 'Sync',
+        verRegistro: 'View full log', ultimaSync: 'Last sync:',
+        // Miembros
+        miembrosTitle: 'Members', cambiosNombre: 'Name changes',
+        verHistorial: 'View history', accionesMasivas: 'Mass actions',
+        activarTodos: 'Enable all', desactivarTodos: 'Disable all',
+        activarPorCartera: 'ENABLE BY WALLET:', cartera: 'WALLET',
+        mision: 'MISSION', activo: 'Active', inactivo: 'Inactive',
+        oroTotal: 'Total gold', gemasTotal: 'Total gems',
+        // Logs
+        actividadClan: 'Clan activity', fecha: 'Date', evento: 'Event', jugador: 'Player',
+        noActividad: 'No activity recorded',
+        // Stats
+        estadisticas: 'Statistics', participacionMisiones: 'Mission participation',
+        // Admin
+        panelAdmin: 'Administration panel', pendientes: 'Pending / Disabled',
+        noPendientes: 'No pending requests ✓',
+        administradores: 'Administrators', lideres: 'Leaders', colideres: 'Co-leaders',
+        miembrosRol: 'Members', espectadores: 'Spectators',
+        enLinea: 'Online', ultimaVez: 'Last seen:', nunca: 'Never',
+        subirLider: '↑ Promote to Leader', subirColider: '↑ Promote to Co-leader',
+        bajarColider: '↓ Demote to Co-leader', bajarMiembro: '↓ Demote to Member',
+        bajarMiembro2: '↓↓ Demote to Member', hacerEspectador: '👁 Make Spectator',
+        hacerMiembro: '↑ Make Member', resetearClave: '🔑 Reset password',
+        // Tabla donaciones
+        jugadorCol: 'Player', oro: 'Gold', gemas: 'Gems', descripcionCol: 'Description',
+        // Idioma
+        selectorIdioma: 'Language',
+    },
+    pt: {
+        // Nav
+        inicio: 'Início', miembros: 'Membros', logs: 'Atividade', stats: 'Estatísticas',
+        comandos: 'Comandos', ajustes: 'Configurações', admin: 'Admin', tracker: 'Tracker',
+        cerrarSesion: 'Sair',
+        // General
+        cargando: 'Carregando...', error: 'Erro', guardar: 'Salvar', cancelar: 'Cancelar',
+        eliminar: 'Excluir', activar: 'Ativar', desactivar: 'Desativar', confirmar: 'Confirmar',
+        sinPermisos: 'Sem permissões', noHay: 'Sem dados', verMas: 'Ver mais',
+        // Inicio
+        descripcion: 'Descrição', sinDescripcion: 'Sem descrição',
+        recursos: 'Recursos do clã', miembrosCount: 'Membros', xpTotal: 'XP Total',
+        idioma: 'Idioma', nivelMin: 'Nível mínimo',
+        anuncios: 'Anúncios', historialAnuncios: 'Histórico de anúncios',
+        manual: 'Manual', automatico: 'Automático',
+        publicar: 'Publicar', escribiAnuncio: 'Escreva seu anúncio aqui...',
+        noAnuncios: 'Sem anúncios',
+        misionActiva: 'Missão ativa', noMisionActiva: 'Sem missão ativa',
+        misionesDisponibles: 'Missões disponíveis', noMisiones: 'Sem missões disponíveis',
+        iniciarseMision: 'Iniciar missão selecionada', shuffle: 'Embaralhar',
+        costoPorMiembro: 'CUSTO POR MEMBRO',
+        premios: 'Prêmios — Última missão', multas: 'Multas — Última missão',
+        registroDonaciones: 'Registro de doações', sincronizar: 'Sincronizar',
+        verRegistro: 'Ver registro completo', ultimaSync: 'Última sincronização:',
+        // Miembros
+        miembrosTitle: 'Membros', cambiosNombre: 'Mudanças de nome',
+        verHistorial: 'Ver histórico', accionesMasivas: 'Ações em massa',
+        activarTodos: 'Ativar todos', desactivarTodos: 'Desativar todos',
+        activarPorCartera: 'ATIVAR POR CARTEIRA:', cartera: 'CARTEIRA',
+        mision: 'MISSÃO', activo: 'Ativo', inactivo: 'Inativo',
+        oroTotal: 'Ouro total', gemasTotal: 'Gemas total',
+        // Logs
+        actividadClan: 'Atividade do clã', fecha: 'Data', evento: 'Evento', jugador: 'Jogador',
+        noActividad: 'Nenhuma atividade registrada',
+        // Stats
+        estadisticas: 'Estatísticas', participacionMisiones: 'Participação em missões',
+        // Admin
+        panelAdmin: 'Painel de administração', pendientes: 'Pendentes / Desativados',
+        noPendientes: 'Sem solicitações pendentes ✓',
+        administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
+        miembrosRol: 'Membros', espectadores: 'Espectadores',
+        enLinea: 'Online', ultimaVez: 'Última vez:', nunca: 'Nunca',
+        subirLider: '↑ Promover a Líder', subirColider: '↑ Promover a Co-líder',
+        bajarColider: '↓ Rebaixar a Co-líder', bajarMiembro: '↓ Rebaixar a Membro',
+        bajarMiembro2: '↓↓ Rebaixar a Membro', hacerEspectador: '👁 Tornar Espectador',
+        hacerMiembro: '↑ Tornar Membro', resetearClave: '🔑 Redefinir senha',
+        // Tabla donaciones
+        jugadorCol: 'Jogador', oro: 'Ouro', gemas: 'Gemas', descripcionCol: 'Descrição',
+        // Idioma
+        selectorIdioma: 'Idioma',
+    }
+}
+
+function t(key) {
+    return (T[idiomaActual] && T[idiomaActual][key]) || T['es'][key] || key
+}
+
+function cambiarIdioma(idioma) {
+    idiomaActual = idioma
+    // Guardar en servidor
+    fetch('/auth/idioma', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idioma })
+    }).catch(() => {})
+    // Actualizar selector visual
+    document.querySelectorAll('.lang-btn').forEach(b => {
+        b.style.opacity = b.dataset.lang === idioma ? '1' : '0.4'
+        b.style.fontWeight = b.dataset.lang === idioma ? '700' : '400'
+    })
+    // Actualizar nav buttons existentes
+    actualizarNavTextos()
+    // Recargar sección actual
+    mostrarSeccion(seccionActual)
+}
+
+function actualizarNavTextos() {
+    const map = {
+        'btn-inicio': t('inicio'), 'btn-miembros': t('miembros'),
+        'btn-logs': t('logs'), 'btn-stats': t('stats'),
+        'btn-comandos': t('comandos'), 'btn-ajustes': t('ajustes'),
+        'btn-admin': t('admin'), 'btn-tracker': t('tracker')
+    }
+    Object.entries(map).forEach(([id, texto]) => {
+        const btn = document.getElementById(id)
+        if (btn) {
+            const icon = btn.querySelector('.nav-icon')
+            const iconHtml = icon ? icon.outerHTML : ''
+            btn.innerHTML = iconHtml + ' ' + texto
+        }
+    })
+}
 
 const ANUNCIOS_AUTO = [
     "¡Ya están las nuevas misiones para votar! Recuerden que tienen 12 horas para participar en la votación.",
@@ -10,6 +208,7 @@ const ANUNCIOS_AUTO = [
 
 window.onload = async function() {
     await cargarSesion()
+    actualizarNavTextos()
     mostrarSeccion('inicio')
 }
 
@@ -26,7 +225,7 @@ function mostrarSeccion(seccion, btn = null) {
     if (btn) btn.classList.add('activo')
     else document.querySelectorAll('.nav-btn')[0].classList.add('activo')
     const contenido = document.getElementById('contenido')
-    contenido.innerHTML = "<p class='cargando'>Cargando...</p>"
+    contenido.innerHTML = `<p class='cargando'>${t('cargando')}</p>`
     if (seccion === 'inicio') cargarInicio()
     else if (seccion === 'miembros') cargarMiembros()
     else if (seccion === 'logs') cargarLogs()
@@ -88,7 +287,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
 
     // ANUNCIOS
     html += `<div class="card"><h3>📢 Anuncios</h3>
-        ${(rolActual === 'admin' || rolActual === 'lider') ? `
+        ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
             <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">Manual</button>
             <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">Automático</button>
@@ -233,7 +432,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     html += `<div class="card">
         <h3>🔄 Registro de donaciones</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
-            ${(rolActual === 'admin' || rolActual === 'lider') ? `<button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>` : ''}
+            ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>` : ''}
             <button class="btn-tracker" onclick="abrirModalDonaciones()">📋 Ver registro completo</button>
             <span id="sync-info-inicio" style="font-size:12px; color:var(--muted); font-style:italic"></span>
         </div>
@@ -458,7 +657,7 @@ function enviarAnuncio(mensaje) {
 // =================== MIEMBROS ===================
 function cargarMiembros() {
     const contenido = document.getElementById('contenido')
-    contenido.innerHTML = `<h1>👥 Miembros</h1><p class="cargando">Cargando miembros...</p>`
+    contenido.innerHTML = `<h1>👥 ${t('miembrosTitle')}</h1><p class="cargando">${t('cargando')}</p>`
     Promise.all([
         fetch('/clan/members').then(r => r.json()),
         fetch('/clan/carteras').then(r => r.json()),
@@ -510,7 +709,7 @@ function cargarAvatares(members) {
 function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 170) {
     const contenido = document.getElementById('contenido')
     if (!members || members.length === 0) {
-        contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted); font-style:italic">No hay miembros</p></div>`
+        contenido.innerHTML = `<h1>👥 ${t('miembrosTitle')}</h1><div class="card"><p style="color:var(--muted); font-style:italic">${t('noHay')}</p></div>`
         return
     }
 
@@ -522,12 +721,12 @@ function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 17
         return (a.username || '').localeCompare(b.username || '', 'es', { sensitivity: 'base' })
     })
 
-    let html = `<h1>👥 Miembros</h1>`
+    let html = `<h1>👥 ${t('miembrosTitle')}</h1>`
 
     html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0">🔄 Cambios de nombre</h3>
         <div style="display:flex; gap:8px; align-items:center">
-            ${(rolActual === 'admin' || rolActual === 'lider') ? `<button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); padding:6px 14px; font-size:10px" onclick="abrirModalClean()">🧹 Clean</button>` : ''}
+            ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); padding:6px 14px; font-size:10px" onclick="abrirModalClean()">🧹 Clean</button>` : ''}
             <button class="btn-tracker" onclick="abrirDrawerCambios()">Ver historial</button>
         </div>
     </div>`
@@ -599,7 +798,7 @@ function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 17
 
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px">
                     <span style="font-family:Cinzel,serif; font-size:11px; color:var(--ink-light); letter-spacing:0.5px">MISIÓN</span>
-                    ${(rolActual === 'admin' || rolActual === 'lider') ? `
+                    ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `
                     <div onclick="toggleParticipacion('${m.playerId}', ${participa})"
                          id="toggle-${m.playerId}"
                          style="width:44px; height:24px; border-radius:12px; background:${participa ? '#2d6a1e' : 'var(--muted)'}; cursor:pointer; position:relative; transition:background 0.3s; border:1px solid rgba(0,0,0,0.1); flex-shrink:0">
@@ -836,7 +1035,7 @@ function cargarRegistroDonaciones() {
             return
         }
 
-        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Descripción</th><th>Fecha</th></tr>`
+        let html = `<table><tr><th>${t('jugadorCol')}</th><th>${t('oro')}</th><th>${t('gemas')}</th><th>${t('descripcionCol')}</th><th>${t('fecha')}</th></tr>`
         recientes.forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
             const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
@@ -895,7 +1094,7 @@ function abrirModalDonaciones() {
             el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:14px">Sin registros.</p>`
             return
         }
-        let html = `<table><tr><th>Jugador</th><th>Oro</th><th>Gemas</th><th>Descripción</th><th>Fecha</th></tr>`
+        let html = `<table><tr><th>${t('jugadorCol')}</th><th>${t('oro')}</th><th>${t('gemas')}</th><th>${t('descripcionCol')}</th><th>${t('fecha')}</th></tr>`
         todos.forEach(d => {
             const fecha = d.creationTime ? d.creationTime.slice(0,10).split('-').reverse().join('-') : 'N/A'
             const hora = d.creationTime ? d.creationTime.slice(11,16) : ''
@@ -933,13 +1132,13 @@ function cargarLogs() {
 
 function mostrarLogs(logs) {
     const contenido = document.getElementById('contenido')
-    let html = `<h1>📋 Actividad del clan</h1><div class="card">`
+    let html = `<h1>📋 ${t('actividadClan')}</h1><div class="card">`
     if (!logs || logs.length === 0) {
-        html += `<p style="color:var(--muted); font-style:italic">No hay actividad registrada</p>`
+        html += `<p style="color:var(--muted); font-style:italic">${t('noActividad')}</p>`
     } else {
         const visibles = logs.slice(0, 10)
         const resto = logs.slice(10)
-        html += `<table><tr><th>Fecha</th><th>Evento</th><th>Jugador</th></tr>`
+        html += `<table><tr><th>${t('fecha')}</th><th>${t('evento')}</th><th>${t('jugador')}</th></tr>`
         visibles.forEach(l => {
             const fecha = l.creationTime ? l.creationTime.slice(0, 10).split('-').reverse().join('-') : 'N/A'
             const jugador = l.playerUsername || 'Bot'
@@ -969,7 +1168,7 @@ function mostrarLogs(logs) {
 // =================== STATS ===================
 function cargarStats() {
     const contenido = document.getElementById('contenido')
-    contenido.innerHTML = `<h1>📊 Estadísticas</h1><p class="cargando">Cargando...</p>`
+    contenido.innerHTML = `<h1>📊 ${t('estadisticas')}</h1><p class="cargando">${t('cargando')}</p>`
 
     Promise.all([
         fetch('/clan/estadisticas').then(r => r.json()),
@@ -1107,15 +1306,15 @@ async function cargarSesion() {
     // Mostrar nombre de usuario y botón logout en sidebar
     const footer = document.querySelector('.sidebar-footer')
     if (footer) {
-        const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : data.rol === 'espectador' ? '✦ ESPECTADOR ✦' : ''
-        const rolColor = data.rol === 'admin' ? 'var(--accent)' : data.rol === 'lider' ? '#9b5e1a' : data.rol === 'espectador' ? '#4a6b8a' : ''
+        const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : data.rol === 'colider' ? '✦ CO-LÍDER ✦' : data.rol === 'espectador' ? '✦ ESPECTADOR ✦' : ''
+        const rolColor = data.rol === 'admin' ? 'var(--accent)' : data.rol === 'lider' ? '#9b5e1a' : data.rol === 'colider' ? '#7a4e2a' : data.rol === 'espectador' ? '#4a6b8a' : ''
         footer.innerHTML = `
             <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:8px">${data.username}</p>
             ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:10px">${rolLabel}</p>` : ''}
             <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
                 onmouseover="this.style.background='rgba(139,32,16,0.15)'; this.style.color='#c87060'"
                 onmouseout="this.style.background='transparent'; this.style.color='rgba(160,100,60,0.6)'">
-                Cerrar sesión
+                ${t('cerrarSesion')}
             </button>
         `
     }
@@ -1144,13 +1343,13 @@ async function cargarSesion() {
     }
 
     // Agregar botones en nav según rol — orden: Comandos, Ajustes, Admin, Tracker
-    if (data.rol === 'admin' || data.rol === 'lider' || data.rol === 'espectador') {
+    if (data.rol === 'admin' || data.rol === 'lider' || data.rol === 'colider' || data.rol === 'espectador') {
         const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-comandos')) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
             btn.id = 'btn-comandos'
-            btn.innerHTML = '<span class="nav-icon">🤖</span> Comandos'
+            btn.innerHTML = `<span class="nav-icon">🤖</span> ${t('comandos')}`
             btn.onclick = function() { mostrarSeccion('comandos', this) }
             navSection.appendChild(btn)
         }
@@ -1158,7 +1357,7 @@ async function cargarSesion() {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
             btn.id = 'btn-ajustes'
-            btn.innerHTML = '<span class="nav-icon">⚙️</span> Ajustes'
+            btn.innerHTML = `<span class="nav-icon">⚙️</span> ${t('ajustes')}`
             btn.onclick = function() { mostrarSeccion('ajustes', this) }
             navSection.appendChild(btn)
         }
@@ -1170,7 +1369,7 @@ async function cargarSesion() {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
             btn.id = 'btn-admin'
-            btn.innerHTML = '<span class="nav-icon">🛡️</span> Admin'
+            btn.innerHTML = `<span class="nav-icon">🛡️</span> ${t('admin')}`
             btn.onclick = function() { mostrarSeccion('admin', this) }
             navSection.appendChild(btn)
         }
@@ -1182,7 +1381,7 @@ async function cargarSesion() {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
             btn.id = 'btn-tracker'
-            btn.innerHTML = '<span class="nav-icon">🔍</span> Tracker'
+            btn.innerHTML = `<span class="nav-icon">🔍</span> ${t('tracker')}`
             btn.onclick = function() { window.location.href = '/tracker/' }
             navSection.appendChild(btn)
         }
@@ -1197,10 +1396,10 @@ async function cerrarSesion() {
 // =================== PANEL ADMIN ===================
 function cargarAdmin() {
     if (rolActual !== 'admin' && rolActual !== 'espectador') {
-        document.getElementById('contenido').innerHTML = `<h1>🛡️ Admin</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
+        document.getElementById('contenido').innerHTML = `<h1>🛡️ ${t('admin')}</h1><div class="card"><p style="color:var(--muted)">${t('sinPermisos')}</p></div>`
         return
     }
-    document.getElementById('contenido').innerHTML = `<h1>🛡️ Panel de administración</h1><p class="cargando">Cargando usuarios...</p>`
+    document.getElementById('contenido').innerHTML = `<h1>🛡️ ${t('panelAdmin')}</h1><p class="cargando">${t('cargando')}</p>`
     fetch('/admin/usuarios')
         .then(r => r.json())
         .then(mostrarAdmin)
@@ -1214,10 +1413,11 @@ function estaConectado(ultimaActividad) {
 
 function mostrarAdmin(usuarios) {
     const contenido = document.getElementById('contenido')
-    let html = `<h1>🛡️ Panel de administración</h1>`
+    let html = `<h1>🛡️ ${t('panelAdmin')}</h1>`
 
     const pendientes = usuarios.filter(u => !u.aprobado && u.rol !== 'admin')
     const lideres = usuarios.filter(u => u.aprobado && u.rol === 'lider')
+    const colideres = usuarios.filter(u => u.aprobado && u.rol === 'colider')
     const miembros = usuarios.filter(u => u.aprobado && u.rol === 'miembro')
     const espectadores = usuarios.filter(u => u.aprobado && u.rol === 'espectador')
     const admins = usuarios.filter(u => u.aprobado && u.rol === 'admin')
@@ -1245,7 +1445,7 @@ function mostrarAdmin(usuarios) {
 
     // Admin
     if (admins.length > 0) {
-        html += `<div class="card"><h3>🛡️ Administradores</h3>`
+        html += `<div class="card"><h3>🛡️ ${t('administradores')}</h3>`
         admins.forEach(u => {
             const conectado = estaConectado(u.ultima_actividad)
             const luz = conectado
@@ -1257,7 +1457,7 @@ function mostrarAdmin(usuarios) {
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
                     <span style="font-size:10px; color:var(--accent); margin-left:8px; font-family:Cinzel,serif">ADMIN</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
             </div>`
         })
@@ -1265,7 +1465,7 @@ function mostrarAdmin(usuarios) {
     }
 
     // Líderes
-    html += `<div class="card"><h3>👑 Líderes</h3>`
+    html += `<div class="card"><h3>👑 ${t('lideres')}</h3>`
     if (lideres.length === 0) {
         html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay líderes</p>`
     } else {
@@ -1279,10 +1479,41 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; align-items:center">
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'colider', '${u.username}')">↓ Bajar a Co-líder</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#3a2c1e,#2a1c0e)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓↓ Bajar a Miembro</button>` : ''}
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
+                </div>
+            </div>`
+        })
+    }
+    html += `</div>`
+
+    // Co-líderes
+    html += `<div class="card"><h3>⭐ ${t('colideres')}</h3>`
+    if (colideres.length === 0) {
+        html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay co-líderes</p>`
+    } else {
+        colideres.forEach(u => {
+            const conectado = estaConectado(u.ultima_actividad)
+            const luz = conectado
+                ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#2d6a1e; box-shadow:0 0 6px #2d6a1e; margin-right:8px; flex-shrink:0"></span>`
+                : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#8b2010; box-shadow:0 0 4px #8b2010; margin-right:8px; flex-shrink:0"></span>`
+            html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center">
+                    ${luz}
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap">
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
+                    ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
+                    ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#2a5e8b,#1a3e6b)" onclick="cambiarRol(${u.id}, 'espectador', '${u.username}')">👁 Hacer Espectador</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
@@ -1293,7 +1524,7 @@ function mostrarAdmin(usuarios) {
     html += `</div>`
 
     // Miembros
-    html += `<div class="card"><h3>🐺 Miembros</h3>`
+    html += `<div class="card"><h3>🐺 ${t('miembrosRol')}</h3>`
     if (miembros.length === 0) {
         html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay miembros</p>`
     } else {
@@ -1307,11 +1538,12 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; align-items:center">
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#2a5e8b,#1a3e6b)" onclick="cambiarRol(${u.id}, 'espectador', '${u.username}')">👁 Hacer Espectador</button>` : ''}
+                    ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#9b5e1a,#7a4e2a)" onclick="cambiarRol(${u.id}, 'colider', '${u.username}')">↑ Subir a Co-líder</button>` : ''}
+                    ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#2a5e8b,#1a3e6b)" onclick="cambiarRol(${u.id}, 'espectador', '${u.username}')">👁 Hacer Espectador</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
@@ -1322,7 +1554,7 @@ function mostrarAdmin(usuarios) {
     html += `</div>`
 
     // Espectadores
-    html += `<div class="card"><h3>👁 Espectadores</h3>`
+    html += `<div class="card"><h3>👁 ${t('espectadores')}</h3>`
     if (espectadores.length === 0) {
         html += `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay espectadores</p>`
     } else {
@@ -1337,10 +1569,10 @@ function mostrarAdmin(usuarios) {
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
                     <span style="font-size:10px; color:#4a6b8a; margin-left:8px; font-family:Cinzel,serif">ESPECTADOR</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? 'En línea' : (u.ultima_actividad ? 'Última vez: ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
+                    ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↑ Hacer Miembro</button>` : ''}
                     <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
@@ -1354,7 +1586,8 @@ function mostrarAdmin(usuarios) {
 }
 
 function cambiarRol(id, nuevoRol, username) {
-    const texto = nuevoRol === 'lider' ? `¿Subir a ${username} a Líder?` : nuevoRol === 'espectador' ? `¿Convertir a ${username} en Espectador?` : `¿Bajar a ${username} a Miembro?`
+    const textos = { lider: `¿Subir a ${username} a Líder?`, colider: `¿Subir a ${username} a Co-líder?`, espectador: `¿Convertir a ${username} en Espectador?`, miembro: `¿Cambiar el rol de ${username} a Miembro?` }
+    const texto = textos[nuevoRol] || `¿Cambiar el rol de ${username}?`
     if (!confirm(texto)) return
     fetch(`/admin/usuarios/${id}/rol`, {
         method: 'PUT',
@@ -1488,10 +1721,10 @@ function eliminarTodosExMiembros() {
 // =================== AJUSTES ===================
 function cargarAjustes() {
     if (rolActual !== 'admin' && rolActual !== 'lider' && rolActual !== 'espectador') {
-        document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
+        document.getElementById('contenido').innerHTML = `<h1>⚙️ ${t('ajustes')}</h1><div class="card"><p style="color:var(--muted)">${t('sinPermisos')}</p></div>`
         return
     }
-    document.getElementById('contenido').innerHTML = `<h1>⚙️ Ajustes</h1><p class="cargando">Cargando...</p>`
+    document.getElementById('contenido').innerHTML = `<h1>⚙️ ${t('ajustes')}</h1><p class="cargando">${t('cargando')}</p>`
     Promise.all([
         fetch('/config/costo_oro_mision').then(r => r.json()),
         fetch('/config/costo_gemas_mision').then(r => r.json()),
@@ -1729,10 +1962,10 @@ function guardarAnuncioAuto(id) {
 // =================== COMANDOS BOT ===================
 function cargarComandos() {
     if (rolActual !== 'admin' && rolActual !== 'lider' && rolActual !== 'espectador') {
-        document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><div class="card"><p style="color:var(--muted)">Sin permisos</p></div>`
+        document.getElementById('contenido').innerHTML = `<h1>🤖 ${t('comandos')}</h1><div class="card"><p style="color:var(--muted)">${t('sinPermisos')}</p></div>`
         return
     }
-    document.getElementById('contenido').innerHTML = `<h1>🤖 Comandos</h1><p class="cargando">Cargando...</p>`
+    document.getElementById('contenido').innerHTML = `<h1>🤖 ${t('comandos')}</h1><p class="cargando">${t('cargando')}</p>`
     fetch('/comandos').then(r => r.json()).then(comandos => {
         const contenido = document.getElementById('contenido')
         let html = `<h1>🤖 Comandos del bot</h1>`
