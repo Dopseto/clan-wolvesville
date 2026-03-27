@@ -159,9 +159,9 @@ const T = {
     }
 }
 
-function t(key) {
+/*function t(key) {
     return (T[idiomaActual] && T[idiomaActual][key]) || T['es'][key] || key
-}
+}*/
 
 function cambiarIdioma(idioma) {
     idiomaActual = idioma
