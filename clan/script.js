@@ -1,4 +1,5 @@
 let seccionActual = 'inicio'
+let seccionActual = 'inicio'
 let miembrosCache = [] // Guardamos los miembros para el filtro
 
 const ANUNCIOS_AUTO = [
@@ -1089,9 +1090,9 @@ function agregarAlTracker(id, nombre) {
 
 // =================== SESIÓN Y ADMIN ===================
 let rolActual = null
+let seccionesActivas = {}
 
 async function cargarSesion() {
-    // Ping de actividad cada 2 minutos
     setInterval(() => fetch('/auth/ping').catch(() => {}), 15 * 1000)
     const res = await fetch('/auth/me')
     if (res.status === 401) {
@@ -1100,11 +1101,11 @@ async function cargarSesion() {
     }
     const data = await res.json()
     rolActual = data.rol
+    seccionesActivas = data.secciones || {}
 
     const topbarUser = document.getElementById('topbar-username')
     if (topbarUser) topbarUser.textContent = data.username
 
-    // Mostrar nombre de usuario y botón logout en sidebar
     const footer = document.querySelector('.sidebar-footer')
     if (footer) {
         const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : data.rol === 'espectador' ? '✦ ESPECTADOR ✦' : ''
@@ -1120,11 +1121,15 @@ async function cargarSesion() {
         `
     }
 
-    // Mostrar/ocultar botón Tracker según rol
-    const btnTracker = document.getElementById('btn-tracker')
-    if (btnTracker) {
-        if (data.rol !== 'admin') btnTracker.style.display = 'none'
-    }
+    // Ocultar secciones base desactivadas por el super-admin
+    // (inicio, miembros, logs, stats siempre están en el HTML estático)
+    const seccionesBase = ['inicio', 'miembros', 'logs', 'stats']
+    seccionesBase.forEach(sec => {
+        if (seccionesActivas[sec] === false) {
+            const btn = document.querySelector(`.nav-btn[onclick*="'${sec}'"]`)
+            if (btn) btn.style.display = 'none'
+        }
+    })
 
     // Si es espectador, deshabilitar todos los controles con CSS global
     if (data.rol === 'espectador') {
@@ -1143,10 +1148,11 @@ async function cargarSesion() {
         document.head.appendChild(style)
     }
 
-    // Agregar botones en nav según rol — orden: Comandos, Ajustes, Admin, Tracker
+    const navSection = document.querySelector('.nav-section')
+
+    // Comandos y Ajustes: admin, lider, espectador — respetando secciones activas
     if (data.rol === 'admin' || data.rol === 'lider' || data.rol === 'espectador') {
-        const navSection = document.querySelector('.nav-section')
-        if (navSection && !document.getElementById('btn-comandos')) {
+        if (navSection && !document.getElementById('btn-comandos') && seccionesActivas['comandos'] !== false) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
             btn.id = 'btn-comandos'
@@ -1154,7 +1160,7 @@ async function cargarSesion() {
             btn.onclick = function() { mostrarSeccion('comandos', this) }
             navSection.appendChild(btn)
         }
-        if (navSection && !document.getElementById('btn-ajustes')) {
+        if (navSection && !document.getElementById('btn-ajustes') && seccionesActivas['ajustes'] !== false) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
             btn.id = 'btn-ajustes'
@@ -1163,9 +1169,9 @@ async function cargarSesion() {
             navSection.appendChild(btn)
         }
     }
-    // Admin solo para admin y espectador (solo lectura para espectador)
-    if (data.rol === 'admin' || data.rol === 'espectador') {
-        const navSection = document.querySelector('.nav-section')
+
+    // Admin: admin y espectador — respetando secciones activas
+    if ((data.rol === 'admin' || data.rol === 'espectador') && seccionesActivas['admin'] !== false) {
         if (navSection && !document.getElementById('btn-admin')) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
@@ -1175,9 +1181,9 @@ async function cargarSesion() {
             navSection.appendChild(btn)
         }
     }
-    // Tracker solo para admin
+
+    // Tracker: solo admin
     if (data.rol === 'admin') {
-        const navSection = document.querySelector('.nav-section')
         if (navSection && !document.getElementById('btn-tracker')) {
             const btn = document.createElement('button')
             btn.className = 'nav-btn'
