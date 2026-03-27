@@ -159,9 +159,9 @@ const T = {
     }
 }
 
-/*function t(key) {
+function t(key) {
     return (T[idiomaActual] && T[idiomaActual][key]) || T['es'][key] || key
-}*/
+}
 
 function cambiarIdioma(idioma) {
     idiomaActual = idioma
@@ -214,10 +214,10 @@ window.onload = async function() {
 }
 
 function mostrarToast(msg, tipo = 'ok') {
-    const toast = document.getElementById('toast')
-    toast.textContent = msg
-    toast.className = `toast ${tipo} show`
-    setTimeout(() => toast.classList.remove('show'), 3000)
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.className = `toast ${tipo} show`
+    setTimeout(() => t.classList.remove('show'), 3000)
 }
 
 function mostrarSeccion(seccion, btn = null) {
