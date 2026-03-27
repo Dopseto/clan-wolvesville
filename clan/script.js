@@ -46,10 +46,10 @@ const T = {
         administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
         miembrosRol: 'Miembros', espectadores: 'Espectadores',
         enLinea: 'En línea', ultimaVez: 'Última vez:', nunca: 'Nunca',
-        subirLider: t('subirLider'), subirColider: t('subirColider'),
-        bajarColider: t('bajarColider'), bajarMiembro: t('bajarMiembro'),
-        bajarMiembro2: t('bajarMiembro2'), hacerEspectador: t('hacerEspectador'),
-        hacerMiembro: t('hacerMiembro'), resetearClave: t('resetearClave'),
+        subirLider: '↑ Subir a Líder', subirColider: '↑ Subir a Co-líder',
+        bajarColider: '↓ Bajar a Co-líder', bajarMiembro: '↓ Bajar a Miembro',
+        bajarMiembro2: '↓↓ Bajar a Miembro', hacerEspectador: '👁 Hacer Espectador',
+        hacerMiembro: '↑ Hacer Miembro', resetearClave: '🔑 Resetear clave',
         // Tabla donaciones
         jugadorCol: 'Jugador', oro: 'Oro', gemas: 'Gemas', descripcionCol: 'Descripción',
         // Idioma
