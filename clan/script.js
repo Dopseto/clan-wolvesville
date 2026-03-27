@@ -46,10 +46,10 @@ const T = {
         administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
         miembrosRol: 'Miembros', espectadores: 'Espectadores',
         enLinea: 'En línea', ultimaVez: 'Última vez:', nunca: 'Nunca',
-        subirLider: '↑ Subir a Líder', subirColider: '↑ Subir a Co-líder',
-        bajarColider: '↓ Bajar a Co-líder', bajarMiembro: '↓ Bajar a Miembro',
-        bajarMiembro2: '↓↓ Bajar a Miembro', hacerEspectador: '👁️ Espectador',
-        hacerMiembro: '↑ Hacer Miembro', resetearClave: '🔑 Resetear clave',
+        subirLider: t('subirLider'), subirColider: t('subirColider'),
+        bajarColider: t('bajarColider'), bajarMiembro: t('bajarMiembro'),
+        bajarMiembro2: t('bajarMiembro2'), hacerEspectador: t('hacerEspectador'),
+        hacerMiembro: t('hacerMiembro'), resetearClave: t('resetearClave'),
         // Tabla donaciones
         jugadorCol: 'Jugador', oro: 'Oro', gemas: 'Gemas', descripcionCol: 'Descripción',
         // Idioma
@@ -214,10 +214,10 @@ window.onload = async function() {
 }
 
 function mostrarToast(msg, tipo = 'ok') {
-    const t = document.getElementById('toast')
-    t.textContent = msg
-    t.className = `toast ${tipo} show`
-    setTimeout(() => t.classList.remove('show'), 3000)
+    const toast = document.getElementById('toast')
+    toast.textContent = msg
+    toast.className = `toast ${tipo} show`
+    setTimeout(() => toast.classList.remove('show'), 3000)
 }
 
 function mostrarSeccion(seccion, btn = null) {
