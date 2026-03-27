@@ -46,10 +46,10 @@ const T = {
         administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
         miembrosRol: 'Miembros', espectadores: 'Espectadores',
         enLinea: 'En línea', ultimaVez: 'Última vez:', nunca: 'Nunca',
-        subirLider: '↑ Subir a Líder', subirColider: '↑ Subir a Co-líder',
-        bajarColider: '↓ Bajar a Co-líder', bajarMiembro: '↓ Bajar a Miembro',
-        bajarMiembro2: '↓↓ Bajar a Miembro', hacerEspectador: '👁 Hacer Espectador',
-        hacerMiembro: '↑ Hacer Miembro', resetearClave: '🔑 Resetear clave',
+        subirLider: t('subirLider'), subirColider: t('subirColider'),
+        bajarColider: t('bajarColider'), bajarMiembro: t('bajarMiembro'),
+        bajarMiembro2: t('bajarMiembro2'), hacerEspectador: t('hacerEspectador'),
+        hacerMiembro: t('hacerMiembro'), resetearClave: t('resetearClave'),
         // Tabla donaciones
         jugadorCol: 'Jugador', oro: 'Oro', gemas: 'Gemas', descripcionCol: 'Descripción',
         // Idioma
@@ -165,6 +165,7 @@ function t(key) {
 
 function cambiarIdioma(idioma) {
     idiomaActual = idioma
+    localStorage.setItem('idioma', idioma)
     // Guardar en servidor
     fetch('/auth/idioma', {
         method: 'PUT',
@@ -1299,18 +1300,32 @@ async function cargarSesion() {
     }
     const data = await res.json()
     rolActual = data.rol
+    // Cargar idioma: primero del servidor, si no hay usar localStorage
+    idiomaActual = data.idioma || localStorage.getItem('idioma') || 'es'
+    localStorage.setItem('idioma', idiomaActual)
 
     const topbarUser = document.getElementById('topbar-username')
     if (topbarUser) topbarUser.textContent = data.username
 
-    // Mostrar nombre de usuario y botón logout en sidebar
+    // Mostrar nombre, selector de idioma y botón logout en sidebar
     const footer = document.querySelector('.sidebar-footer')
     if (footer) {
         const rolLabel = data.rol === 'admin' ? '✦ ADMIN ✦' : data.rol === 'lider' ? '✦ LÍDER ✦' : data.rol === 'colider' ? '✦ CO-LÍDER ✦' : data.rol === 'espectador' ? '✦ ESPECTADOR ✦' : ''
         const rolColor = data.rol === 'admin' ? 'var(--accent)' : data.rol === 'lider' ? '#9b5e1a' : data.rol === 'colider' ? '#7a4e2a' : data.rol === 'espectador' ? '#4a6b8a' : ''
+        const langs = [
+            { code: 'es', flag: '🇪🇸', label: 'ES' },
+            { code: 'en', flag: '🇺🇸', label: 'EN' },
+            { code: 'pt', flag: '🇧🇷', label: 'PT' }
+        ]
+        const langBtns = langs.map(l => `<button class="lang-btn" data-lang="${l.code}" onclick="cambiarIdioma('${l.code}')"
+            style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;opacity:${idiomaActual===l.code?'1':'0.35'};transition:opacity 0.2s;filter:${idiomaActual===l.code?'drop-shadow(0 0 4px rgba(196,122,42,0.8))':'none'}"
+            title="${l.label}">${l.flag}</button>`).join('')
         footer.innerHTML = `
-            <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:8px">${data.username}</p>
-            ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:10px">${rolLabel}</p>` : ''}
+            <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:6px">${data.username}</p>
+            ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:8px">${rolLabel}</p>` : ''}
+            <div style="display:flex;align-items:center;gap:2px;margin-bottom:10px;padding:4px 6px;background:rgba(0,0,0,0.15);border-radius:3px;width:fit-content">
+                ${langBtns}
+            </div>
             <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
                 onmouseover="this.style.background='rgba(139,32,16,0.15)'; this.style.color='#c87060'"
                 onmouseout="this.style.background='transparent'; this.style.color='rgba(160,100,60,0.6)'">
