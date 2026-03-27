@@ -8,31 +8,23 @@ import hashlib
 import secrets
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import parse_qs, urlparse, quote
+from urllib.parse import parse_qs, urlparse
 
+api_key = "FkUKPpQhT9jlJspDzwKeuBK3MuvSOvFVHIfeMn9E0TiB9UrrzNzegAkJNCQWPbun"
+clan_id = "b734e3a5-cb89-4645-b9f5-0bd4229d4a99"
 base = os.path.dirname(os.path.abspath(__file__))
 
 SUPABASE_URL = "https://dtsjfrtofhvfjsqncsjl.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0c2pmcnRvZmh2ZmpzcW5jc2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQ5NTcsImV4cCI6MjA4OTIwMDk1N30.7IW5IMb-1aLdEUo6wq5L90vTZDmXbG9P9Kvd_cwosS0"
 
-# ID del super-admin (dopseto) — nunca cambia
-SUPER_ADMIN_USERNAME = "dopseto"
-SUPER_ADMIN_PASSWORD = hash("universitario99")  # se recalcula abajo con sha256
-
 # =================== SESIONES EN SUPABASE ===================
 SESSION_DURATION = 60 * 60 * 24 * 30  # 30 dias
 
-def crear_sesion(username, rol, clan_id=None):
+def crear_sesion(username, rol):
     token = secrets.token_hex(32)
     expires = int(time.time()) + SESSION_DURATION
     try:
-        supabase_request("POST", "sesiones", {
-            "token": token,
-            "username": username,
-            "rol": rol,
-            "clan_id": clan_id,
-            "expires": expires
-        })
+        supabase_request("POST", "sesiones", {"token": token, "username": username, "rol": rol, "expires": expires})
     except Exception as e:
         print(f"[SESION] Error al crear sesion: {e}")
     return token
@@ -48,7 +40,7 @@ def obtener_sesion(token):
         if int(time.time()) > s["expires"]:
             supabase_request("DELETE", f"sesiones?token=eq.{token}")
             return None
-        return {"username": s["username"], "rol": s["rol"], "clan_id": s.get("clan_id")}
+        return {"username": s["username"], "rol": s["rol"]}
     except Exception as e:
         print(f"[SESION] Error al obtener sesion: {e}")
         return None
@@ -76,53 +68,6 @@ def supabase_request(method, endpoint, data=None):
     with urllib.request.urlopen(req, body) as response:
         return json.loads(response.read())
 
-# =================== CLANES ===================
-def listar_clanes():
-    return supabase_request("GET", "clanes?select=*&order=nombre.asc")
-
-def obtener_clan(clan_id):
-    rows = supabase_request("GET", f"clanes?id=eq.{clan_id}&select=*")
-    return rows[0] if rows else None
-
-def crear_clan(nombre, wolvesville_clan_id, api_key, secciones=None):
-    if secciones is None:
-        secciones = {"inicio": True, "miembros": True, "stats": True, "logs": True,
-                     "ajustes": True, "comandos": True, "admin": True}
-    return supabase_request("POST", "clanes", {
-        "nombre": nombre,
-        "wolvesville_clan_id": wolvesville_clan_id,
-        "api_key": api_key,
-        "secciones": json.dumps(secciones)
-    })
-
-def actualizar_clan(clan_id, campos):
-    supabase_request("PATCH", f"clanes?id=eq.{clan_id}", campos)
-
-def eliminar_clan(clan_id):
-    supabase_request("DELETE", f"clanes?id=eq.{clan_id}")
-
-def get_clan_api_key(clan_id):
-    """Devuelve la api_key del clan."""
-    clan = obtener_clan(clan_id)
-    return clan["api_key"] if clan else None
-
-def get_clan_wid(clan_id):
-    """Devuelve el wolvesville_clan_id del clan."""
-    clan = obtener_clan(clan_id)
-    return clan["wolvesville_clan_id"] if clan else None
-
-def get_clan_secciones(clan_id):
-    clan = obtener_clan(clan_id)
-    if not clan:
-        return {}
-    s = clan.get("secciones", "{}")
-    if isinstance(s, str):
-        try:
-            return json.loads(s)
-        except:
-            return {}
-    return s or {}
-
 # =================== JUGADORES ===================
 def cargar_jugadores():
     rows = supabase_request("GET", "jugadores?select=*")
@@ -142,22 +87,14 @@ def actualizar_jugador(id_jugador, campos):
     supabase_request("PATCH", f"jugadores?id=eq.{id_jugador}", campos)
 
 # =================== USUARIOS ===================
-def crear_usuario_supabase(username, password_hash, rol="miembro", aprobado=False, clan_id=None):
-    return supabase_request("POST", "usuarios", {
-        "username": username,
-        "password": password_hash,
-        "rol": rol,
-        "aprobado": aprobado,
-        "clan_id": clan_id
-    })
+def crear_usuario_supabase(username, password_hash, rol="miembro", aprobado=False):
+    return supabase_request("POST", "usuarios", {"username": username, "password": password_hash, "rol": rol, "aprobado": aprobado})
 
 def buscar_usuario(username):
     rows = supabase_request("GET", f"usuarios?username=eq.{username}&select=*")
     return rows[0] if rows else None
 
-def listar_usuarios(clan_id=None):
-    if clan_id:
-        return supabase_request("GET", f"usuarios?clan_id=eq.{clan_id}&select=*&order=created_at.desc")
+def listar_usuarios():
     return supabase_request("GET", "usuarios?select=*&order=created_at.desc")
 
 def aprobar_usuario(user_id, aprobado):
@@ -180,128 +117,22 @@ def init_admin():
     try:
         existente = buscar_usuario("dopseto")
         if not existente:
-            crear_usuario_supabase("dopseto", hash_password("universitario99"), rol="superadmin", aprobado=True, clan_id=None)
-            print("Superadmin creado: dopseto")
-        elif existente.get("rol") != "superadmin":
-            supabase_request("PATCH", "usuarios?username=eq.dopseto", {"rol": "superadmin"})
+            crear_usuario_supabase("dopseto", hash_password("universitario99"), rol="admin", aprobado=True)
+            print("Admin creado: dopseto")
     except Exception as e:
         print(f"Error iniciando admin: {e}")
 
-# =================== VERIFICACIONES ===================
-VERIFICACION_DURATION = 60 * 30  # 30 minutos para poner el código
-
-def crear_verificacion(username_juego, clan_id):
-    """Genera un código aleatorio de 6 caracteres para verificar identidad."""
-    codigo = secrets.token_hex(3).upper()  # ej: A3F9B2
-    expires = int(time.time()) + VERIFICACION_DURATION
-    # Eliminar verificaciones previas del mismo usuario
-    try:
-        supabase_request("DELETE", f"verificaciones?username_juego=eq.{username_juego}")
-    except:
-        pass
-    supabase_request("POST", "verificaciones", {
-        "username_juego": username_juego,
-        "clan_id": clan_id,
-        "codigo": codigo,
-        "expires": expires,
-        "verificado": False
-    })
-    return codigo
-
-def confirmar_verificacion(username_juego, clan_id, api_key, wolvesville_clan_id):
-    """Lee la bio del jugador y compara con el código guardado."""
-    try:
-        rows = supabase_request("GET", f"verificaciones?username_juego=eq.{username_juego}&clan_id=eq.{clan_id}&select=*")
-        if not rows:
-            return {"ok": False, "error": "No hay verificación pendiente"}
-        v = rows[0]
-        if int(time.time()) > v["expires"]:
-            supabase_request("DELETE", f"verificaciones?username_juego=eq.{username_juego}")
-            return {"ok": False, "error": "El código expiró. Iniciá el proceso nuevamente."}
-        if v["verificado"]:
-            return {"ok": False, "error": "Ya fue verificado"}
-
-        # Buscar al jugador en la API de Wolvesville
-        nombre_encoded = quote(username_juego)
-        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", api_key)
-        bio = jugador.get("personalMessage", "") or ""
-
-        if v["codigo"] not in bio:
-            return {"ok": False, "error": f"No encontré el código '{v['codigo']}' en tu mensaje personal. Asegurate de haberlo guardado."}
-
-        # Verificación exitosa — determinar rol según rango en el clan
-        player_id = jugador.get("id", "")
-        rol = determinar_rol_por_rango(player_id, wolvesville_clan_id, api_key)
-
-        # Marcar como verificado
-        supabase_request("PATCH", f"verificaciones?username_juego=eq.{username_juego}", {"verificado": True})
-
-        # Crear o actualizar usuario en la tabla usuarios
-        existente = buscar_usuario(username_juego)
-        if existente:
-            supabase_request("PATCH", f"usuarios?username=eq.{username_juego}", {
-                "aprobado": True,
-                "rol": rol,
-                "clan_id": clan_id,
-                "player_id": player_id
-            })
-        else:
-            supabase_request("POST", "usuarios", {
-                "username": username_juego,
-                "password": None,
-                "rol": rol,
-                "aprobado": True,
-                "clan_id": clan_id,
-                "player_id": player_id
-            })
-
-        return {"ok": True, "rol": rol, "player_id": player_id}
-
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-def determinar_rol_por_rango(player_id, wolvesville_clan_id, api_key):
-    """Consulta la API y devuelve 'lider', 'colider' o 'miembro' según el rango del jugador."""
-    try:
-        members = consultar_api_key(f"https://api.wolvesville.com/clans/{wolvesville_clan_id}/members", api_key)
-        for m in members:
-            if m.get("playerId") == player_id:
-                # Buscar el líder (el que tiene más alto rango)
-                if m.get("isCoLeader"):
-                    return "lider"  # co-líderes reciben rol lider en nuestra plataforma
-                return "miembro"
-        # Si no está en la lista (raro), miembro por defecto
-        return "miembro"
-    except:
-        return "miembro"
-
-def verificar_pertenencia_clan(username_juego, wolvesville_clan_id, api_key):
-    """Verifica que el username exista y pertenezca al clan."""
-    try:
-        nombre_encoded = quote(username_juego)
-        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", api_key)
-        if not jugador or jugador.get("error"):
-            return {"ok": False, "error": "Jugador no encontrado en Wolvesville"}
-        player_id = jugador.get("id", "")
-        clan_actual = jugador.get("clanId", "") or jugador.get("clan", {}).get("id", "")
-        if clan_actual != wolvesville_clan_id:
-            return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
-        return {"ok": True, "player_id": player_id}
-    except Exception as e:
-        return {"ok": False, "error": f"Error al verificar: {str(e)}"}
-
 # =================== CARTERAS ===================
-def cargar_carteras(clan_id=None):
-    if clan_id:
-        rows = supabase_request("GET", f"carteras?clan_id=eq.{clan_id}&select=*")
-    else:
-        rows = supabase_request("GET", "carteras?select=*")
+def cargar_carteras():
+    rows = supabase_request("GET", "carteras?select=*")
     carteras = {}
     for row in rows:
         carteras[row["player_id"]] = {"oro": row.get("oro", 0), "gemas": row.get("gemas", 0)}
     return carteras
 
-def upsert_cartera(player_id, username, clan_id, oro=0, gemas=0):
+# la siguiente "def upsert_cartera" fue de prueba para ver si funcionaba que agregue miembros a la lista de las carteras.
+# la "def upsert_cartera" que fue reemplazada por la actual era def upsert_cartera(player_id, username, oro, gemas): supabase_request("POST", "carteras", {"player_id": player_id, "username": username, "oro": oro, "gemas": gemas})
+def upsert_cartera(player_id, username, oro=0, gemas=0):
     url = f"{SUPABASE_URL}/rest/v1/carteras"
     req = urllib.request.Request(url, method="POST")
     req.add_header("apikey", SUPABASE_KEY)
@@ -311,35 +142,38 @@ def upsert_cartera(player_id, username, clan_id, oro=0, gemas=0):
     body = json.dumps({
         "player_id": player_id,
         "username": username,
-        "clan_id": clan_id,
         "oro": oro,
         "gemas": gemas
     }).encode("utf-8")
     with urllib.request.urlopen(req, body) as response:
         response.read()
-
+    
 def eliminar_cartera(player_id):
     supabase_request("DELETE", f"carteras?player_id=eq.{player_id}")
 
 def actualizar_cartera(player_id, campos):
     supabase_request("PATCH", f"carteras?player_id=eq.{player_id}", campos)
 
-def obtener_ex_miembros(members, clan_id):
-    carteras = supabase_request("GET", f"carteras?clan_id=eq.{clan_id}&select=*")
+def obtener_ex_miembros(members):
+    """Devuelve carteras de jugadores que ya no están en el clan."""
+    carteras = supabase_request("GET", "carteras?select=*")
     ids_actuales = {m.get("playerId") for m in members}
     return [c for c in carteras if c["player_id"] not in ids_actuales]
 
-def inicializar_carteras(members, clan_id):
-    carteras = cargar_carteras(clan_id)
+
+
+def inicializar_carteras(members):
+    """Crea filas en carteras para miembros que no las tienen aún."""
+    carteras = cargar_carteras()
     for m in members:
         player_id = m.get("playerId")
         username = m.get("username", "")
         if player_id and player_id not in carteras:
-            upsert_cartera(player_id, username, clan_id, 0, 0)
+            upsert_cartera(player_id, username, 0, 0)
             carteras[player_id] = {"oro": 0, "gemas": 0}
     return carteras
 
-# =================== CAMBIOS DE NOMBRE ===================
+# =====================registrar quien se cambia el nombre en la sección "miembros"=========================
 def registrar_cambio_nombre(player_id, nombre_anterior, nombre_nuevo):
     supabase_request("POST", "cambios_nombre", {
         "player_id": player_id,
@@ -351,8 +185,8 @@ def obtener_cambios_nombre():
     return supabase_request("GET", "cambios_nombre?select=*&order=created_at.desc")
 
 # =================== ANUNCIOS AUTOMÁTICOS ===================
-def obtener_anuncios_auto(clan_id):
-    return supabase_request("GET", f"anuncios_auto?clan_id=eq.{clan_id}&select=*&order=id.asc")
+def obtener_anuncios_auto():
+    return supabase_request("GET", "anuncios_auto?select=*&order=id.asc")
 
 def guardar_anuncio_auto(anuncio_id, mensaje, activo, dia_semana, hora_gmt):
     supabase_request("PATCH", f"anuncios_auto?id=eq.{anuncio_id}", {
@@ -370,118 +204,138 @@ def marcar_publicado(anuncio_id, dia, hora):
         "ultima_hora_publicada": hora
     })
 
-def verificar_y_publicar_anuncios(clan_id, wid, api_key):
+def verificar_y_publicar_anuncios():
+    """Verifica si hay anuncios automáticos que deban publicarse y los publica."""
     try:
-        anuncios = obtener_anuncios_auto(clan_id)
+        anuncios = obtener_anuncios_auto()
         ahora = time.gmtime()
-        dia_hoy = ahora.tm_wday
+        dia_hoy = ahora.tm_wday  # 0=lunes, 6=domingo
         hora_actual = f"{ahora.tm_hour:02d}:{ahora.tm_min:02d}"
         fecha_hoy = time.strftime("%Y-%m-%d", ahora)
+
         for a in anuncios:
             if not a.get("activo"): continue
             if not a.get("mensaje", "").strip(): continue
             if a.get("dia_semana") != dia_hoy: continue
-            if a.get("hora_gmt", "") > hora_actual: continue
+            if a.get("hora_gmt", "") > hora_actual: continue  # aún no llegó la hora
+
+            # Verificar si ya fue publicado con esta misma configuración hoy
             ultima = a.get("ultima_publicacion")
             ultimo_dia = a.get("ultimo_dia_publicado")
             ultima_hora = a.get("ultima_hora_publicada")
             dia_actual = a.get("dia_semana")
             hora_programada = a.get("hora_gmt", "")
+
             if ultima:
-                ultima_fecha = ultima[:10]
+                ultima_fecha = ultima[:10]  # YYYY-MM-DD
+                # Si fue publicado hoy Y con la misma configuración de día/hora, no repetir
                 if ultima_fecha == fecha_hoy and ultimo_dia == dia_actual and ultima_hora == hora_programada:
                     continue
+                # Si fue publicado hoy pero la configuración cambió, publicar de nuevo
+
+            # Publicar
             try:
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/announcements", {"message": a["mensaje"]}, api_key)
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": a["mensaje"]})
                 marcar_publicado(a["id"], dia_actual, hora_programada)
+                print(f"[ANUNCIO AUTO] Publicado: {a['mensaje'][:50]}")
             except Exception as e:
-                print(f"[ANUNCIO AUTO] Error: {e}")
+                print(f"[ANUNCIO AUTO] Error al publicar: {e}")
     except Exception as e:
         print(f"[ANUNCIO AUTO] Error general: {e}")
 
 # =================== CONFIG ===================
 FECHA_INICIO = "2026-03-17T00:00:00Z"
 
-def get_config(clave, clan_id=None):
+def get_config(clave):
     try:
-        if clan_id:
-            rows = supabase_request("GET", f"config?clave=eq.{clave}&clan_id=eq.{clan_id}&select=*")
-        else:
-            rows = supabase_request("GET", f"config?clave=eq.{clave}&select=*")
+        rows = supabase_request("GET", f"config?clave=eq.{clave}&select=*")
         return rows[0]["valor"] if rows else None
     except:
         return None
 
-def set_config(clave, valor, clan_id=None):
+def set_config(clave, valor):
     try:
-        if clan_id:
-            existing = supabase_request("GET", f"config?clave=eq.{clave}&clan_id=eq.{clan_id}&select=id")
-            if existing:
-                supabase_request("PATCH", f"config?clave=eq.{clave}&clan_id=eq.{clan_id}", {"valor": valor})
-            else:
-                supabase_request("POST", "config", {"clave": clave, "valor": valor, "clan_id": clan_id})
-        else:
-            supabase_request("PATCH", f"config?clave=eq.{clave}", {"valor": valor})
+        supabase_request("PATCH", f"config?clave=eq.{clave}", {"valor": valor})
+        print(f"[CONFIG] Guardado ok: {clave} = {valor}")
     except Exception as e:
         print(f"[CONFIG] ERROR al guardar {clave}: {e}")
 
 # =================== COMANDOS DE CHAT ===================
-def obtener_comandos_bot(clan_id):
-    rows = supabase_request("GET", f"comandos_bot?clan_id=eq.{clan_id}&select=*&order=id.asc")
+LEADER_ID = "304dec10-4074-40ff-884d-392099bacdf1"  # ID del líder del clan
+
+def obtener_comandos_bot():
+    rows = supabase_request("GET", "comandos_bot?select=*&order=id.asc")
     return sorted(rows, key=lambda c: (0 if c["nombre"] == "!comandos" else 1, c["id"]))
 
-def es_lider_o_colider(player_id, wid, api_key):
+def es_lider_o_colider(player_id):
+    """Verifica si un jugador es líder o co-líder del clan."""
     try:
-        members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
+        members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members")
         for m in members:
             if m.get("playerId") == player_id:
-                return m.get("isCoLeader", False)
+                return m.get("isCoLeader", False) or player_id == LEADER_ID
     except:
         pass
-    return False
+    return player_id == LEADER_ID
 
-def procesar_comandos_chat(clan_id, wid, api_key):
+def procesar_comandos_chat():
+    """Lee el chat del clan y responde al último comando nuevo."""
     try:
-        ultima = get_config("ultima_lectura_chat", clan_id) or "2000-01-01T00:00:00.000Z"
-        mensajes = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", api_key)
+        ultima = get_config("ultima_lectura_chat") or "2000-01-01T00:00:00.000Z"
+        mensajes = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/chat")
         if not mensajes:
             return
+
+        # Solo procesar el mensaje más reciente (el primero de la lista)
         ultimo = mensajes[0]
         if ultimo.get("date", "") <= ultima:
             return
-        set_config("ultima_lectura_chat", ultimo.get("date", ""), clan_id)
+
+        # Actualizar fecha antes de procesar
+        set_config("ultima_lectura_chat", ultimo.get("date", ""))
+
         msg = (ultimo.get("msg") or "").strip()
         pid = ultimo.get("playerId", "")
+
+        # Ignorar mensajes del sistema, del bot, o respuestas del bot
         if ultimo.get("isSystem"): return
         if msg.startswith("[Bot]"): return
-        comandos = obtener_comandos_bot(clan_id)
+
+        # Cargar configuración de comandos
+        comandos = obtener_comandos_bot()
         cfg = {c["nombre"]: c["acceso"] for c in comandos}
-        carteras_rows = supabase_request("GET", f"carteras?clan_id=eq.{clan_id}&select=*")
+
+        carteras_rows = supabase_request("GET", "carteras?select=*")
         carteras_por_pid = {r["player_id"]: r for r in carteras_rows}
         carteras_por_username = {r["username"].lower(): r for r in carteras_rows if r.get("username")}
 
+        # !cartera
         if msg.lower() == "!cartera":
             acceso = cfg.get("!cartera", "desactivado")
             if acceso == "desactivado": return
-            if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
+            # Sincronizar donaciones antes de mostrar el saldo
             try:
-                sincronizar_donaciones(clan_id, wid, api_key)
-            except: pass
-            cartera_actualizada = supabase_request("GET", f"carteras?player_id=eq.{pid}&clan_id=eq.{clan_id}&select=*")
+                sincronizar_donaciones()
+            except Exception as e:
+                print(f"[CHAT BOT] Error al sincronizar en !cartera: {e}")
+            # Releer la cartera ya actualizada
+            cartera_actualizada = supabase_request("GET", f"carteras?player_id=eq.{pid}&select=*")
             cartera = cartera_actualizada[0] if cartera_actualizada else None
             if cartera:
                 respuesta = f"[Bot] Cartera de {cartera['username']}: 🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas"
             else:
                 respuesta = "[Bot] No encontré tu cartera. Asegurate de estar en el clan."
             try:
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": respuesta}, api_key)
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
             except Exception as e:
-                print(f"[CHAT BOT] Error: {e}")
+                print(f"[CHAT BOT] Error al responder !cartera: {e}")
 
+        # !info @usuario
         elif msg.lower().startswith("!info @"):
             acceso = cfg.get("!info @", "desactivado")
             if acceso == "desactivado": return
-            if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
             objetivo = msg[7:].strip().lower()
             cartera = carteras_por_username.get(objetivo)
             if cartera:
@@ -489,113 +343,155 @@ def procesar_comandos_chat(clan_id, wid, api_key):
             else:
                 respuesta = f"[Bot] No encontré la cartera de @{objetivo}."
             try:
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": respuesta}, api_key)
-            except: pass
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !info: {e}")
 
+        # !comandos
         elif msg.lower() == "!comandos":
             acceso = cfg.get("!comandos", "desactivado")
             if acceso == "desactivado": return
-            if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
             activos = [
                 c["nombre"] + (" (solo líderes)" if c.get("acceso") == "lideres" else "")
-                for c in comandos if c.get("acceso") != "desactivado"
+                for c in sorted(comandos, key=lambda c: (0 if c["nombre"] == "!comandos" else 1, c["id"]))
+                if c.get("acceso") != "desactivado"
             ]
-            respuesta = "[Bot] Comandos disponibles:\n" + "\n".join(activos) if activos else "[Bot] No hay comandos activos."
+            if activos:
+                respuesta = "[Bot] Comandos disponibles:\n" + "\n".join(activos)
+            else:
+                respuesta = "[Bot] No hay comandos activos en este momento."
             try:
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": respuesta}, api_key)
-            except: pass
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !comandos: {e}")
 
+        # !donarOro @usuario cantidad
         elif msg.lower().startswith("!donaroro "):
             acceso = cfg.get("!donarOro", "desactivado")
             if acceso == "desactivado": return
-            if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
             partes = msg.split()
+            # Formato esperado: !donarOro @usuario cantidad
             if len(partes) != 3 or not partes[1].startswith("@"):
                 respuesta = "[Bot] Uso correcto: !donarOro @usuario cantidad"
             else:
-                destinatario = partes[1][1:].lower()
+                destinatario = partes[1][1:].lower()  # quitar el @
                 try:
                     cantidad = int(partes[2])
-                    cartera_origen = carteras_por_pid.get(pid)
-                    cartera_destino = carteras_por_username.get(destinatario)
-                    if not cartera_origen: respuesta = "[Bot] No encontré tu cartera."
-                    elif not cartera_destino: respuesta = f"[Bot] No encontré la cartera de @{destinatario}."
-                    elif cartera_origen["player_id"] == cartera_destino["player_id"]: respuesta = "[Bot] No podés donarte a vos mismo."
-                    elif (cartera_origen.get("oro") or 0) < cantidad: respuesta = f"[Bot] Fondos insuficientes. Tu saldo: 🥇 {cartera_origen.get('oro', 0)}."
+                    if cantidad <= 0:
+                        respuesta = "[Bot] La cantidad debe ser mayor a 0."
                     else:
-                        supabase_request("PATCH", f"carteras?player_id=eq.{cartera_origen['player_id']}", {"oro": cartera_origen.get("oro", 0) - cantidad})
-                        supabase_request("PATCH", f"carteras?player_id=eq.{cartera_destino['player_id']}", {"oro": cartera_destino.get("oro", 0) + cantidad})
-                        respuesta = f"[Bot] ✅ {cartera_origen['username']} donó 🥇 {cantidad} oro a {cartera_destino['username']}."
+                        cartera_origen = carteras_por_pid.get(pid)
+                        cartera_destino = carteras_por_username.get(destinatario)
+                        if not cartera_origen:
+                            respuesta = "[Bot] No encontré tu cartera."
+                        elif not cartera_destino:
+                            respuesta = f"[Bot] No encontré la cartera de @{destinatario}."
+                        elif cartera_origen["player_id"] == cartera_destino["player_id"]:
+                            respuesta = "[Bot] No podés donarte a vos mismo."
+                        elif (cartera_origen.get("oro") or 0) < cantidad:
+                            respuesta = f"[Bot] Fondos insuficientes. Tu saldo actual: 🥇 {cartera_origen.get('oro', 0)} oro."
+                        else:
+                            nuevo_origen = (cartera_origen.get("oro") or 0) - cantidad
+                            nuevo_destino = (cartera_destino.get("oro") or 0) + cantidad
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_origen['player_id']}", {"oro": nuevo_origen})
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_destino['player_id']}", {"oro": nuevo_destino})
+                            respuesta = f"[Bot] ✅ {cartera_origen['username']} donó 🥇 {cantidad} oro a {cartera_destino['username']}. Saldo restante: 🥇 {nuevo_origen}."
                 except ValueError:
                     respuesta = "[Bot] La cantidad debe ser un número entero."
             try:
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": respuesta}, api_key)
-            except: pass
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !donarOro: {e}")
 
+        # !donarGemas @usuario cantidad
         elif msg.lower().startswith("!donargemas "):
             acceso = cfg.get("!donarGemas", "desactivado")
             if acceso == "desactivado": return
-            if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            if acceso == "lideres" and not es_lider_o_colider(pid): return
             partes = msg.split()
+            # Formato esperado: !donarGemas @usuario cantidad
             if len(partes) != 3 or not partes[1].startswith("@"):
                 respuesta = "[Bot] Uso correcto: !donarGemas @usuario cantidad"
             else:
-                destinatario = partes[1][1:].lower()
+                destinatario = partes[1][1:].lower()  # quitar el @
                 try:
                     cantidad = int(partes[2])
-                    cartera_origen = carteras_por_pid.get(pid)
-                    cartera_destino = carteras_por_username.get(destinatario)
-                    if not cartera_origen: respuesta = "[Bot] No encontré tu cartera."
-                    elif not cartera_destino: respuesta = f"[Bot] No encontré la cartera de @{destinatario}."
-                    elif cartera_origen["player_id"] == cartera_destino["player_id"]: respuesta = "[Bot] No podés donarte a vos mismo."
-                    elif (cartera_origen.get("gemas") or 0) < cantidad: respuesta = f"[Bot] Fondos insuficientes. Tu saldo: 💎 {cartera_origen.get('gemas', 0)}."
+                    if cantidad <= 0:
+                        respuesta = "[Bot] La cantidad debe ser mayor a 0."
                     else:
-                        supabase_request("PATCH", f"carteras?player_id=eq.{cartera_origen['player_id']}", {"gemas": cartera_origen.get("gemas", 0) - cantidad})
-                        supabase_request("PATCH", f"carteras?player_id=eq.{cartera_destino['player_id']}", {"gemas": cartera_destino.get("gemas", 0) + cantidad})
-                        respuesta = f"[Bot] ✅ {cartera_origen['username']} donó 💎 {cantidad} gemas a {cartera_destino['username']}."
+                        cartera_origen = carteras_por_pid.get(pid)
+                        cartera_destino = carteras_por_username.get(destinatario)
+                        if not cartera_origen:
+                            respuesta = "[Bot] No encontré tu cartera."
+                        elif not cartera_destino:
+                            respuesta = f"[Bot] No encontré la cartera de @{destinatario}."
+                        elif cartera_origen["player_id"] == cartera_destino["player_id"]:
+                            respuesta = "[Bot] No podés donarte a vos mismo."
+                        elif (cartera_origen.get("gemas") or 0) < cantidad:
+                            respuesta = f"[Bot] Fondos insuficientes. Tu saldo actual: 💎 {cartera_origen.get('gemas', 0)} gemas."
+                        else:
+                            nuevo_origen = (cartera_origen.get("gemas") or 0) - cantidad
+                            nuevo_destino = (cartera_destino.get("gemas") or 0) + cantidad
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_origen['player_id']}", {"gemas": nuevo_origen})
+                            supabase_request("PATCH", f"carteras?player_id=eq.{cartera_destino['player_id']}", {"gemas": nuevo_destino})
+                            respuesta = f"[Bot] ✅ {cartera_origen['username']} donó 💎 {cantidad} gemas a {cartera_destino['username']}. Saldo restante: 💎 {nuevo_origen}."
                 except ValueError:
                     respuesta = "[Bot] La cantidad debe ser un número entero."
             try:
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": respuesta}, api_key)
-            except: pass
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": respuesta})
+            except Exception as e:
+                print(f"[CHAT BOT] Error al responder !donarGemas: {e}")
+
+        print(f"[CHAT BOT] Último mensaje procesado: {msg[:50]}")
 
         # Comandos personalizados
         for c in comandos:
-            if not c.get("personalizado") or not c.get("respuesta"): continue
+            if not c.get("personalizado") or not c.get("respuesta"):
+                continue
             if msg.lower() == c["nombre"].lower():
                 acceso = c.get("acceso", "desactivado")
                 if acceso == "desactivado": break
-                if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): break
+                if acceso == "lideres" and not es_lider_o_colider(pid): break
                 try:
-                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": f"[Bot] {c['respuesta']}"}, api_key)
-                except: pass
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": f"[Bot] {c['respuesta']}"})
+                except Exception as e:
+                    print(f"[CHAT BOT] Error al responder comando personalizado {c['nombre']}: {e}")
                 break
 
     except Exception as e:
-        print(f"[CHAT BOT] Error general clan {clan_id}: {e}")
+        print(f"[CHAT BOT] Error general: {e}")
 
-def sincronizar_donaciones(clan_id, wid, api_key):
-    ultima = get_config("ultima_sincronizacion", clan_id) or FECHA_INICIO
-    ledger = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/ledger", api_key)
+def sincronizar_donaciones():
+    ultima = get_config("ultima_sincronizacion") or FECHA_INICIO
+    ledger = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger")
     nuevas = [e for e in ledger if e.get("creationTime", "") > ultima]
+
     if not nuevas:
         return {"ok": True, "procesadas": 0, "mensaje": "No hay donaciones nuevas"}
+
     sumas = {}
     for entry in nuevas:
         username = entry.get("playerUsername", "")
-        if not username: continue
+        if not username:
+            continue
         if username not in sumas:
             sumas[username] = {"gold": 0, "gems": 0}
         sumas[username]["gold"] += entry.get("gold", 0) or 0
         sumas[username]["gems"] += entry.get("gems", 0) or 0
-    carteras_rows = supabase_request("GET", f"carteras?clan_id=eq.{clan_id}&select=*")
+
+    carteras_rows = supabase_request("GET", "carteras?select=*")
     carteras_por_player_id = {row["player_id"]: row for row in carteras_rows}
+
+    # Mapear playerId por username desde el ledger
     player_id_por_username = {}
     for entry in nuevas:
         pid = entry.get("playerId")
         uname = entry.get("playerUsername", "")
         if pid and uname:
             player_id_por_username[uname] = pid
+
     procesadas = 0
     for username, montos in sumas.items():
         pid = player_id_por_username.get(username)
@@ -607,138 +503,201 @@ def sincronizar_donaciones(clan_id, wid, api_key):
             if username_guardado and username_guardado != username:
                 registrar_cambio_nombre(pid, username_guardado, username)
             supabase_request("PATCH", f"carteras?player_id=eq.{pid}", {
-                "oro": nuevo_oro, "gemas": nuevo_gemas, "username": username
+                "oro": nuevo_oro,
+                "gemas": nuevo_gemas,
+                "username": username
             })
             procesadas += 1
+
     if nuevas:
         ultima_nueva = max(e.get("creationTime", "") for e in nuevas)
-        set_config("ultima_sincronizacion", ultima_nueva, clan_id)
+        set_config("ultima_sincronizacion", ultima_nueva)
+
     return {"ok": True, "procesadas": procesadas, "mensaje": f"{procesadas} cartera(s) actualizada(s)", "donaciones": nuevas}
 
+
 # =================== DETECCIÓN DE NUEVOS MIEMBROS ===================
-def detectar_nuevos_miembros(clan_id, wid, api_key):
+def detectar_nuevos_miembros():
+    """Revisa los logs del clan, detecta player_joined y crea cartera + bienvenida."""
     try:
-        ultima = get_config("ultimo_log_procesado", clan_id) or "2000-01-01T00:00:00.000Z"
-        logs = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/logs", api_key)
-        if not logs: return
-        nuevos_ingresos = [l for l in logs if l.get("creationTime", "") > ultima and l.get("action", "").upper() == "PLAYER_JOINED"]
+        ultima = get_config("ultimo_log_procesado") or "2000-01-01T00:00:00.000Z"
+        logs = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
+        if not logs:
+            return
+
+        # Filtrar solo logs nuevos con evento player_joined
+        nuevos_ingresos = [
+            l for l in logs
+            if l.get("creationTime", "") > ultima and l.get("action", "").upper() == "PLAYER_JOINED"
+        ]
+
         if not nuevos_ingresos:
+            # Actualizar marca de tiempo con el log más reciente igual
             ultimo_log = max(logs, key=lambda l: l.get("creationTime", ""))
             ultima_fecha = ultimo_log.get("creationTime", "")
             if ultima_fecha > ultima:
-                set_config("ultimo_log_procesado", ultima_fecha, clan_id)
+                set_config("ultimo_log_procesado", ultima_fecha)
             return
+
+        # Actualizar marca de tiempo al log más reciente procesado
         ultima_nueva = max(l.get("creationTime", "") for l in nuevos_ingresos)
-        set_config("ultimo_log_procesado", ultima_nueva, clan_id)
-        carteras_existentes = supabase_request("GET", f"carteras?clan_id=eq.{clan_id}&select=player_id")
+        set_config("ultimo_log_procesado", ultima_nueva)
+
+        # Cargar carteras existentes para no crear duplicados
+        carteras_existentes = supabase_request("GET", "carteras?select=player_id")
         ids_con_cartera = {r["player_id"] for r in carteras_existentes}
+
         for log in nuevos_ingresos:
             username = log.get("playerUsername", "")
             player_id = log.get("playerId", "")
-            if not player_id or not username: continue
+
+            if not player_id or not username:
+                continue
+
+            # Crear cartera si no existe
             if player_id not in ids_con_cartera:
-                upsert_cartera(player_id, username, clan_id, 0, 0)
+                upsert_cartera(player_id, username, 0, 0)
                 ids_con_cartera.add(player_id)
+                print(f"[NUEVO MIEMBRO] Cartera creada para {username}")
+
+            # Mensaje de bienvenida en el chat
             try:
-                plantilla = get_config("mensaje_bienvenida", clan_id) or "[Bot] ¡Bienvenido/a al clan, {username}! 🐺"
+                plantilla = get_config("mensaje_bienvenida") or "[Bot] ¡Bienvenido/a al clan, {username}! 🐺"
                 bienvenida = plantilla.replace("{username}", username)
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": bienvenida}, api_key)
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": bienvenida})
             except Exception as e:
-                print(f"[NUEVO MIEMBRO] Error bienvenida: {e}")
+                print(f"[NUEVO MIEMBRO] Error al enviar bienvenida a {username}: {e}")
+
     except Exception as e:
         print(f"[NUEVO MIEMBRO] Error general: {e}")
 
+
 # =================== PARTICIPACIÓN EN MISIONES ===================
-def registrar_participacion_mision(clan_id, wid, api_key):
+def registrar_participacion_mision():
+    """Detecta si hay una nueva misión activa y registra quién participa y quién no."""
     try:
-        quest_data = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/active", api_key)
-        if not quest_data or not quest_data.get("quest"): return
+        quest_data = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active")
+        if not quest_data or not quest_data.get("quest"):
+            return  # No hay misión activa
+
         quest = quest_data.get("quest", {})
         mission_id = quest.get("id", "")
-        if not mission_id: return
-        ultima = get_config("ultima_mision_registrada", clan_id)
-        if ultima == mission_id: return
+        if not mission_id:
+            return
+
+        # Verificar si ya registramos esta misión
+        ultima = get_config("ultima_mision_registrada")
+        if ultima == mission_id:
+            return  # Ya fue procesada
+
+        # Fecha de inicio de la misión
         tier_start = quest_data.get("tierStartTime", "")
         mission_date = tier_start[:10] if tier_start else time.strftime("%Y-%m-%d", time.gmtime())
+
+        # Obtener participantes actuales de la misión
         participants = quest_data.get("participants", [])
         ids_participantes = {p.get("playerId") for p in participants if p.get("playerId")}
-        members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
-        if not members: return
-        logs = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/logs", api_key)
+
+        # Obtener todos los miembros del clan
+        members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members")
+        if not members:
+            return
+
+        # Obtener fechas de ingreso desde los logs para no registrar misiones previas al ingreso
+        logs = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs")
         fecha_ingreso = {}
         for log in (logs or []):
             if log.get("action", "").upper() == "PLAYER_JOINED":
                 pid = log.get("playerId", "")
                 fecha = log.get("creationTime", "")[:10]
                 if pid and fecha:
+                    # Guardar la fecha de ingreso más reciente para cada jugador
                     if pid not in fecha_ingreso or fecha > fecha_ingreso[pid]:
                         fecha_ingreso[pid] = fecha
+
+        # Registrar participación para cada miembro
         for m in members:
             pid = m.get("playerId", "")
             username = m.get("username", "")
-            if not pid: continue
+            if not pid:
+                continue
+
+            # Si el miembro se unió después del inicio de esta misión, no registrar
             ingreso = fecha_ingreso.get(pid, "")
-            if ingreso and ingreso > mission_date: continue
+            if ingreso and ingreso > mission_date:
+                continue
+
             participo = pid in ids_participantes
-            existente = supabase_request("GET", f"participacion?player_id=eq.{pid}&mission_id=eq.{mission_id}&clan_id=eq.{clan_id}&select=id")
-            if existente: continue
+
+            # Verificar si ya existe el registro para este jugador en esta misión
+            existente = supabase_request("GET", f"participacion?player_id=eq.{pid}&mission_id=eq.{mission_id}&select=id")
+            if existente:
+                continue  # Ya registrado
+
             supabase_request("POST", "participacion", {
-                "player_id": pid, "username": username, "mission_id": mission_id,
-                "mission_date": mission_date, "participo": participo, "clan_id": clan_id
+                "player_id": pid,
+                "username": username,
+                "mission_id": mission_id,
+                "mission_date": mission_date,
+                "participo": participo
             })
-        set_config("ultima_mision_registrada", mission_id, clan_id)
+
+        # Marcar misión como registrada
+        set_config("ultima_mision_registrada", mission_id)
+        print(f"[PARTICIPACION] Misión {mission_id} registrada — {len(members)} miembros procesados")
+
     except Exception as e:
         print(f"[PARTICIPACION] Error: {e}")
 
 # =================== API WOLVESVILLE ===================
-def consultar_api_key(url, api_key):
+def consultar_api(url):
     req = urllib.request.Request(url)
     req.add_header("Authorization", "Bot " + api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/json")
-    req.add_header("User-Agent", "Mozilla/5.0")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     with urllib.request.urlopen(req) as response:
         return json.loads(response.read())
 
-def post_api_key(url, data, api_key):
+def post_api(url, data):
     body = json.dumps(data).encode("utf-8")
     req = urllib.request.Request(url, data=body, method="POST")
     req.add_header("Authorization", "Bot " + api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/json")
-    req.add_header("User-Agent", "Mozilla/5.0")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     with urllib.request.urlopen(req) as response:
         raw = response.read()
         return json.loads(raw) if raw else {"ok": True}
 
-def put_api_key(url, data, api_key):
+def put_api(url, data):
     body = json.dumps(data).encode("utf-8")
     req = urllib.request.Request(url, data=body, method="PUT")
     req.add_header("Authorization", "Bot " + api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/json")
-    req.add_header("User-Agent", "Mozilla/5.0")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     with urllib.request.urlopen(req) as response:
         raw = response.read()
         return json.loads(raw) if raw else {"ok": True}
 
-def patch_api_key(url, data, api_key):
+def patch_api(url, data):
     body = json.dumps(data).encode("utf-8")
     req = urllib.request.Request(url, data=body, method="PATCH")
     req.add_header("Authorization", "Bot " + api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/json")
-    req.add_header("User-Agent", "Mozilla/5.0")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     with urllib.request.urlopen(req) as response:
         raw = response.read()
         return json.loads(raw) if raw else {"ok": True}
 
-def delete_api_key(url, api_key):
+def delete_api(url):
     req = urllib.request.Request(url, method="DELETE")
     req.add_header("Authorization", "Bot " + api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/json")
-    req.add_header("User-Agent", "Mozilla/5.0")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     with urllib.request.urlopen(req) as response:
         raw = response.read()
         return json.loads(raw) if raw else {"ok": True}
@@ -753,27 +712,16 @@ def servir_archivo(path, content_type):
     with open(os.path.join(base, path), "rb") as f:
         return f.read(), content_type
 
-def obtener_avatar(player_id, api_key):
+def obtener_avatar(player_id):
     try:
-        slot = consultar_api_key(f"https://api.wolvesville.com/avatars/sharedAvatarId/{player_id}/0", api_key)
+        slot = consultar_api(f"https://api.wolvesville.com/avatars/sharedAvatarId/{player_id}/0")
         shared_id = slot.get("sharedAvatarId")
         if shared_id:
-            avatar = consultar_api_key(f"https://api.wolvesville.com/avatars/{shared_id}", api_key)
+            avatar = consultar_api(f"https://api.wolvesville.com/avatars/{shared_id}")
             return avatar.get("avatar", {}).get("url", None)
     except:
         pass
     return None
-
-# =================== HELPER: obtener clan de la sesión ===================
-def get_clan_context(sesion):
-    """Devuelve (clan_id, wid, api_key) según la sesión activa."""
-    clan_id = sesion.get("clan_id")
-    if not clan_id:
-        return None, None, None
-    clan = obtener_clan(clan_id)
-    if not clan:
-        return None, None, None
-    return clan_id, clan["wolvesville_clan_id"], clan["api_key"]
 
 # =================== HANDLER ===================
 class Handler(BaseHTTPRequestHandler):
@@ -813,10 +761,7 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/":
                 sesion = self.get_sesion()
                 if sesion:
-                    if sesion["rol"] == "superadmin":
-                        self.redirect("/superadmin/")
-                    else:
-                        self.redirect("/clan/")
+                    self.redirect("/clan/")
                 else:
                     body, ct = servir_archivo("login.html", "text/html; charset=utf-8")
                     self.send_html(body, ct)
@@ -827,38 +772,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_html(body, ct)
                 return
 
-            # Ruta pública: lista de clanes para el selector del login
-            if parsed.path == "/clanes/lista":
-                clanes = listar_clanes()
-                self.send_json([{"id": c["id"], "nombre": c["nombre"]} for c in clanes])
-                return
-
+            # Rutas protegidas
             sesion = self.get_sesion()
 
-            # Panel superadmin
-            if parsed.path in ("/superadmin/", "/superadmin/index.html"):
-                if not sesion or sesion["rol"] != "superadmin":
-                    self.redirect("/")
-                    return
-                body, ct = servir_archivo("superadmin/index.html", "text/html; charset=utf-8")
-                self.send_html(body, ct)
-                return
-
-            if parsed.path == "/superadmin/script.js":
-                if not sesion or sesion["rol"] != "superadmin":
-                    self.send_json({"error": "No autorizado"}, 401)
-                    return
-                body, ct = servir_archivo("superadmin/script.js", "application/javascript")
-                self.send_html(body, ct)
-                return
-
-            # Panel clan
             if parsed.path in ("/clan/", "/clan/index.html"):
                 if not sesion:
                     self.redirect("/")
-                    return
-                if sesion["rol"] == "superadmin":
-                    self.redirect("/superadmin/")
                     return
                 actualizar_actividad(sesion["username"])
                 body, ct = servir_archivo("clan/index.html", "text/html; charset=utf-8")
@@ -874,7 +793,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path in ("/tracker/", "/tracker/index.html"):
-                if not sesion or sesion["rol"] not in ("admin", "superadmin"):
+                if not sesion or sesion["rol"] != "admin":
                     self.redirect("/")
                     return
                 body, ct = servir_archivo("tracker/index.html", "text/html; charset=utf-8")
@@ -882,7 +801,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/tracker/script.js":
-                if not sesion or sesion["rol"] not in ("admin", "superadmin"):
+                if not sesion or sesion["rol"] != "admin":
                     self.send_json({"error": "No autorizado"}, 401)
                     return
                 body, ct = servir_archivo("tracker/script.js", "application/javascript")
@@ -894,84 +813,35 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
-            # =================== SUPERADMIN APIs ===================
-            if parsed.path == "/superadmin/clanes":
-                if sesion["rol"] != "superadmin":
-                    self.send_json({"error": "Sin permisos"}, 403)
-                    return
-                self.send_json(listar_clanes())
-                return
-
-            if parsed.path.startswith("/superadmin/clanes/") and parsed.path.endswith("/usuarios"):
-                if sesion["rol"] != "superadmin":
-                    self.send_json({"error": "Sin permisos"}, 403)
-                    return
-                cid = parsed.path.split("/superadmin/clanes/")[1].replace("/usuarios", "")
-                self.send_json(listar_usuarios(cid))
-                return
-
-            # Superadmin impersonando un clan
-            if parsed.path.startswith("/superadmin/entrar/"):
-                if sesion["rol"] != "superadmin":
-                    self.send_json({"error": "Sin permisos"}, 403)
-                    return
-                cid = parsed.path.split("/superadmin/entrar/")[1]
-                clan = obtener_clan(cid)
-                if not clan:
-                    self.send_json({"error": "Clan no encontrado"}, 404)
-                    return
-                # Crear sesión temporal como admin de ese clan
-                token = crear_sesion("dopseto", "admin", cid)
-                body = json.dumps({"ok": True}).encode("utf-8")
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; Max-Age={SESSION_DURATION}")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(body)
-                return
-
-            # =================== APIs de clan ===================
-            clan_id, wid, api_key = get_clan_context(sesion)
-
             if parsed.path == "/auth/ping":
                 actualizar_actividad(sesion["username"])
-                if clan_id and wid and api_key:
-                    verificar_y_publicar_anuncios(clan_id, wid, api_key)
-                    procesar_comandos_chat(clan_id, wid, api_key)
-                    detectar_nuevos_miembros(clan_id, wid, api_key)
-                    registrar_participacion_mision(clan_id, wid, api_key)
+                verificar_y_publicar_anuncios()
+                procesar_comandos_chat()
+                detectar_nuevos_miembros()
+                registrar_participacion_mision()
                 self.send_json({"ok": True})
                 return
 
             if parsed.path == "/auth/me":
-                secciones = get_clan_secciones(clan_id) if clan_id else {}
-                self.send_json({
-                    "username": sesion["username"],
-                    "rol": sesion["rol"],
-                    "clan_id": clan_id,
-                    "secciones": secciones
-                })
+                self.send_json({"username": sesion["username"], "rol": sesion["rol"]})
                 return
 
             if parsed.path == "/admin/usuarios":
-                if sesion["rol"] not in ("admin", "superadmin"):
+                if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
-                self.send_json(listar_usuarios(clan_id))
-                return
-
-            if not clan_id or not wid or not api_key:
-                self.send_json({"error": "Clan no configurado"}, 400)
+                self.send_json(listar_usuarios())
                 return
 
             if parsed.path == "/clan/info":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/info", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/info"))
                 return
 
             if parsed.path == "/clan/members":
-                members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members/detailed", api_key)
-                carteras = inicializar_carteras(members, clan_id)
+                # Trae miembros e inicializa carteras automáticamente
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                carteras = inicializar_carteras(members)
+                # Adjuntar cartera a cada miembro
                 for m in members:
                     pid = m.get("playerId")
                     m["cartera"] = carteras.get(pid, {"oro": 0, "gemas": 0})
@@ -980,49 +850,49 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path.startswith("/clan/avatar/"):
                 player_id = parsed.path.split("/clan/avatar/")[1]
-                self.send_json({"avatarUrl": obtener_avatar(player_id, api_key)})
+                self.send_json({"avatarUrl": obtener_avatar(player_id)})
                 return
 
             if parsed.path == "/clan/quests":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/active", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/active"))
                 return
 
             if parsed.path == "/clan/quests/available":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/available", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/available"))
                 return
 
             if parsed.path == "/clan/quests/votes":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/votes", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/votes"))
                 return
 
             if parsed.path == "/clan/quests/history":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/history", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/history"))
                 return
 
             if parsed.path == "/clan/estadisticas":
-                rows = supabase_request("GET", f"participacion?clan_id=eq.{clan_id}&select=*&order=mission_date.asc")
+                rows = supabase_request("GET", "participacion?select=*&order=mission_date.asc")
                 self.send_json(rows)
                 return
 
             if parsed.path == "/clan/announcements":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/announcements", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements"))
                 return
 
             if parsed.path == "/clan/ledger":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/ledger", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/ledger"))
                 return
 
             if parsed.path == "/clan/logs":
-                self.send_json(consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/logs", api_key))
+                self.send_json(consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/logs"))
                 return
 
             if parsed.path == "/clan/carteras":
-                self.send_json(cargar_carteras(clan_id))
+                self.send_json(cargar_carteras())
                 return
 
             if parsed.path == "/clan/ex-miembros":
-                members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members/detailed", api_key)
-                self.send_json(obtener_ex_miembros(members, clan_id))
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                self.send_json(obtener_ex_miembros(members))
                 return
 
             if parsed.path == "/clan/cambios_nombre":
@@ -1030,21 +900,21 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/ajustes/anuncios_auto":
-                self.send_json(obtener_anuncios_auto(clan_id))
+                self.send_json(obtener_anuncios_auto())
                 return
 
             if parsed.path == "/comandos":
-                self.send_json(obtener_comandos_bot(clan_id))
+                self.send_json(obtener_comandos_bot())
                 return
 
             if parsed.path == "/clan/sincronizar/info":
-                ultima = get_config("ultima_sincronizacion", clan_id) or FECHA_INICIO
+                ultima = get_config("ultima_sincronizacion") or FECHA_INICIO
                 self.send_json({"ultima_sincronizacion": ultima})
                 return
 
             if parsed.path.startswith("/config/"):
                 clave = parsed.path.split("/config/")[1]
-                valor = get_config(clave, clan_id) or ""
+                valor = get_config(clave) or ""
                 self.send_json({"clave": clave, "valor": valor})
                 return
 
@@ -1055,7 +925,7 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/buscar":
                 nombre = params.get("nombre", [""])[0]
                 if nombre:
-                    data = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre}", api_key)
+                    data = consultar_api(f"https://api.wolvesville.com/players/search?username={nombre}")
                     id_j = data["id"]
                     nombre_actual = data["username"]
                     jugadores = cargar_jugadores()
@@ -1070,7 +940,7 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/buscarid":
                 id_j = params.get("id", [""])[0]
                 if id_j:
-                    data = consultar_api_key(f"https://api.wolvesville.com/players/{id_j}", api_key)
+                    data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     nombre_actual = data["username"]
                     jugadores = cargar_jugadores()
                     nombre_original = jugadores.get(id_j, {}).get("nombre_original", nombre_actual)
@@ -1097,7 +967,7 @@ class Handler(BaseHTTPRequestHandler):
                     nombre_anterior = info.get("nombre_actual", "")
                     nombre_original = info.get("nombre_original", "")
                     nota = info.get("nota", "")
-                    data = consultar_api_key(f"https://api.wolvesville.com/players/{id_j}", api_key)
+                    data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     nombre_actual = data["username"]
                     cambio = nombre_actual != nombre_anterior
                     if cambio:
@@ -1114,7 +984,7 @@ class Handler(BaseHTTPRequestHandler):
                     nombre_anterior = info.get("nombre_actual", "")
                     nombre_original = info.get("nombre_original", "")
                     nota = info.get("nota", "")
-                    data = consultar_api_key(f"https://api.wolvesville.com/players/{id_j}", api_key)
+                    data = consultar_api(f"https://api.wolvesville.com/players/{id_j}")
                     nombre_actual = data["username"]
                     cambio = nombre_actual != nombre_anterior
                     if cambio:
@@ -1139,7 +1009,6 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
-            # =================== Login con contraseña (superadmin / admin legacy) ===================
             if parsed.path == "/auth/login":
                 username = data.get("username", "").strip()
                 password = data.get("password", "")
@@ -1147,7 +1016,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Campos incompletos"})
                     return
                 usuario = buscar_usuario(username)
-                if not usuario or not usuario.get("password") or usuario["password"] != hash_password(password):
+                if not usuario or usuario["password"] != hash_password(password):
                     self.send_json({"error": "Usuario o contraseña incorrectos"})
                     return
                 if not usuario["aprobado"]:
@@ -1156,10 +1025,9 @@ class Handler(BaseHTTPRequestHandler):
                     else:
                         self.send_json({"pendiente": True, "error": "Cuenta pendiente de aprobación"})
                     return
-                token = crear_sesion(usuario["username"], usuario["rol"], usuario.get("clan_id"))
+                token = crear_sesion(usuario["username"], usuario["rol"])
                 actualizar_actividad(usuario["username"])
-                redirect_url = "/superadmin/" if usuario["rol"] == "superadmin" else "/clan/"
-                body = json.dumps({"ok": True, "rol": usuario["rol"], "redirect": redirect_url}).encode("utf-8")
+                body = json.dumps({"ok": True, "rol": usuario["rol"]}).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; Max-Age={SESSION_DURATION}")
@@ -1168,51 +1036,20 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
                 return
 
-            # =================== Registro/verificación con cuenta del juego ===================
-            if parsed.path == "/auth/iniciar-verificacion":
-                username_juego = data.get("username_juego", "").strip()
-                clan_id = data.get("clan_id", "").strip()
-                if not username_juego or not clan_id:
-                    self.send_json({"error": "Datos incompletos"})
+            if parsed.path == "/auth/registro":
+                username = data.get("username", "").strip()
+                password = data.get("password", "")
+                if not username or not password:
+                    self.send_json({"error": "Campos incompletos"})
                     return
-                clan = obtener_clan(clan_id)
-                if not clan:
-                    self.send_json({"error": "Clan no encontrado"})
+                if len(username) < 3:
+                    self.send_json({"error": "El usuario debe tener al menos 3 caracteres"})
                     return
-                # Verificar que el jugador pertenece al clan
-                resultado = verificar_pertenencia_clan(username_juego, clan["wolvesville_clan_id"], clan["api_key"])
-                if not resultado["ok"]:
-                    self.send_json({"error": resultado["error"]})
+                if buscar_usuario(username):
+                    self.send_json({"error": "Ese nombre de usuario ya está en uso"})
                     return
-                # Generar código
-                codigo = crear_verificacion(username_juego, clan_id)
-                self.send_json({"ok": True, "codigo": codigo})
-                return
-
-            if parsed.path == "/auth/confirmar-verificacion":
-                username_juego = data.get("username_juego", "").strip()
-                clan_id = data.get("clan_id", "").strip()
-                if not username_juego or not clan_id:
-                    self.send_json({"error": "Datos incompletos"})
-                    return
-                clan = obtener_clan(clan_id)
-                if not clan:
-                    self.send_json({"error": "Clan no encontrado"})
-                    return
-                resultado = confirmar_verificacion(username_juego, clan_id, clan["api_key"], clan["wolvesville_clan_id"])
-                if not resultado["ok"]:
-                    self.send_json({"error": resultado["error"]})
-                    return
-                # Crear sesión
-                token = crear_sesion(username_juego, resultado["rol"], clan_id)
-                actualizar_actividad(username_juego)
-                body = json.dumps({"ok": True, "rol": resultado["rol"]}).encode("utf-8")
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; Max-Age={SESSION_DURATION}")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(body)
+                crear_usuario_supabase(username, hash_password(password))
+                self.send_json({"ok": True})
                 return
 
             if parsed.path == "/auth/logout":
@@ -1235,31 +1072,13 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
-            # =================== SUPERADMIN: CRUD clanes ===================
-            if parsed.path == "/superadmin/clanes":
-                if sesion["rol"] != "superadmin":
-                    self.send_json({"error": "Sin permisos"}, 403)
-                    return
-                nombre = data.get("nombre", "").strip()
-                wolvesville_clan_id = data.get("wolvesville_clan_id", "").strip()
-                api_key_clan = data.get("api_key", "").strip()
-                if not nombre or not wolvesville_clan_id or not api_key_clan:
-                    self.send_json({"error": "Nombre, clan ID y API key son obligatorios"})
-                    return
-                secciones = data.get("secciones", None)
-                result = crear_clan(nombre, wolvesville_clan_id, api_key_clan, secciones)
-                self.send_json({"ok": True, "clan": result[0] if result else {}})
-                return
-
-            clan_id, wid, api_key = get_clan_context(sesion)
-
             if parsed.path == "/clan/chat":
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 mensaje = data.get("message", "").strip()
                 if mensaje:
-                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": mensaje}, api_key)
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/chat", {"message": mensaje})
                     self.send_json({"ok": True})
                 else:
                     self.send_json({"error": "Mensaje vacío"})
@@ -1271,7 +1090,7 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 mensaje = data.get("message", "").strip()
                 if mensaje:
-                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/announcements", {"message": mensaje}, api_key)
+                    post_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements", {"message": mensaje})
                     self.send_json({"ok": True})
                 else:
                     self.send_json({"error": "Mensaje vacío"})
@@ -1281,7 +1100,7 @@ class Handler(BaseHTTPRequestHandler):
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
-                resultado = sincronizar_donaciones(clan_id, wid, api_key)
+                resultado = sincronizar_donaciones()
                 self.send_json(resultado)
                 return
 
@@ -1293,7 +1112,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not quest_id:
                     self.send_json({"error": "questId requerido"})
                     return
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/claim", {"questId": quest_id}, api_key)
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/claim", {"questId": quest_id})
                 self.send_json({"ok": True})
                 return
 
@@ -1301,7 +1120,7 @@ class Handler(BaseHTTPRequestHandler):
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
-                post_api_key(f"https://api.wolvesville.com/clans/{wid}/quests/available/shuffle", {}, api_key)
+                post_api(f"https://api.wolvesville.com/clans/{clan_id}/quests/available/shuffle", {})
                 self.send_json({"ok": True})
                 return
 
@@ -1311,7 +1130,7 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 clave = parsed.path.split("/config/")[1]
                 valor = data.get("valor", "")
-                set_config(clave, str(valor), clan_id)
+                set_config(clave, str(valor))
                 self.send_json({"ok": True})
                 return
 
@@ -1320,7 +1139,13 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 anuncio_id = parsed.path.split("/ajustes/anuncios_auto/")[1]
-                guardar_anuncio_auto(anuncio_id, data.get("mensaje", ""), data.get("activo", False), data.get("dia_semana", 0), data.get("hora_gmt", "20:00"))
+                guardar_anuncio_auto(
+                    anuncio_id,
+                    data.get("mensaje", ""),
+                    data.get("activo", False),
+                    data.get("dia_semana", 0),
+                    data.get("hora_gmt", "20:00")
+                )
                 self.send_json({"ok": True})
                 return
 
@@ -1336,7 +1161,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not nombre.startswith("!"):
                     self.send_json({"error": "El nombre debe empezar con !"})
                     return
-                existentes = supabase_request("GET", f"comandos_bot?nombre=eq.{nombre}&clan_id=eq.{clan_id}&select=id")
+                existentes = supabase_request("GET", f"comandos_bot?nombre=eq.{nombre}&select=id")
                 if existentes:
                     self.send_json({"error": f"Ya existe un comando con el nombre {nombre}"})
                     return
@@ -1345,8 +1170,7 @@ class Handler(BaseHTTPRequestHandler):
                     "descripcion": respuesta_cmd[:60] + ("..." if len(respuesta_cmd) > 60 else ""),
                     "respuesta": respuesta_cmd,
                     "acceso": "todos",
-                    "personalizado": True,
-                    "clan_id": clan_id
+                    "personalizado": True
                 })
                 self.send_json({"ok": True})
                 return
@@ -1380,39 +1204,24 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
-            clan_id, wid, api_key = get_clan_context(sesion)
-
-            # SUPERADMIN: actualizar clan
-            if parsed.path.startswith("/superadmin/clanes/"):
-                if sesion["rol"] != "superadmin":
-                    self.send_json({"error": "Sin permisos"}, 403)
-                    return
-                cid = parsed.path.split("/superadmin/clanes/")[1]
-                campos = {}
-                if "nombre" in data: campos["nombre"] = data["nombre"]
-                if "wolvesville_clan_id" in data: campos["wolvesville_clan_id"] = data["wolvesville_clan_id"]
-                if "api_key" in data: campos["api_key"] = data["api_key"]
-                if "secciones" in data: campos["secciones"] = json.dumps(data["secciones"])
-                if campos:
-                    actualizar_clan(cid, campos)
-                self.send_json({"ok": True})
-                return
-
             if parsed.path == "/admin/resetear-password":
-                if sesion["rol"] not in ("admin", "superadmin"):
+                if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 username = data.get("username", "").strip()
                 nueva_password = data.get("nueva_password", "")
-                if not username or not nueva_password or len(nueva_password) < 4:
-                    self.send_json({"error": "Datos inválidos"})
+                if not username or not nueva_password:
+                    self.send_json({"error": "Datos incompletos"})
+                    return
+                if len(nueva_password) < 4:
+                    self.send_json({"error": "La contraseña debe tener al menos 4 caracteres"})
                     return
                 supabase_request("PATCH", f"usuarios?username=eq.{username}", {"password": hash_password(nueva_password)})
                 self.send_json({"ok": True})
                 return
 
             if parsed.path.startswith("/admin/usuarios/") and parsed.path.endswith("/aprobar"):
-                if sesion["rol"] not in ("admin", "superadmin"):
+                if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 user_id = parsed.path.split("/admin/usuarios/")[1].replace("/aprobar", "")
@@ -1421,7 +1230,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path.startswith("/admin/usuarios/") and parsed.path.endswith("/rol"):
-                if sesion["rol"] not in ("admin", "superadmin"):
+                if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 user_id = parsed.path.split("/admin/usuarios/")[1].replace("/rol", "")
@@ -1441,8 +1250,8 @@ class Handler(BaseHTTPRequestHandler):
                 min_gold = data.get("minGold", None)
                 min_gems = data.get("minGems", None)
                 if min_gold is not None or min_gems is not None:
-                    carteras = cargar_carteras(clan_id)
-                    members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members/detailed", api_key)
+                    carteras = cargar_carteras()
+                    members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
                     actualizados = 0
                     for m in members:
                         pid = m.get("playerId")
@@ -1452,12 +1261,12 @@ class Handler(BaseHTTPRequestHandler):
                         if min_gems is not None and (cartera.get("gemas") or 0) < min_gems: cumple = False
                         if cumple:
                             try:
-                                put_api_key(f"https://api.wolvesville.com/clans/{wid}/members/{pid}/participateInQuests", {"participateInQuests": participar}, api_key)
+                                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{pid}/participateInQuests", {"participateInQuests": participar})
                                 actualizados += 1
                             except: pass
                     self.send_json({"ok": True, "actualizados": actualizados})
                 else:
-                    put_api_key(f"https://api.wolvesville.com/clans/{wid}/members/all/participateInQuests", {"participateInQuests": participar}, api_key)
+                    put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/all/participateInQuests", {"participateInQuests": participar})
                     self.send_json({"ok": True})
                 return
 
@@ -1466,7 +1275,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 member_id = parsed.path.split("/clan/members/")[1].replace("/participate", "")
-                put_api_key(f"https://api.wolvesville.com/clans/{wid}/members/{member_id}/participateInQuests", {"participateInQuests": data.get("participateInQuests", True)}, api_key)
+                put_api(f"https://api.wolvesville.com/clans/{clan_id}/members/{member_id}/participateInQuests", {"participateInQuests": data.get("participateInQuests", True)})
                 self.send_json({"ok": True})
                 return
 
@@ -1486,13 +1295,11 @@ class Handler(BaseHTTPRequestHandler):
             raw = self.rfile.read(length)
             data = json.loads(raw) if raw else {}
 
-            clan_id, wid, api_key = get_clan_context(sesion)
-
             if parsed.path.startswith("/clan/announcements/"):
                 anuncio_id = parsed.path.split("/clan/announcements/")[1]
                 contenido = data.get("content", "").strip()
                 if anuncio_id and contenido:
-                    patch_api_key(f"https://api.wolvesville.com/clans/{wid}/announcements/{anuncio_id}", {"message": contenido}, api_key)
+                    patch_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements/{anuncio_id}", {"message": contenido})
                     self.send_json({"ok": True})
                 else:
                     self.send_json({"error": "Datos inválidos"})
@@ -1505,19 +1312,24 @@ class Handler(BaseHTTPRequestHandler):
                 player_id = parsed.path.split("/clan/carteras/")[1]
                 restar = data.get("restar", False)
                 if restar:
+                    # Modo descuento: restar el monto de la cartera actual
                     rows = supabase_request("GET", f"carteras?player_id=eq.{player_id}&select=oro,gemas")
                     if rows:
                         actual_oro = rows[0].get("oro", 0) or 0
                         actual_gemas = rows[0].get("gemas", 0) or 0
                         campos = {}
-                        if data.get("oro") is not None: campos["oro"] = actual_oro + int(data["oro"])
-                        if data.get("gemas") is not None: campos["gemas"] = actual_gemas + int(data["gemas"])
-                        if campos: actualizar_cartera(player_id, campos)
+                        if data.get("oro") is not None:
+                            campos["oro"] = actual_oro + int(data["oro"])  # oro viene negativo
+                        if data.get("gemas") is not None:
+                            campos["gemas"] = actual_gemas + int(data["gemas"])  # gemas viene negativo
+                        if campos:
+                            actualizar_cartera(player_id, campos)
                 else:
                     campos = {}
                     if data.get("oro") is not None: campos["oro"] = int(data["oro"])
                     if data.get("gemas") is not None: campos["gemas"] = int(data["gemas"])
-                    if campos: actualizar_cartera(player_id, campos)
+                    if campos:
+                        actualizar_cartera(player_id, campos)
                 self.send_json({"ok": True})
                 return
 
@@ -1534,18 +1346,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "No autorizado"}, 401)
                 return
 
-            clan_id, wid, api_key = get_clan_context(sesion)
-
-            # SUPERADMIN: eliminar clan
-            if parsed.path.startswith("/superadmin/clanes/"):
-                if sesion["rol"] != "superadmin":
-                    self.send_json({"error": "Sin permisos"}, 403)
-                    return
-                cid = parsed.path.split("/superadmin/clanes/")[1]
-                eliminar_clan(cid)
-                self.send_json({"ok": True})
-                return
-
             if parsed.path.startswith("/comandos/"):
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
@@ -1560,7 +1360,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if parsed.path.startswith("/admin/usuarios/"):
-                if sesion["rol"] not in ("admin", "superadmin"):
+                if sesion["rol"] != "admin":
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 eliminar_usuario(parsed.path.split("/admin/usuarios/")[1])
@@ -1580,8 +1380,8 @@ class Handler(BaseHTTPRequestHandler):
                 if sesion["rol"] not in ("admin", "lider"):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
-                members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members/detailed", api_key)
-                ex = obtener_ex_miembros(members, clan_id)
+                members = consultar_api(f"https://api.wolvesville.com/clans/{clan_id}/members/detailed")
+                ex = obtener_ex_miembros(members)
                 for c in ex:
                     eliminar_cartera(c["player_id"])
                 self.send_json({"ok": True, "eliminados": len(ex)})
@@ -1590,7 +1390,7 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path.startswith("/clan/announcements/"):
                 anuncio_id = parsed.path.split("/clan/announcements/")[1]
                 if anuncio_id:
-                    delete_api_key(f"https://api.wolvesville.com/clans/{wid}/announcements/{anuncio_id}", api_key)
+                    delete_api(f"https://api.wolvesville.com/clans/{clan_id}/announcements/{anuncio_id}")
                     self.send_json({"ok": True})
                 return
 
@@ -1602,7 +1402,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-print("Iniciando Wolvesville Multi-Clan...")
+print("Iniciando Wolvesville...")
 init_admin()
 threading.Timer(1, lambda: webbrowser.open("http://localhost:8080/")).start()
 HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
