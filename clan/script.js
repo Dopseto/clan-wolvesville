@@ -32,8 +32,8 @@ const T = {
         miembrosTitle: 'Miembros', cambiosNombre: 'Cambios de nombre',
         verHistorial: 'Ver historial', accionesMasivas: 'Acciones masivas',
         activarTodos: 'Activar todos', desactivarTodos: 'Desactivar todos',
-        activarPorCartera: 'ACTIVAR POR CARTERA:', cartera: t('cartera'),
-        mision: t('mision'), activo: 'Activo', inactivo: 'Inactivo',
+        activarPorCartera: 'ACTIVAR POR CARTERA:', cartera: 'CARTERA',
+        mision: 'MISIÓN', activo: 'Activo', inactivo: 'Inactivo',
         oroTotal: 'Oro total', gemasTotal: 'Gemas total',
         // Logs
         actividadClan: 'Actividad del clan', fecha: 'Fecha', evento: 'Evento', jugador: 'Jugador',
@@ -45,26 +45,15 @@ const T = {
         noPendientes: 'No hay solicitudes pendientes ✓',
         administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
         miembrosRol: 'Miembros', espectadores: 'Espectadores',
-        enLinea: t('enLinea'), ultimaVez: 'Última vez:', nunca: t('nunca'),
-        subirLider: '↑ Subir a Líder', subirColider: '↑ Subir a Co-líder',
-        bajarColider: '↓ Bajar a Co-líder', bajarMiembro: '↓ Bajar a Miembro',
-        bajarMiembro2: '↓↓ Bajar a Miembro', hacerEspectador: '👁️ Espectador',
-        hacerMiembro: '↑ Hacer Miembro', resetearClave: '🔑 Resetear clave',
+        enLinea: 'En línea', ultimaVez: 'Última vez:', nunca: 'Nunca',
+        subirLider: t('subirLider'), subirColider: t('subirColider'),
+        bajarColider: t('bajarColider'), bajarMiembro: t('bajarMiembro'),
+        bajarMiembro2: t('bajarMiembro2'), hacerEspectador: t('hacerEspectador'),
+        hacerMiembro: t('hacerMiembro'), resetearClave: t('resetearClave'),
         // Tabla donaciones
         jugadorCol: 'Jugador', oro: 'Oro', gemas: 'Gemas', descripcionCol: 'Descripción',
         // Idioma
         selectorIdioma: 'Idioma',
-        // Tabla premios/multas
-        xpHecha: 'XP hecha', minimo: 'Mínimo', multa: 'Multa', premio: 'Premio',
-        // Ajustes
-        costoMisiones: 'Costo de misiones', mensajeBienvenida: 'Mensaje de bienvenida',
-        premiosYMultas: 'Premios y multas', anunciosAuto: 'Anuncios automáticos',
-        agregarComando: 'Agregar comando personalizado', configComandos: 'Configuración de comandos',
-        oroPorMision: 'ORO POR MISIÓN', gemasPorMision: 'GEMAS POR MISIÓN',
-        premiosPct: 'PREMIOS — % DEL COSTO DE MISIÓN', multaPct: 'MULTA — % DEL COSTO DE MISIÓN',
-        ultimaMisionCompletada: 'ÚLTIMA MISIÓN COMPLETADA',
-        activarConOro: 'Activar con este oro', activarConGemas: 'Activar con estas gemas',
-        ultimos14dias: 'últimos 14 días',
     },
     en: {
         // Nav
@@ -116,17 +105,6 @@ const T = {
         jugadorCol: 'Player', oro: 'Gold', gemas: 'Gems', descripcionCol: 'Description',
         // Idioma
         selectorIdioma: 'Language',
-        // Tabla premios/multas
-        xpHecha: 'XP earned', minimo: 'Minimum', multa: 'Fine', premio: 'Prize',
-        // Ajustes
-        costoMisiones: 'Mission cost', mensajeBienvenida: 'Welcome message',
-        premiosYMultas: 'Prizes and fines', anunciosAuto: 'Automatic announcements',
-        agregarComando: 'Add custom command', configComandos: 'Command settings',
-        oroPorMision: 'GOLD PER MISSION', gemasPorMision: 'GEMS PER MISSION',
-        premiosPct: 'PRIZES — % OF MISSION COST', multaPct: 'FINE — % OF MISSION COST',
-        ultimaMisionCompletada: 'LAST COMPLETED MISSION',
-        activarConOro: 'Enable with this gold', activarConGemas: 'Enable with these gems',
-        ultimos14dias: 'last 14 days',
     },
     pt: {
         // Nav
@@ -169,7 +147,7 @@ const T = {
         noPendientes: 'Sem solicitações pendentes ✓',
         administradores: 'Administradores', lideres: 'Líderes', colideres: 'Co-líderes',
         miembrosRol: 'Membros', espectadores: 'Espectadores',
-        enLinea: 'Online', ultimaVez: 'Última vez:', nunca: t('nunca'),
+        enLinea: 'Online', ultimaVez: 'Última vez:', nunca: 'Nunca',
         subirLider: '↑ Promover a Líder', subirColider: '↑ Promover a Co-líder',
         bajarColider: '↓ Rebaixar a Co-líder', bajarMiembro: '↓ Rebaixar a Membro',
         bajarMiembro2: '↓↓ Rebaixar a Membro', hacerEspectador: '👁 Tornar Espectador',
@@ -178,17 +156,6 @@ const T = {
         jugadorCol: 'Jogador', oro: 'Ouro', gemas: 'Gemas', descripcionCol: 'Descrição',
         // Idioma
         selectorIdioma: 'Idioma',
-        // Tabla premios/multas
-        xpHecha: 'XP feita', minimo: 'Mínimo', multa: 'Multa', premio: 'Prêmio',
-        // Ajustes
-        costoMisiones: 'Custo de missões', mensajeBienvenida: 'Mensagem de boas-vindas',
-        premiosYMultas: 'Prêmios e multas', anunciosAuto: 'Anúncios automáticos',
-        agregarComando: 'Adicionar comando personalizado', configComandos: 'Configuração de comandos',
-        oroPorMision: 'OURO POR MISSÃO', gemasPorMision: 'GEMAS POR MISSÃO',
-        premiosPct: 'PRÊMIOS — % DO CUSTO DA MISSÃO', multaPct: 'MULTA — % DO CUSTO DA MISSÃO',
-        ultimaMisionCompletada: 'ÚLTIMA MISSÃO CONCLUÍDA',
-        activarConOro: 'Ativar com este ouro', activarConGemas: 'Ativar com estas gemas',
-        ultimos14dias: 'últimos 14 dias',
     }
 }
 
@@ -247,10 +214,10 @@ window.onload = async function() {
 }
 
 function mostrarToast(msg, tipo = 'ok') {
-    const toast = document.getElementById('toast')
-    toast.textContent = msg
-    toast.className = `toast ${tipo} show`
-    setTimeout(() => toast.classList.remove('show'), 3000)
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.className = `toast ${tipo} show`
+    setTimeout(() => t.classList.remove('show'), 3000)
 }
 
 function mostrarSeccion(seccion, btn = null) {
@@ -301,8 +268,8 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     const contenido = document.getElementById('contenido')
     let html = `<h1>${info.name || 'Clan'} <span class="tag">${info.tag || ''}</span></h1>`
 
-    html += `<div class="card"><h3>${t('descripcion')}</h3>
-        <p style="font-size:15px; line-height:1.7">${(info.description || t('sinDescripcion')).replace(/\n/g, '<br>')}</p>
+    html += `<div class="card"><h3>📜 Descripción</h3>
+        <p style="font-size:15px; line-height:1.7">${(info.description || 'Sin descripción').replace(/\n/g, '<br>')}</p>
     </div>`
 
     html += `<div class="grid">
@@ -312,7 +279,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         <div class="stat"><div class="stat-valor">${info.minLevel || 0}</div><div class="stat-label">Nivel mínimo</div></div>
     </div>`
 
-    html += `<div class="card" style="margin-top:16px"><h3>${t('recursos')}</h3>
+    html += `<div class="card" style="margin-top:16px"><h3>💰 Recursos del clan</h3>
         <div class="grid">
             <div class="stat"><div class="stat-valor">🥇 ${info.gold || 0}</div><div class="stat-label">Oro</div></div>
             <div class="stat"><div class="stat-valor">💎 ${info.gems || 0}</div><div class="stat-label">Gemas</div></div>
@@ -320,24 +287,24 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
     </div>`
 
     // ANUNCIOS
-    html += `<div class="card"><h3>${t('anuncios')}</h3>
+    html += `<div class="card"><h3>📢 Anuncios</h3>
         ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `
         <div style="display:flex; gap:0; margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; width:fit-content">
-            <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">${t('manual')}</button>
-            <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">${t('automatico')}</button>
+            <button id="tab-manual" onclick="switchTab('manual')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:var(--accent); color:#fff8e8; transition:all 0.2s">Manual</button>
+            <button id="tab-auto" onclick="switchTab('auto')" style="padding:8px 20px; border:none; cursor:pointer; font-family:Cinzel,serif; font-size:11px; letter-spacing:1px; background:rgba(160,128,64,0.1); color:var(--muted); transition:all 0.2s">Automático</button>
         </div>
         <div id="panel-manual">
-            <textarea id="nuevoAnuncio" placeholder="${t('escribiAnuncio')}"></textarea>
-            <button class="btn-primary" onclick="publicarAnuncio()">${t('publicar')}</button>
+            <textarea id="nuevoAnuncio" placeholder="Escribí tu anuncio acá..."></textarea>
+            <button class="btn-primary" onclick="publicarAnuncio()">📢 Publicar</button>
         </div>
         <div id="panel-auto" style="display:none">
             <p style="font-size:13px; color:var(--muted); margin-bottom:12px; font-style:italic">Anuncios programados desde Ajustes:</p>
-            <div id="lista-anuncios-auto"><p style="color:var(--muted); font-style:italic; font-size:13px">${t('cargando')}</p></div>
+            <div id="lista-anuncios-auto"><p style="color:var(--muted); font-style:italic; font-size:13px">Cargando...</p></div>
         </div>` : ''}
     </div>`
 
     // HISTORIAL con scroll
-    html += `<div class="card"><h3>${t('historialAnuncios')}</h3>
+    html += `<div class="card"><h3>📜 Historial de anuncios</h3>
         <div style="max-height:280px; overflow-y:auto; padding-right:4px">`
     if (anuncios && anuncios.length > 0) {
         anuncios.slice(0, 10).forEach(a => {
@@ -349,12 +316,12 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
             </div>`
         })
     } else {
-        html += `<p style="color:var(--muted); font-style:italic">${t('noAnuncios')}</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay anuncios</p>`
     }
     html += `</div></div>`
 
     // MISIÓN ACTIVA
-    html += `<div class="card"><h3>${t('misionActiva')}</h3>`
+    html += `<div class="card"><h3>⚔️ Misión activa</h3>`
     if (quests && quests.quest) {
         const progreso = quests.currentValue || 0
         const objetivo = quests.quest.targetValue || 1
@@ -365,12 +332,12 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
             </div>
             <p style="font-size:14px; color:var(--muted)">${progreso} / ${objetivo} &nbsp;·&nbsp; Recompensa: ${quests.quest.goldReward || 0} 🥇</p>`
     } else {
-        html += `<p style="color:var(--muted); font-style:italic">${t('noMisionActiva')}</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay misión activa</p>`
     }
     html += `</div>`
 
     // MISIONES DISPONIBLES
-    html += `<div class="card"><h3>${t('misionesDisponibles')}</h3>`
+    html += `<div class="card"><h3>🗳️ Misiones disponibles</h3>`
     if (available && available.length > 0) {
         const votosMap = votes && votes.votes ? votes.votes : {}
         const shuffleVotos = votes && votes.shuffleVotes ? votes.shuffleVotes.length : 0
@@ -403,7 +370,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         // la cantidad de miembros activos y otros parámetros del clan.
         // Valores a reemplazar/mover: COSTO_ORO_DEFAULT (700) y COSTO_GEMAS_DEFAULT (170)
         html += `<div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:16px">
-            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">${t('costoPorMiembro')}</p>
+            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">COSTO POR MIEMBRO</p>
             <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center">
                 <div style="display:flex; align-items:center; gap:8px">
                     <span style="font-size:15px">🥇</span>
@@ -427,7 +394,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         html += `<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start">`
         if (rolActual === 'admin' || rolActual === 'lider') {
             html += `<div style="display:flex; flex-direction:column; align-items:center; gap:4px">
-                <button class="btn-primary" onclick="confirmarIniciarMision()">⚔️ ${t('iniciarseMision')}</button>
+                <button class="btn-primary" onclick="confirmarIniciarMision()">⚔️ Iniciar misión seleccionada</button>
             </div>`
             html += `<div style="display:flex; flex-direction:column; align-items:center; gap:4px">
                 <button class="btn-primary" id="btn-shuffle" style="background:linear-gradient(180deg,#4a2e7a,#2e1a5a)" onclick="hacerShuffle()">🔀 Shuffle</button>
@@ -436,7 +403,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         }
         html += `</div>`
     } else {
-        html += `<p style="color:var(--muted); font-style:italic">${t('noMisiones')}</p>`
+        html += `<p style="color:var(--muted); font-style:italic">No hay misiones disponibles</p>`
     }
     html += `</div>`
 
@@ -446,28 +413,28 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         const premioOro2 = Math.round(costoOroDefault * premioPct2 / 100)
         const premioOro3 = Math.round(costoOroDefault * premioPct3 / 100)
         html += `<div class="card">
-            <h3>${t('premios')}</h3>
+            <h3>🏆 Premios — Última misión</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:14px">
                 🥇 1er puesto: <b>${premioPct1}% = ${premioOro1} oro</b> &nbsp;·&nbsp;
                 🥈 2do puesto: <b>${premioPct2}% = ${premioOro2} oro</b> &nbsp;·&nbsp;
                 🥉 3er puesto: <b>${premioPct3}% = ${premioOro3} oro</b>
             </p>
-            <div id="panel-premios"><p style="color:var(--muted); font-style:italic; font-size:13px">${t('cargando')}</p></div>
+            <div id="panel-premios"><p style="color:var(--muted); font-style:italic; font-size:13px">Cargando...</p></div>
         </div>`
         html += `<div class="card">
-            <h3>${t('multas')}</h3>
+            <h3>⚠️ Multas — Última misión</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:14px">
                 Jugadores con menos de <b>${multaXpMin} XP</b>. Multa: <b>${multaPct}% de ${costoOroDefault} = 🥇 ${Math.round(costoOroDefault * multaPct / 100)} oro</b>.
             </p>
-            <div id="panel-multas"><p style="color:var(--muted); font-style:italic; font-size:13px">${t('cargando')}</p></div>
+            <div id="panel-multas"><p style="color:var(--muted); font-style:italic; font-size:13px">Cargando...</p></div>
         </div>`
     }
 
     html += `<div class="card">
-        <h3>${t('registroDonaciones')}</h3>
+        <h3>🔄 Registro de donaciones</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px">
-            ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">${t('sincronizar')}</button>` : ''}
-            <button class="btn-tracker" onclick="abrirModalDonaciones()">${t('verRegistro')}</button>
+            ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" id="btn-sincronizar-inicio" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a)" onclick="sincronizarDonaciones('inicio')">🔄 Sincronizar</button>` : ''}
+            <button class="btn-tracker" onclick="abrirModalDonaciones()">📋 Ver registro completo</button>
             <span id="sync-info-inicio" style="font-size:12px; color:var(--muted); font-style:italic"></span>
         </div>
         <div id="sync-registro"></div>
@@ -483,7 +450,7 @@ function mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOr
         const el = document.getElementById('sync-info-inicio')
         if (el && data.ultima_sincronizacion) {
             const fecha = new Date(data.ultima_sincronizacion).toLocaleString('es-AR')
-            el.textContent = `${t('ultimaSync')} ${fecha}`
+            el.textContent = `Última sincronización: ${fecha}`
         }
         cargarRegistroDonaciones()
     }).catch(() => {})
@@ -643,7 +610,7 @@ function cargarListaAnunciosAuto() {
     const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
     fetch('/ajustes/anuncios_auto').then(r => r.json()).then(anuncios => {
         if (!anuncios || anuncios.length === 0) {
-            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">${t('noAnuncios')} configurados</p>`
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay anuncios configurados</p>`
             return
         }
         let h = ''
@@ -758,10 +725,10 @@ function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 17
     let html = `<h1>👥 ${t('miembrosTitle')}</h1>`
 
     html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0">${t('cambiosNombre')}</h3>
+        <h3 style="margin:0">🔄 Cambios de nombre</h3>
         <div style="display:flex; gap:8px; align-items:center">
             ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); padding:6px 14px; font-size:10px" onclick="abrirModalClean()">🧹 Clean</button>` : ''}
-            <button class="btn-tracker" onclick="abrirDrawerCambios()">${t('verHistorial')}</button>
+            <button class="btn-tracker" onclick="abrirDrawerCambios()">Ver historial</button>
         </div>
     </div>`
 
@@ -771,25 +738,25 @@ function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 17
     if (rolActual === 'admin' || rolActual === 'lider') {
     html += `
     <div class="card">
-        <h3>${t('accionesMasivas')}</h3>
+        <h3>⚡ Acciones masivas</h3>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:16px">
-            <button class="btn-primary" onclick="activarTodos(true)">${t('activarTodos')}</button>
-            <button class="btn-primary" style="background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="activarTodos(false)">${t('desactivarTodos')}</button>
+            <button class="btn-primary" onclick="activarTodos(true)">✅ Activar todos</button>
+            <button class="btn-primary" style="background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="activarTodos(false)">❌ Desactivar todos</button>
         </div>
         <div style="padding-top:16px; border-top:1px solid rgba(160,128,64,0.2)">
-            <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:12px">${t('activarPorCartera')}</p>
+            <p style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:12px">ACTIVAR POR CARTERA:</p>
             <div style="display:flex; flex-direction:column; gap:12px">
                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
                     <span style="font-size:13px; color:var(--ink-light); min-width:16px">🥇</span>
                     <input type="number" id="filtroOro" value="${costoOro}" min="0"
                         style="flex:1; min-width:160px; max-width:220px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
-                    <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('oro')">${t('activarConOro')}</button>
+                    <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('oro')">✅ Activar con este oro</button>
                 </div>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
                     <span style="font-size:13px; color:var(--ink-light); min-width:16px">💎</span>
                     <input type="number" id="filtroGemas" value="${costoGemas}" min="0"
                         style="flex:1; min-width:160px; max-width:220px; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--parchment-shadow); background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none">
-                    <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('gemas')">${t('activarConGemas')}</button>
+                    <button class="btn-primary" style="padding:7px 16px; font-size:11px; white-space:nowrap" onclick="activarConFiltro('gemas')">✅ Activar con estas gemas</button>
                 </div>
             </div>
         </div>
@@ -841,7 +808,7 @@ function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 17
                     <div style="width:44px; height:24px; border-radius:12px; background:${participa ? '#2d6a1e' : 'var(--muted)'}; position:relative; border:1px solid rgba(0,0,0,0.1); flex-shrink:0; opacity:0.7">
                         <div style="width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:2px; left:${participa ? '22px' : '2px'}; box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div>
                     </div>`}
-                    <span style="font-size:12px; color:${participa ? '#2d6a1e' : 'var(--muted)'}; font-style:italic" id="toggle-label-${m.playerId}">${participa ? t('activo') : t('inactivo')}</span>
+                    <span style="font-size:12px; color:${participa ? '#2d6a1e' : 'var(--muted)'}; font-style:italic" id="toggle-label-${m.playerId}">${participa ? 'Activo' : 'Inactivo'}</span>
                 </div>
 
                 <div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.3); border-radius:var(--radius-sm); padding:10px 14px">
@@ -910,7 +877,7 @@ function abrirDrawerCambios(abrir = true) {
                     <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink)">🔄 Cambios de nombre</span>
                     <button onclick="cerrarDrawerCambios()" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
                 </div>
-                <div id="drawer-cambios-contenido"><p style="color:var(--muted); font-style:italic; font-size:14px">${t('cargando')}</p></div>
+                <div id="drawer-cambios-contenido"><p style="color:var(--muted); font-style:italic; font-size:14px">Cargando...</p></div>
             </div>`
         document.body.appendChild(drawer)
     }
@@ -1044,7 +1011,7 @@ function sincronizarDonaciones(origen = 'miembros') {
         } else {
             mostrarToast(`✓ ${data.mensaje}`)
             const ahora = new Date().toLocaleString('es-AR')
-            if (info) info.textContent = `${t('ultimaSync')} ${ahora} · ${data.procesadas} cartera(s) actualizada(s)`
+            if (info) info.textContent = `Última sincronización: ${ahora} · ${data.procesadas} cartera(s) actualizada(s)`
             if (origen === 'inicio') cargarRegistroDonaciones(new Date().toISOString())
         }
         if (btn) { btn.disabled = false; btn.textContent = '🔄 Sincronizar' }
@@ -1065,7 +1032,7 @@ function cargarRegistroDonaciones() {
         const recientes = ledger.filter(d => d.creationTime && d.creationTime >= desde)
 
         if (recientes.length === 0) {
-            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay ${t('ultimos14dias')}.</p>`
+            el.innerHTML = `<p style="color:var(--muted); font-style:italic; font-size:13px">No hay donaciones en los últimos 14 días.</p>`
             return
         }
 
@@ -1110,7 +1077,7 @@ function abrirModalDonaciones() {
                     <button onclick="document.getElementById('modal-donaciones').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
                 </div>
                 <div id="modal-donaciones-contenido" style="overflow-y:auto; flex:1">
-                    <p style="color:var(--muted); font-style:italic; font-size:14px">${t('cargando')}</p>
+                    <p style="color:var(--muted); font-style:italic; font-size:14px">Cargando...</p>
                 </div>
             </div>`
         modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none' })
@@ -1247,7 +1214,7 @@ function cargarStats() {
 
         // Leyenda
         html += `<div class="card">
-            <h3>${t('participacionMisiones')}</h3>
+            <h3>📋 Participación en misiones</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:14px">
                 Registro de participación desde que el bot comenzó a trackear. Hacé click en un miembro para ver su historial.
             </p>
@@ -1351,12 +1318,12 @@ async function cargarSesion() {
             { code: 'pt', flag: '🇧🇷', label: 'PT' }
         ]
         const langBtns = langs.map(l => `<button class="lang-btn" data-lang="${l.code}" onclick="cambiarIdioma('${l.code}')"
-            style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;opacity:${idiomaActual===l.code?'1':'0.35'};transition:opacity 0.2s;filter:${idiomaActual===l.code?'drop-shadow(0 0 4px rgba(196,122,42,0.8))':'none'}"
-            title="${l.label}">${l.flag}</button>`).join('')
+            style="background:${idiomaActual===l.code?'rgba(196,122,42,0.25)':'transparent'};border:1px solid ${idiomaActual===l.code?'rgba(196,122,42,0.6)':'transparent'};border-radius:3px;cursor:pointer;font-size:14px;padding:3px 7px;opacity:${idiomaActual===l.code?'1':'0.75'};transition:all 0.2s"
+            title="${l.label}">${l.flag} <span style="font-family:Cinzel,serif;font-size:9px;color:${idiomaActual===l.code?'var(--accent-light)':'rgba(160,128,80,0.8)'};vertical-align:middle">${l.label}</span></button>`).join('')
         footer.innerHTML = `
             <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:6px">${data.username}</p>
             ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:8px">${rolLabel}</p>` : ''}
-            <div style="display:flex;align-items:center;gap:2px;margin-bottom:10px;padding:4px 6px;background:rgba(0,0,0,0.15);border-radius:3px;width:fit-content">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px">
                 ${langBtns}
             </div>
             <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
@@ -1472,7 +1439,7 @@ function mostrarAdmin(usuarios) {
 
     // Solicitudes pendientes / desactivados
     if (pendientes.length > 0) {
-        html += `<div class="card"><h3>${t('pendientes')}</h3>`
+        html += `<div class="card"><h3>⏳ Pendientes / Desactivados</h3>`
         pendientes.forEach(u => {
             html += `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.2); flex-wrap:wrap; gap:10px">
@@ -1481,14 +1448,14 @@ function mostrarAdmin(usuarios) {
                     <span style="font-size:12px; color:var(--muted); margin-left:8px">${u.created_at ? u.created_at.slice(0,10) : ''}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px" onclick="toggleAcceso(${u.id}, true, '${u.username}')">${t('activar')}</button>
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">${t('eliminar')}</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px" onclick="toggleAcceso(${u.id}, true, '${u.username}')">✓ Activar</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">✗ Eliminar</button>
                 </div>
             </div>`
         })
         html += `</div>`
     } else {
-        html += `<div class="card"><p style="color:var(--muted); font-style:italic">${t('noPendientes')}</p></div>`
+        html += `<div class="card"><p style="color:var(--muted); font-style:italic">No hay solicitudes pendientes ✓</p></div>`
     }
 
     // Admin
@@ -1505,7 +1472,7 @@ function mostrarAdmin(usuarios) {
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
                     <span style="font-size:10px; color:var(--accent); margin-left:8px; font-family:Cinzel,serif">ADMIN</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : t('nunca'))}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
             </div>`
         })
@@ -1527,14 +1494,14 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; align-items:center">
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : t('nunca'))}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'colider', '${u.username}')">↓ Bajar a Co-líder</button>` : ''}
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#3a2c1e,#2a1c0e)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓↓ Bajar a Miembro</button>` : ''}
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">${t('desactivar')}</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ ${t('eliminar')}</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
         })
@@ -1556,15 +1523,15 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; align-items:center">
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : t('nunca'))}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
                     ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↓ Bajar a Miembro</button>` : ''}
                     ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#2a5e8b,#1a3e6b)" onclick="cambiarRol(${u.id}, 'espectador', '${u.username}')">👁 Hacer Espectador</button>` : ''}
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">${t('desactivar')}</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ ${t('eliminar')}</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
         })
@@ -1586,15 +1553,15 @@ function mostrarAdmin(usuarios) {
                 <div style="display:flex; align-items:center">
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : t('nunca'))}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#c47a2a,#9b5e1a)" onclick="cambiarRol(${u.id}, 'lider', '${u.username}')">↑ Subir a Líder</button>` : ''}
                     ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#9b5e1a,#7a4e2a)" onclick="cambiarRol(${u.id}, 'colider', '${u.username}')">↑ Subir a Co-líder</button>` : ''}
                     ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#2a5e8b,#1a3e6b)" onclick="cambiarRol(${u.id}, 'espectador', '${u.username}')">👁 Hacer Espectador</button>` : ''}
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">${t('desactivar')}</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ ${t('eliminar')}</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
         })
@@ -1617,13 +1584,13 @@ function mostrarAdmin(usuarios) {
                     ${luz}
                     <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink)">${u.username}</span>
                     <span style="font-size:10px; color:#4a6b8a; margin-left:8px; font-family:Cinzel,serif">ESPECTADOR</span>
-                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : t('nunca'))}</span>
+                    <span style="font-size:11px; color:var(--muted); margin-left:10px; font-style:italic">${conectado ? t('enLinea') : (u.ultima_actividad ? t('ultimaVez') + ' ' + new Date(u.ultima_actividad).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : 'Nunca')}</span>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#5a3c1e,#3a2010)" onclick="cambiarRol(${u.id}, 'miembro', '${u.username}')">↑ Hacer Miembro</button>` : ''}
-                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">${t('desactivar')}</button>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="toggleAcceso(${u.id}, false, '${u.username}')">⛔ Desactivar</button>
                     ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#1a4a6b,#0a2e4a)" onclick="resetearPassword('${u.username}')">🔑 Resetear clave</button>` : ''}
-                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ ${t('eliminar')}</button>` : ''}
+                    ${rolActual === 'admin' ? `<button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="eliminarUsuarioAdmin(${u.id}, '${u.username}')">🗑️ Eliminar</button>` : ''}
                 </div>
             </div>`
         })
@@ -1708,7 +1675,7 @@ function abrirModalClean() {
                     <button onclick="document.getElementById('modal-clean').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
                 </div>
                 <div id="modal-clean-contenido" style="overflow-y:auto; flex:1">
-                    <p style="color:var(--muted); font-style:italic; font-size:14px">${t('cargando')}</p>
+                    <p style="color:var(--muted); font-style:italic; font-size:14px">Cargando...</p>
                 </div>
             </div>`
         modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none' })
@@ -1792,7 +1759,7 @@ function cargarAjustes() {
 
         // COSTO DE MISIONES
         html += `<div class="card">
-            <h3>${t('costoMisiones')}</h3>
+            <h3>⚔️ Costo de misiones</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
                 Estos valores son el costo por miembro activo al iniciar una misión. Son permanentes y se usan como valor predeterminado en la página de inicio.
             </p>
@@ -1800,7 +1767,7 @@ function cargarAjustes() {
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
                     <span style="font-size:18px">🥇</span>
                     <div>
-                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">${t('oroPorMision')}</p>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">ORO POR MISIÓN</p>
                         ${rolActual === 'admin'
                             ? `<input type="number" id="ajuste-costo-oro" value="${parseInt(cfgOro.valor) || 700}" min="0"
                                 style="width:120px; padding:7px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--accent-dark); font-family:Cinzel,serif; font-size:16px; font-weight:700">`
@@ -1811,7 +1778,7 @@ function cargarAjustes() {
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
                     <span style="font-size:18px">💎</span>
                     <div>
-                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">${t('gemasPorMision')}</p>
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">GEMAS POR MISIÓN</p>
                         ${rolActual === 'admin'
                             ? `<input type="number" id="ajuste-costo-gemas" value="${parseInt(cfgGemas.valor) || 170}" min="0"
                                 style="width:120px; padding:7px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:#7b2da8; font-family:Cinzel,serif; font-size:16px; font-weight:700">`
@@ -1828,7 +1795,7 @@ function cargarAjustes() {
 
         // MENSAJE DE BIENVENIDA
         html += `<div class="card">
-            <h3>${t('mensajeBienvenida')}</h3>
+            <h3>🐺 Mensaje de bienvenida</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
                 Mensaje que envía el bot cuando un jugador se une al clan. Usá <b>{username}</b> para incluir su nombre.
             </p>
@@ -1839,13 +1806,13 @@ function cargarAjustes() {
 
         // PREMIOS Y MULTAS
         html += `<div class="card">
-            <h3>${t('premiosYMultas')}</h3>
+            <h3>🏆 Premios y multas</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
                 Configurá los parámetros para premios (top 3 XP) y multas (XP mínimo) de misiones.
             </p>
             <div style="display:flex; flex-direction:column; gap:16px">
                 <div>
-                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">${t('premiosPct')}</p>
+                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">PREMIOS — % DEL COSTO DE MISIÓN</p>
                     <div style="display:flex; flex-direction:column; gap:10px">
                         <div style="display:flex; align-items:center; gap:8px">
                             <span style="font-size:14px; min-width:20px">🥇</span>
@@ -1876,7 +1843,7 @@ function cargarAjustes() {
                     </div>
                 </div>
                 <div>
-                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">${t('multaPct')}</p>
+                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">MULTA — % DEL COSTO DE MISIÓN</p>
                     <div style="display:flex; align-items:center; gap:8px">
                         <input type="number" id="ajuste-multa-pct" value="${parseInt(cfgMultaPct.valor) || 50}" min="0"
                             style="width:100px; padding:7px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--red); font-family:Cinzel,serif; font-size:16px; font-weight:700">
@@ -1899,7 +1866,7 @@ function cargarAjustes() {
         </div>`
 
         // ANUNCIOS AUTOMÁTICOS
-        html += `<div class="card"><h3>${t('anunciosAuto')}</h3>
+        html += `<div class="card"><h3>📢 Anuncios automáticos</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
                 Los anuncios activos se publican automáticamente el día y hora indicados (hora GMT). Si la página no está abierta a esa hora exacta, se publicará la próxima vez que alguien la visite ese mismo día.
             </p>`
@@ -2020,7 +1987,7 @@ function cargarComandos() {
 
         // Formulario nuevo comando personalizado
         html += `<div class="card">
-            <h3>${t('agregarComando')}</h3>
+            <h3>➕ Agregar comando personalizado</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">El bot responderá automáticamente cuando alguien escriba el comando en el chat.</p>
             <div style="display:flex; flex-direction:column; gap:12px">
                 <div>
@@ -2036,7 +2003,7 @@ function cargarComandos() {
         </div>`
 
         html += `<div class="card">
-            <h3>${t('configComandos')}</h3>
+            <h3>⚙️ Configuración de comandos</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
                 Controlá quién puede usar cada comando en el chat del clan. Los cambios se aplican de inmediato.
             </p>`
@@ -2063,7 +2030,7 @@ function cargarComandos() {
                                 onclick="cambiarAccesoComando(${c.id}, 'lideres')">👑 Solo líderes</button>
                             <button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)"
                                 onclick="cambiarAccesoComando(${c.id}, 'desactivado')">❌ Desactivar</button>
-                            ${c.personalizado ? `<button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#4a1a1a,#2a0a0a)" onclick="eliminarComandoPersonalizado(${c.id}, '${c.nombre}')">🗑️ ${t('eliminar')}</button>` : ''}
+                            ${c.personalizado ? `<button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#4a1a1a,#2a0a0a)" onclick="eliminarComandoPersonalizado(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>` : ''}
                         </div>
                     </div>
                 </div>`
@@ -2135,7 +2102,7 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
             htmlPremios += `<div style="display:flex; gap:16px; margin-bottom:16px; padding:12px 16px; background:rgba(160,128,64,0.1); border:1px solid rgba(160,128,64,0.25); border-radius:var(--radius-sm); flex-wrap:wrap; align-items:flex-start">
                 <img src="${imagenMision}" style="width:180px; height:180px; object-fit:cover; border-radius:4px; border:1px solid rgba(160,128,64,0.3); flex-shrink:0">
                 <div style="display:flex; flex-direction:column; gap:6px">
-                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px">${t('ultimaMisionCompletada')}</p>
+                    <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px">ÚLTIMA MISIÓN COMPLETADA</p>
                     <p style="font-size:13px; color:var(--ink-light)">${fechaMision}</p>
                     <p style="font-size:13px; color:var(--muted)">XP total del clan: <b style="color:var(--ink)">${xpTotal.toLocaleString()}</b></p>
                 </div>
@@ -2145,7 +2112,7 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
             htmlPremios += `<p style="color:var(--muted); font-style:italic">Nadie hizo XP en la última misión.</p>`
         } else {
             const medallas = ['🥇', '🥈', '🥉']
-            htmlPremios += `<table><tr><th>#</th><th>${t('jugadorCol')}</th><th>XP</th><th>${t('premio')}</th></tr>`
+            htmlPremios += `<table><tr><th>#</th><th>Jugador</th><th>XP</th><th>Premio</th></tr>`
             top3.forEach((p, i) => {
                 htmlPremios += `<tr><td>${medallas[i]}</td><td>${p.username || p.playerId}</td><td>${p.xp || 0}</td><td>+🥇 ${premiosOro[i]}</td></tr>`
             })
@@ -2165,7 +2132,7 @@ function cargarPremiosYMultas(costoOro, premioPct1, premioPct2, premioPct3, mult
             if (multados.length === 0) {
                 htmlMultas = `<p style="color:var(--ok); font-style:italic">✓ Todos cumplieron el mínimo de XP.</p>`
             } else {
-                htmlMultas += `<table><tr><th>${t('jugadorCol')}</th><th>${t('xpHecha')}</th><th>${t('minimo')}</th><th>${t('multa')}</th></tr>`
+                htmlMultas += `<table><tr><th>Jugador</th><th>XP hecha</th><th>Mínimo</th><th>Multa</th></tr>`
                 multados.forEach(p => {
                     htmlMultas += `<tr><td>${p.username || p.playerId}</td><td style="color:var(--red)">${p.xp || 0}</td><td>${multaXpMin}</td><td>-🥇 ${multaOroCalculado}</td></tr>`
                 })
