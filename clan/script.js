@@ -1,6 +1,9 @@
 let seccionActual = 'inicio'
 let miembrosCache = []
 let idiomaActual = 'es'
+let datosCache = {}
+
+function puedeActuar() { return rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider' }
 
 // =================== TRADUCCIONES ===================
 const T = {
@@ -166,21 +169,38 @@ function t(key) {
 function cambiarIdioma(idioma) {
     idiomaActual = idioma
     localStorage.setItem('idioma', idioma)
-    // Guardar en servidor
-    fetch('/auth/idioma', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idioma })
-    }).catch(() => {})
-    // Actualizar selector visual
+    fetch('/auth/idioma', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idioma }) }).catch(() => {})
+
+    // Actualizar botones de idioma
     document.querySelectorAll('.lang-btn').forEach(b => {
-        b.style.opacity = b.dataset.lang === idioma ? '1' : '0.4'
-        b.style.fontWeight = b.dataset.lang === idioma ? '700' : '400'
+        const activo = b.dataset.lang === idioma
+        b.style.background = activo ? 'rgba(196,122,42,0.25)' : 'transparent'
+        b.style.border = `1px solid ${activo ? 'rgba(196,122,42,0.6)' : 'transparent'}`
+        b.style.opacity = activo ? '1' : '0.75'
     })
-    // Actualizar nav buttons existentes
+
+    // Actualizar textos del nav
     actualizarNavTextos()
-    // Recargar sección actual
-    mostrarSeccion(seccionActual)
+
+    // Rerenderizar sección actual con datos en caché (sin fetch)
+    const c = datosCache
+    if (seccionActual === 'inicio' && c.inicio) {
+        const d = c.inicio
+        mostrarInicio(d.info, d.quests, d.anuncios, d.ledger, d.available, d.votes, d.costoOroDefault, d.costoGemasDefault, d.premioPct1, d.premioPct2, d.premioPct3, d.multaXpMin, d.multaPct)
+    } else if (seccionActual === 'miembros' && c.miembros) {
+        const d = c.miembros
+        mostrarMiembros(d.members, d.carteras, d.costoOro, d.costoGemas)
+    } else if (seccionActual === 'logs' && c.logs) {
+        mostrarLogs(c.logs)
+    } else if (seccionActual === 'stats' && c.stats) {
+        // Stats se reconstruye directamente
+        cargarStats()
+    } else if (seccionActual === 'admin' && c.admin) {
+        mostrarAdmin(c.admin)
+    } else {
+        // Si no hay caché todavía, recargar normalmente
+        mostrarSeccion(seccionActual)
+    }
 }
 
 function actualizarNavTextos() {
@@ -210,7 +230,9 @@ const ANUNCIOS_AUTO = [
 window.onload = async function() {
     await cargarSesion()
     actualizarNavTextos()
-    mostrarSeccion('inicio')
+    const seccionInicial = window.location.hash.replace('#', '') || 'inicio'
+    const seccionesValidas = ['inicio', 'miembros', 'logs', 'stats', 'comandos', 'ajustes', 'admin']
+    mostrarSeccion(seccionesValidas.includes(seccionInicial) ? seccionInicial : 'inicio')
 }
 
 function mostrarToast(msg, tipo = 'ok') {
@@ -222,6 +244,7 @@ function mostrarToast(msg, tipo = 'ok') {
 
 function mostrarSeccion(seccion, btn = null) {
     seccionActual = seccion
+    window.location.hash = seccion
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('activo'))
     if (btn) btn.classList.add('activo')
     else document.querySelectorAll('.nav-btn')[0].classList.add('activo')
@@ -260,6 +283,7 @@ function cargarInicio() {
         const premioPct3 = parseInt(cfgP3.valor) || 5
         const multaXpMin = parseInt(cfgMultaXp.valor) || 0
         const multaPct = parseInt(cfgMultaPct.valor) || 50
+        datosCache.inicio = { info, quests, anuncios, ledger, available, votes, costoOroDefault, costoGemasDefault, premioPct1, premioPct2, premioPct3, multaXpMin, multaPct }
         mostrarInicio(info, quests, anuncios, ledger, available, votes, costoOroDefault, costoGemasDefault, premioPct1, premioPct2, premioPct3, multaXpMin, multaPct)
     })
 }
@@ -678,7 +702,10 @@ function cargarMiembros() {
                 carteras[m.playerId] = { oro: 0, gemas: 0 }
             }
         })
-        mostrarMiembros(membrosReales, carteras, parseInt(cfgOro.valor) || 700, parseInt(cfgGemas.valor) || 170)
+        const costoOro = parseInt(cfgOro.valor) || 700
+        const costoGemas = parseInt(cfgGemas.valor) || 170
+        datosCache.miembros = { members: membrosReales, carteras, costoOro, costoGemas }
+        mostrarMiembros(membrosReales, carteras, costoOro, costoGemas)
         cargarAvatares(membrosReales)
     }).catch(() => {
         contenido.innerHTML = `<h1>👥 Miembros</h1><div class="card"><p style="color:var(--muted)">Error al cargar miembros</p></div>`
@@ -1128,7 +1155,10 @@ function abrirModalDonaciones() {
 
 // =================== LOGS ===================
 function cargarLogs() {
-    fetch('/clan/logs').then(r => r.json()).then(mostrarLogs)
+    fetch('/clan/logs').then(r => r.json()).then(logs => {
+        datosCache.logs = logs
+        mostrarLogs(logs)
+    })
 }
 
 function mostrarLogs(logs) {
@@ -1175,6 +1205,7 @@ function cargarStats() {
         fetch('/clan/estadisticas').then(r => r.json()),
         fetch('/clan/members').then(r => r.json())
     ]).then(([rows, members]) => {
+        datosCache.stats = { rows, members }
         const miembrosActuales = new Set(members.map(m => m.playerId))
 
         // Agrupar por player_id
@@ -1417,7 +1448,7 @@ function cargarAdmin() {
     document.getElementById('contenido').innerHTML = `<h1>🛡️ ${t('panelAdmin')}</h1><p class="cargando">${t('cargando')}</p>`
     fetch('/admin/usuarios')
         .then(r => r.json())
-        .then(mostrarAdmin)
+        .then(usuarios => { datosCache.admin = usuarios; mostrarAdmin(usuarios) })
 }
 
 function estaConectado(ultimaActividad) {
