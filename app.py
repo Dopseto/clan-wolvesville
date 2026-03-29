@@ -208,7 +208,7 @@ def crear_verificacion(username_juego, clan_id):
     })
     return codigo
 
-def confirmar_verificacion(username_juego, clan_id, api_key, wolvesville_clan_id):
+def confirmar_verificacion(username_juego, clan_id, api_key, wolvesville_clan_id, password_hash=None):
     """Lee la bio del jugador y compara con el código guardado."""
     try:
         rows = supabase_request("GET", f"verificaciones?username_juego=eq.{username_juego}&clan_id=eq.{clan_id}&select=*")
@@ -239,16 +239,14 @@ def confirmar_verificacion(username_juego, clan_id, api_key, wolvesville_clan_id
         # Crear o actualizar usuario en la tabla usuarios
         existente = buscar_usuario(username_juego)
         if existente:
-            supabase_request("PATCH", f"usuarios?username=eq.{username_juego}", {
-                "aprobado": True,
-                "rol": rol,
-                "clan_id": clan_id,
-                "player_id": player_id
-            })
+            campos = {"aprobado": True, "rol": rol, "clan_id": clan_id, "player_id": player_id}
+            if password_hash:
+                campos["password"] = password_hash
+            supabase_request("PATCH", f"usuarios?username=eq.{username_juego}", campos)
         else:
             supabase_request("POST", "usuarios", {
                 "username": username_juego,
-                "password": None,
+                "password": password_hash,
                 "rol": rol,
                 "aprobado": True,
                 "clan_id": clan_id,
@@ -1204,14 +1202,18 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/auth/confirmar-verificacion":
                 username_juego = data.get("username_juego", "").strip()
                 clan_id = data.get("clan_id", "").strip()
+                password = data.get("password", "")
                 if not username_juego or not clan_id:
                     self.send_json({"error": "Datos incompletos"})
+                    return
+                if not password or len(password) < 4:
+                    self.send_json({"error": "La contraseña debe tener al menos 4 caracteres"})
                     return
                 clan = obtener_clan(clan_id)
                 if not clan:
                     self.send_json({"error": "Clan no encontrado"})
                     return
-                resultado = confirmar_verificacion(username_juego, clan_id, clan["api_key"], clan["wolvesville_clan_id"])
+                resultado = confirmar_verificacion(username_juego, clan_id, clan["api_key"], clan["wolvesville_clan_id"], hash_password(password))
                 if not resultado["ok"]:
                     self.send_json({"error": resultado["error"]})
                     return

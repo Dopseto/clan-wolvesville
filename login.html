@@ -227,33 +227,6 @@
         .mensaje.error { background: rgba(139,32,16,0.1); color: var(--red); border: 1px solid rgba(139,32,16,0.2); display: block; }
         .mensaje.ok { background: rgba(45,106,30,0.1); color: var(--ok); border: 1px solid rgba(45,106,30,0.2); display: block; }
         .mensaje.pendiente { background: rgba(196,122,42,0.1); color: var(--accent-dark); border: 1px solid rgba(196,122,42,0.2); display: block; }
-
-        .lang-selector {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            display: flex;
-            gap: 2px;
-            background: rgba(0,0,0,0.12);
-            border-radius: 4px;
-            padding: 3px 5px;
-        }
-
-        .lang-selector button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 2px 4px;
-            opacity: 0.35;
-            transition: opacity 0.2s, filter 0.2s;
-            line-height: 1;
-        }
-
-        .lang-selector button.activo {
-            opacity: 1;
-            filter: drop-shadow(0 0 4px rgba(196,122,42,0.8));
-        }
     </style>
 </head>
 <body>
@@ -268,106 +241,89 @@
         <div class="divider"><span>✦</span></div>
 
         <div class="tabs">
-            <button class="tab-btn activo" id="tab-login-btn" onclick="switchTab('login')" data-i18n="tabLogin">Ingresar</button>
-            <button class="tab-btn" id="tab-reg-btn" onclick="switchTab('registro')" data-i18n="tabReg">Registrarse</button>
+            <button class="tab-btn activo" onclick="switchTab('login')">Ingresar</button>
+            <button class="tab-btn" onclick="switchTab('registro')">Registrarse</button>
         </div>
 
         <!-- LOGIN -->
         <div class="form-panel activo" id="panel-login">
             <div class="field">
-                <label data-i18n="usuario">Usuario</label>
-                <input type="text" id="login-user" data-i18n-placeholder="placeholderUsuario" placeholder="Tu nombre de usuario" autocomplete="username"/>
+                <label>Usuario</label>
+                <input type="text" id="login-user" placeholder="Tu nombre de usuario" autocomplete="username"/>
             </div>
             <div class="field">
-                <label data-i18n="contrasena">Contraseña</label>
+                <label>Contraseña</label>
                 <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/>
             </div>
-            <button class="btn-submit" onclick="hacerLogin()" data-i18n="btnLogin">Entrar al clan</button>
+            <button class="btn-submit" onclick="hacerLogin()">Entrar al clan</button>
             <div class="mensaje" id="login-msg"></div>
         </div>
 
         <!-- REGISTRO -->
         <div class="form-panel" id="panel-registro">
-            <div class="field">
-                <label data-i18n="usuario">Usuario</label>
-                <input type="text" id="reg-user" data-i18n-placeholder="placeholderUsuarioReg" placeholder="Elegí un nombre de usuario" autocomplete="username"/>
+
+            <!-- PASO 1: usuario + clan + contraseña -->
+            <div id="reg-paso1">
+                <div class="field">
+                    <label>Usuario en Wolvesville</label>
+                    <input type="text" id="reg-user" placeholder="Tu nombre exacto en el juego" autocomplete="username"/>
+                </div>
+                <div class="field">
+                    <label>Clan</label>
+                    <select id="reg-clan" style="width:100%; padding:10px 14px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:15px; outline:none">
+                        <option value="">Cargando clanes...</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Contraseña</label>
+                    <input type="password" id="reg-pass" placeholder="••••••••" autocomplete="new-password"/>
+                </div>
+                <div class="field">
+                    <label>Confirmar contraseña</label>
+                    <input type="password" id="reg-pass2" placeholder="••••••••" autocomplete="new-password"/>
+                </div>
+                <button class="btn-submit" onclick="iniciarVerificacion()">Continuar →</button>
+                <div class="mensaje" id="reg-msg"></div>
             </div>
-            <div class="field">
-                <label data-i18n="contrasena">Contraseña</label>
-                <input type="password" id="reg-pass" placeholder="••••••••" autocomplete="new-password"/>
+
+            <!-- PASO 2: mostrar código -->
+            <div id="reg-paso2" style="display:none">
+                <p style="font-size:14px; color:var(--ink-light); margin-bottom:16px; line-height:1.6">
+                    Para confirmar que sos vos, copiá este código en tu <b>mensaje personal</b> dentro de Wolvesville:
+                </p>
+                <div id="reg-codigo-box" style="text-align:center; font-family:Cinzel,serif; font-size:22px; font-weight:700; color:var(--accent); letter-spacing:4px; padding:16px; background:rgba(196,122,42,0.1); border:1px solid rgba(196,122,42,0.3); border-radius:3px; margin-bottom:16px; cursor:pointer" onclick="copiarCodigo()" title="Clic para copiar"></div>
+                <p style="font-size:12px; color:var(--muted); font-style:italic; margin-bottom:20px; text-align:center">Clic en el código para copiarlo · Expira en 10 minutos</p>
+                <button class="btn-submit" onclick="confirmarVerificacion()">✓ Ya lo puse, verificar</button>
+                <button onclick="volverPaso1()" style="width:100%; margin-top:8px; padding:8px; background:transparent; color:var(--muted); border:1px solid rgba(160,100,60,0.2); border-radius:3px; cursor:pointer; font-family:Cinzel,serif; font-size:10px; letter-spacing:1px">← Volver</button>
+                <div class="mensaje" id="reg-msg2"></div>
             </div>
-            <div class="field">
-                <label data-i18n="confirmarContrasena">Confirmar contraseña</label>
-                <input type="password" id="reg-pass2" placeholder="••••••••" autocomplete="new-password"/>
-            </div>
-            <button class="btn-submit" onclick="hacerRegistro()" data-i18n="btnReg">Solicitar acceso</button>
-            <div class="mensaje" id="reg-msg"></div>
+
         </div>
     </div>
 </div>
 
 <script>
-// =================== TRADUCCIONES LOGIN ===================
-const TL = {
-    es: {
-        tabLogin: 'Ingresar', tabReg: 'Registrarse',
-        usuario: 'Usuario', contrasena: 'Contraseña', confirmarContrasena: 'Confirmar contraseña',
-        btnLogin: 'Entrar al clan', btnReg: 'Solicitar acceso',
-        placeholderUsuario: 'Tu nombre de usuario', placeholderUsuarioReg: 'Elegí un nombre de usuario',
-        errorCampos: 'Completá todos los campos', errorPass: 'Las contraseñas no coinciden',
-        errorPassLen: 'La contraseña debe tener al menos 4 caracteres',
-        suspendido: '⛔ Cuenta temporalmente suspendida',
-        pendiente: '⏳ Tu cuenta está pendiente de aprobación',
-        registroOk: '✓ Solicitud enviada. Esperá que el admin te apruebe.',
-    },
-    en: {
-        tabLogin: 'Log in', tabReg: 'Register',
-        usuario: 'Username', contrasena: 'Password', confirmarContrasena: 'Confirm password',
-        btnLogin: 'Enter the clan', btnReg: 'Request access',
-        placeholderUsuario: 'Your username', placeholderUsuarioReg: 'Choose a username',
-        errorCampos: 'Please fill in all fields', errorPass: 'Passwords do not match',
-        errorPassLen: 'Password must be at least 4 characters',
-        suspendido: '⛔ Account temporarily suspended',
-        pendiente: '⏳ Your account is pending approval',
-        registroOk: '✓ Request sent. Wait for the admin to approve you.',
-    },
-    pt: {
-        tabLogin: 'Entrar', tabReg: 'Registrar',
-        usuario: 'Usuário', contrasena: 'Senha', confirmarContrasena: 'Confirmar senha',
-        btnLogin: 'Entrar no clã', btnReg: 'Solicitar acesso',
-        placeholderUsuario: 'Seu nome de usuário', placeholderUsuarioReg: 'Escolha um nome de usuário',
-        errorCampos: 'Preencha todos os campos', errorPass: 'As senhas não coincidem',
-        errorPassLen: 'A senha deve ter pelo menos 4 caracteres',
-        suspendido: '⛔ Conta temporariamente suspensa',
-        pendiente: '⏳ Sua conta está aguardando aprovação',
-        registroOk: '✓ Solicitação enviada. Aguarde a aprovação do admin.',
+// Cargar clanes al iniciar
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('/clanes/lista')
+        const clanes = await res.json()
+        const sel = document.getElementById('reg-clan')
+        sel.innerHTML = '<option value="">— Seleccioná tu clan —</option>'
+        clanes.forEach(c => {
+            const opt = document.createElement('option')
+            opt.value = c.id
+            opt.textContent = c.nombre
+            sel.appendChild(opt)
+        })
+    } catch(e) {
+        document.getElementById('reg-clan').innerHTML = '<option value="">Error al cargar clanes</option>'
     }
-}
+})
 
-let idiomaLogin = localStorage.getItem('idioma') || 'es'
-
-function tl(key) {
-    return (TL[idiomaLogin] && TL[idiomaLogin][key]) || TL['es'][key] || key
-}
-
-function cambiarIdiomaLogin(idioma) {
-    idiomaLogin = idioma
-    localStorage.setItem('idioma', idioma)
-    // Actualizar botones
-    document.querySelectorAll('.lang-selector button').forEach(b => {
-        b.classList.toggle('activo', b.id === `lang-${idioma}`)
-    })
-    // Actualizar textos
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        el.textContent = tl(el.dataset.i18n)
-    })
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        el.placeholder = tl(el.dataset.i18nPlaceholder)
-    })
-}
-
-// Aplicar idioma guardado al cargar
-window.addEventListener('load', () => cambiarIdiomaLogin(idiomaLogin))
+let regUsername = ''
+let regClanId = ''
+let regPassword = ''
 
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach((b, i) => {
@@ -383,10 +339,72 @@ function mostrarMsg(id, texto, tipo) {
     el.className = `mensaje ${tipo}`
 }
 
+function volverPaso1() {
+    document.getElementById('reg-paso1').style.display = 'block'
+    document.getElementById('reg-paso2').style.display = 'none'
+    mostrarMsg('reg-msg', '', '')
+}
+
+function copiarCodigo() {
+    const codigo = document.getElementById('reg-codigo-box').textContent
+    navigator.clipboard.writeText(codigo).then(() => {
+        const box = document.getElementById('reg-codigo-box')
+        const original = box.textContent
+        box.textContent = '✓ Copiado'
+        setTimeout(() => box.textContent = original, 1500)
+    })
+}
+
+async function iniciarVerificacion() {
+    const username = document.getElementById('reg-user').value.trim()
+    const clan_id = document.getElementById('reg-clan').value
+    const password = document.getElementById('reg-pass').value
+    const password2 = document.getElementById('reg-pass2').value
+
+    if (!username) { mostrarMsg('reg-msg', 'Ingresá tu usuario de Wolvesville', 'error'); return }
+    if (!clan_id) { mostrarMsg('reg-msg', 'Seleccioná tu clan', 'error'); return }
+    if (!password) { mostrarMsg('reg-msg', 'Ingresá una contraseña', 'error'); return }
+    if (password.length < 4) { mostrarMsg('reg-msg', 'La contraseña debe tener al menos 4 caracteres', 'error'); return }
+    if (password !== password2) { mostrarMsg('reg-msg', 'Las contraseñas no coinciden', 'error'); return }
+
+    mostrarMsg('reg-msg', '⏳ Verificando...', 'pendiente')
+
+    const res = await fetch('/auth/iniciar-verificacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username_juego: username, clan_id })
+    })
+    const data = await res.json()
+    if (!data.ok) { mostrarMsg('reg-msg', data.error || 'Error al verificar', 'error'); return }
+
+    regUsername = username
+    regClanId = clan_id
+    regPassword = password
+
+    document.getElementById('reg-codigo-box').textContent = data.codigo
+    document.getElementById('reg-paso1').style.display = 'none'
+    document.getElementById('reg-paso2').style.display = 'block'
+}
+
+async function confirmarVerificacion() {
+    mostrarMsg('reg-msg2', '⏳ Verificando código...', 'pendiente')
+
+    const res = await fetch('/auth/confirmar-verificacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username_juego: regUsername, clan_id: regClanId, password: regPassword })
+    })
+    const data = await res.json()
+    if (!data.ok) { mostrarMsg('reg-msg2', data.error || 'Error al verificar', 'error'); return }
+
+    mostrarMsg('reg-msg2', '✓ Verificación exitosa. Ingresando...', 'ok')
+    setTimeout(() => { window.location.href = data.redirect || '/clan/' }, 1200)
+}
+
 async function hacerLogin() {
     const username = document.getElementById('login-user').value.trim()
     const password = document.getElementById('login-pass').value
-    if (!username || !password) { mostrarMsg('login-msg', tl('errorCampos'), 'error'); return }
+    if (!username || !password) { mostrarMsg('login-msg', 'Completá todos los campos', 'error'); return }
 
     const res = await fetch('/auth/login', {
         method: 'POST',
@@ -395,46 +413,19 @@ async function hacerLogin() {
     })
     const data = await res.json()
     if (data.ok) {
-        window.location.href = '/clan/'
+        window.location.href = data.redirect || '/clan/'
     } else if (data.suspendido) {
-        mostrarMsg('login-msg', tl('suspendido'), 'error')
+        mostrarMsg('login-msg', '⛔ Cuenta temporalmente suspendida', 'error')
     } else if (data.pendiente) {
-        mostrarMsg('login-msg', tl('pendiente'), 'pendiente')
+        mostrarMsg('login-msg', '⏳ Tu cuenta está pendiente de aprobación', 'pendiente')
     } else {
         mostrarMsg('login-msg', data.error || 'Usuario o contraseña incorrectos', 'error')
     }
 }
 
-async function hacerRegistro() {
-    const username = document.getElementById('reg-user').value.trim()
-    const password = document.getElementById('reg-pass').value
-    const password2 = document.getElementById('reg-pass2').value
-    if (!username || !password) { mostrarMsg('reg-msg', tl('errorCampos'), 'error'); return }
-    if (password !== password2) { mostrarMsg('reg-msg', tl('errorPass'), 'error'); return }
-    if (password.length < 4) { mostrarMsg('reg-msg', tl('errorPassLen'), 'error'); return }
-
-    const res = await fetch('/auth/registro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    })
-    const data = await res.json()
-    if (data.ok) {
-        mostrarMsg('reg-msg', tl('registroOk'), 'ok')
-        document.getElementById('reg-user').value = ''
-        document.getElementById('reg-pass').value = ''
-        document.getElementById('reg-pass2').value = ''
-    } else {
-        mostrarMsg('reg-msg', data.error || 'Error al registrarse', 'error')
-    }
-}
-
-// Enter para login
 document.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-        const panelLogin = document.getElementById('panel-login')
-        if (panelLogin.classList.contains('activo')) hacerLogin()
-        else hacerRegistro()
+        if (document.getElementById('panel-login').classList.contains('activo')) hacerLogin()
     }
 })
 </script>
