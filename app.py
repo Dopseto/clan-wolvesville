@@ -17,7 +17,6 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 # ID del super-admin (dopseto) — nunca cambia
 DOPSETO_CLAN_WID = "b734e3a5-cb89-4645-b9f5-0bd4229d4a99"
-DOPSETO_API_KEY = "FkUKPpQhT9jlJspDzwKeuBK3MuvSOvFVHIfeMn9E0TiB9UrrzNzegAkJNCQWPbun"
 SUPER_ADMIN_PASSWORD = hash("universitario99")  # se recalcula abajo con sha256
 
 # =================== SESIONES EN SUPABASE ===================
@@ -181,10 +180,18 @@ def init_admin():
     try:
         existente = buscar_usuario("dopseto")
         if not existente:
-            crear_usuario_supabase("dopseto", hash_password("universitario99"), rol="admin", aprobado=True, clan_id=None)
+            # Buscar clan de dopseto por wolvesville_clan_id
+            clanes = supabase_request("GET", f"clanes?wolvesville_clan_id=eq.{DOPSETO_CLAN_WID}&select=id")
+            dopseto_clan_id = clanes[0]["id"] if clanes else None
+            crear_usuario_supabase("dopseto", hash_password("universitario99"), rol="admin", aprobado=True, clan_id=dopseto_clan_id)
             print("Admin creado: dopseto")
         elif existente.get("rol") != "admin":
             supabase_request("PATCH", "usuarios?username=eq.dopseto", {"rol": "admin"})
+        # Asegurarse que dopseto tenga su clan asignado si falta
+        if existente and not existente.get("clan_id"):
+            clanes = supabase_request("GET", f"clanes?wolvesville_clan_id=eq.{DOPSETO_CLAN_WID}&select=id")
+            if clanes:
+                supabase_request("PATCH", "usuarios?username=eq.dopseto", {"clan_id": clanes[0]["id"]})
     except Exception as e:
         print(f"Error iniciando admin: {e}")
 
@@ -222,9 +229,9 @@ def confirmar_verificacion(username_juego, clan_id, api_key, wolvesville_clan_id
         if v["verificado"]:
             return {"ok": False, "error": "Ya fue verificado"}
 
-        # Buscar al jugador usando la API key de dopseto
+        # Buscar al jugador en la API de Wolvesville
         nombre_encoded = quote(username_juego)
-        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", DOPSETO_API_KEY)
+        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", api_key)
         bio = jugador.get("personalMessage", "") or ""
 
         if v["codigo"] not in bio:
@@ -279,23 +286,14 @@ def determinar_rol_por_rango(player_id, wolvesville_clan_id, api_key):
 def verificar_pertenencia_clan(username_juego, wolvesville_clan_id, api_key):
     """Verifica que el username exista y pertenezca al clan."""
     try:
-        # Buscar jugador usando la API key de dopseto (búsqueda global de jugadores)
         nombre_encoded = quote(username_juego)
-        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", DOPSETO_API_KEY)
+        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", api_key)
         if not jugador or jugador.get("error"):
             return {"ok": False, "error": "Jugador no encontrado en Wolvesville"}
         player_id = jugador.get("id", "")
-        # Verificar membresía usando la lista de miembros del clan (con la API key del clan)
-        try:
-            members = consultar_api_key(f"https://api.wolvesville.com/clans/{wolvesville_clan_id}/members", api_key)
-            ids_miembros = {m.get("playerId") for m in members}
-            if player_id not in ids_miembros:
-                return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
-        except Exception:
-            # Fallback: verificar por clanId en el perfil del jugador
-            clan_actual = jugador.get("clanId", "") or jugador.get("clan", {}).get("id", "")
-            if clan_actual != wolvesville_clan_id:
-                return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
+        clan_actual = jugador.get("clanId", "") or jugador.get("clan", {}).get("id", "")
+        if clan_actual != wolvesville_clan_id:
+            return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
         return {"ok": True, "player_id": player_id}
     except Exception as e:
         return {"ok": False, "error": f"Error al verificar: {str(e)}"}
@@ -938,6 +936,42 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Clan no encontrado"}, 404)
                     return
                 # Crear sesión temporal como admin de ese clan
+                token = crear_sesion("dopseto", "admin", cid)
+                body = json.dumps({"ok": True}).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.send_header("Set-Cookie", f"session={token}; Path=/; HttpOnly; Max-Age={SESSION_DURATION}")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            # Lista de clanes para el selector de dopseto (desde dentro del clan)
+            if parsed.path == "/admin/clanes-lista":
+                if sesion["rol"] != "admin":
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                clanes = listar_clanes()
+                self.send_json([{"id": c["id"], "nombre": c["nombre"]} for c in clanes])
+                return
+
+            # Cambiar clan temporalmente (solo dopseto)
+            if parsed.path.startswith("/admin/cambiar-clan/"):
+                if sesion["rol"] != "admin":
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                cid = parsed.path.split("/admin/cambiar-clan/")[1]
+                clan = obtener_clan(cid)
+                if not clan:
+                    self.send_json({"error": "Clan no encontrado"}, 404)
+                    return
+                # Invalidar sesión actual
+                token_actual = get_token_from_request(self)
+                if token_actual:
+                    try:
+                        supabase_request("DELETE", f"sesiones?token=eq.{token_actual}")
+                    except: pass
+                # Crear nueva sesión con el clan elegido
                 token = crear_sesion("dopseto", "admin", cid)
                 body = json.dumps({"ok": True}).encode("utf-8")
                 self.send_response(200)

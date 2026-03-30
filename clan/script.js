@@ -1396,6 +1396,12 @@ async function cargarSesion() {
             <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px">
                 ${langBtns}
             </div>
+            ${data.rol === 'admin' ? `
+            <button onclick="abrirSelectorClan()" style="width:100%; padding:7px; background:linear-gradient(180deg,rgba(74,107,138,0.3),rgba(26,62,106,0.3)); color:rgba(140,180,220,0.8); border:1px solid rgba(74,107,138,0.3); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s; margin-bottom:6px"
+                onmouseover="this.style.background='rgba(74,107,138,0.5)'; this.style.color='#a8d0f0'"
+                onmouseout="this.style.background='linear-gradient(180deg,rgba(74,107,138,0.3),rgba(26,62,106,0.3))'; this.style.color='rgba(140,180,220,0.8)'">
+                🔀 Cambiar clan
+            </button>` : ''}
             <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
                 onmouseover="this.style.background='rgba(139,32,16,0.15)'; this.style.color='#c87060'"
                 onmouseout="this.style.background='transparent'; this.style.color='rgba(160,100,60,0.6)'">
@@ -1476,6 +1482,62 @@ async function cargarSesion() {
 async function cerrarSesion() {
     await fetch('/auth/logout', { method: 'POST' })
     window.location.href = '/'
+}
+
+// =================== SELECTOR DE CLAN (solo admin) ===================
+function abrirSelectorClan() {
+    let modal = document.getElementById('modal-cambiar-clan')
+    if (!modal) {
+        modal = document.createElement('div')
+        modal.id = 'modal-cambiar-clan'
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:998; display:flex; align-items:center; justify-content:center; padding:20px'
+        modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none' })
+        document.body.appendChild(modal)
+    }
+    modal.style.display = 'flex'
+    modal.innerHTML = `
+        <div style="background:var(--parchment); border:2px solid var(--border); border-radius:4px; padding:28px; width:100%; max-width:400px; box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(160,128,64,0.3); padding-bottom:12px">
+                <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink)">🔀 Cambiar clan</span>
+                <button onclick="document.getElementById('modal-cambiar-clan').style.display='none'" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--accent-dark); padding:0; line-height:1">✕</button>
+            </div>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">Seleccioná el clan al que querés acceder temporalmente.</p>
+            <div id="lista-clanes-selector"><p style="color:var(--muted); font-style:italic">Cargando...</p></div>
+        </div>`
+
+    fetch('/admin/clanes-lista')
+        .then(r => r.json())
+        .then(clanes => {
+            const el = document.getElementById('lista-clanes-selector')
+            if (!clanes || clanes.length === 0) {
+                el.innerHTML = '<p style="color:var(--muted); font-style:italic">No hay clanes registrados</p>'
+                return
+            }
+            el.innerHTML = clanes.map(c => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(160,128,64,0.15)">
+                    <span style="font-family:Cinzel,serif; font-weight:600; color:var(--ink); font-size:14px">🏰 ${c.nombre}</span>
+                    <button class="btn-primary" style="padding:6px 16px; font-size:10px" onclick="cambiarClan('${c.id}', '${c.nombre}')">Entrar</button>
+                </div>`).join('')
+        })
+        .catch(() => {
+            const el = document.getElementById('lista-clanes-selector')
+            if (el) el.innerHTML = '<p style="color:var(--red)">Error al cargar clanes</p>'
+        })
+}
+
+function cambiarClan(clanId, nombre) {
+    if (!confirm(`¿Entrar al clan "${nombre}"?`)) return
+    fetch(`/admin/cambiar-clan/${clanId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                mostrarToast(`✓ Entrando a ${nombre}...`)
+                setTimeout(() => window.location.reload(), 800)
+            } else {
+                mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+            }
+        })
+        .catch(() => mostrarToast('Error al cambiar clan', 'error'))
 }
 
 // =================== PANEL ADMIN ===================
