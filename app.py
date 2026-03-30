@@ -17,6 +17,7 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 # ID del super-admin (dopseto) — nunca cambia
 DOPSETO_CLAN_WID = "b734e3a5-cb89-4645-b9f5-0bd4229d4a99"
+DOPSETO_API_KEY = "FkUKPpQhT9jlJspDzwKeuBK3MuvSOvFVHIfeMn9E0TiB9UrrzNzegAkJNCQWPbun"
 SUPER_ADMIN_PASSWORD = hash("universitario99")  # se recalcula abajo con sha256
 
 # =================== SESIONES EN SUPABASE ===================
@@ -221,9 +222,9 @@ def confirmar_verificacion(username_juego, clan_id, api_key, wolvesville_clan_id
         if v["verificado"]:
             return {"ok": False, "error": "Ya fue verificado"}
 
-        # Buscar al jugador en la API de Wolvesville
+        # Buscar al jugador usando la API key de dopseto
         nombre_encoded = quote(username_juego)
-        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", api_key)
+        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", DOPSETO_API_KEY)
         bio = jugador.get("personalMessage", "") or ""
 
         if v["codigo"] not in bio:
@@ -278,14 +279,23 @@ def determinar_rol_por_rango(player_id, wolvesville_clan_id, api_key):
 def verificar_pertenencia_clan(username_juego, wolvesville_clan_id, api_key):
     """Verifica que el username exista y pertenezca al clan."""
     try:
+        # Buscar jugador usando la API key de dopseto (búsqueda global de jugadores)
         nombre_encoded = quote(username_juego)
-        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", api_key)
+        jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", DOPSETO_API_KEY)
         if not jugador or jugador.get("error"):
             return {"ok": False, "error": "Jugador no encontrado en Wolvesville"}
         player_id = jugador.get("id", "")
-        clan_actual = jugador.get("clanId", "") or jugador.get("clan", {}).get("id", "")
-        if clan_actual != wolvesville_clan_id:
-            return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
+        # Verificar membresía usando la lista de miembros del clan (con la API key del clan)
+        try:
+            members = consultar_api_key(f"https://api.wolvesville.com/clans/{wolvesville_clan_id}/members", api_key)
+            ids_miembros = {m.get("playerId") for m in members}
+            if player_id not in ids_miembros:
+                return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
+        except Exception:
+            # Fallback: verificar por clanId en el perfil del jugador
+            clan_actual = jugador.get("clanId", "") or jugador.get("clan", {}).get("id", "")
+            if clan_actual != wolvesville_clan_id:
+                return {"ok": False, "error": "Este usuario no pertenece al clan seleccionado"}
         return {"ok": True, "player_id": player_id}
     except Exception as e:
         return {"ok": False, "error": f"Error al verificar: {str(e)}"}
