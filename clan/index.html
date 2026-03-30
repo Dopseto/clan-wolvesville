@@ -599,6 +599,18 @@
 
 <div id="sidebar">
     <div class="sidebar-header">
+        <div style="display:flex; justify-content:flex-end; gap:6px; margin-bottom:10px">
+            <div id="btn-cambiar-clan-header" style="display:none">
+                <button onclick="abrirSelectorClan()" title="Cambiar clan"
+                    style="background:rgba(74,107,138,0.25); border:1px solid rgba(74,107,138,0.35); border-radius:3px; cursor:pointer; color:rgba(140,180,220,0.85); font-size:14px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; transition:all 0.2s"
+                    onmouseover="this.style.background='rgba(74,107,138,0.5)'"
+                    onmouseout="this.style.background='rgba(74,107,138,0.25)'">🔀</button>
+            </div>
+            <button onclick="cerrarSesion()" title="Cerrar sesión"
+                style="background:rgba(139,32,16,0.2); border:1px solid rgba(139,32,16,0.3); border-radius:3px; cursor:pointer; color:rgba(200,112,96,0.85); font-size:14px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; transition:all 0.2s"
+                onmouseover="this.style.background='rgba(139,32,16,0.45)'"
+                onmouseout="this.style.background='rgba(139,32,16,0.2)'">⏻</button>
+        </div>
         <span class="sidebar-icon">🐺</span>
         <h2>Clan</h2>
         <p class="subtitle">Wolvesville</p>

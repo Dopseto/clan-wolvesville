@@ -1392,22 +1392,16 @@ async function cargarSesion() {
             title="${l.label}">${l.flag} <span style="font-family:Cinzel,serif;font-size:9px;color:${idiomaActual===l.code?'var(--accent-light)':'rgba(160,128,80,0.8)'};vertical-align:middle">${l.label}</span></button>`).join('')
         footer.innerHTML = `
             <p style="color:rgba(160,128,80,0.6); font-size:10px; margin-bottom:6px">${data.username}</p>
-            ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:8px">${rolLabel}</p>` : ''}
-            <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px">
+            ${rolLabel ? `<p style="color:${rolColor}; font-size:9px; letter-spacing:1px; margin-bottom:6px">${rolLabel}</p>` : ''}
+            <div style="display:flex;align-items:center;gap:4px;">
                 ${langBtns}
             </div>
-            ${data.rol === 'admin' ? `
-            <button onclick="abrirSelectorClan()" style="width:100%; padding:7px; background:linear-gradient(180deg,rgba(74,107,138,0.3),rgba(26,62,106,0.3)); color:rgba(140,180,220,0.8); border:1px solid rgba(74,107,138,0.3); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s; margin-bottom:6px"
-                onmouseover="this.style.background='rgba(74,107,138,0.5)'; this.style.color='#a8d0f0'"
-                onmouseout="this.style.background='linear-gradient(180deg,rgba(74,107,138,0.3),rgba(26,62,106,0.3))'; this.style.color='rgba(140,180,220,0.8)'">
-                🔀 Cambiar clan
-            </button>` : ''}
-            <button onclick="cerrarSesion()" style="width:100%; padding:7px; background:transparent; color:rgba(160,100,60,0.6); border:1px solid rgba(160,100,60,0.2); border-radius:2px; cursor:pointer; font-family:Cinzel,serif; font-size:9px; letter-spacing:1px; transition:all 0.2s"
-                onmouseover="this.style.background='rgba(139,32,16,0.15)'; this.style.color='#c87060'"
-                onmouseout="this.style.background='transparent'; this.style.color='rgba(160,100,60,0.6)'">
-                ${t('cerrarSesion')}
-            </button>
         `
+        // Mostrar botón cambiar clan en el header solo para admin
+        const btnCambiarClanHeader = document.getElementById('btn-cambiar-clan-header')
+        if (btnCambiarClanHeader && data.rol === 'admin') {
+            btnCambiarClanHeader.style.display = 'block'
+        }
     }
 
     // Mostrar/ocultar botón Tracker según rol
