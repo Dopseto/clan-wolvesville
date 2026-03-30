@@ -955,12 +955,24 @@ class Handler(BaseHTTPRequestHandler):
                 secciones = get_clan_secciones(clan_id) if clan_id else {}
                 usuario = buscar_usuario(sesion["username"])
                 idioma = usuario.get("idioma", "es") if usuario else "es"
+                tema = {}
+                if clan_id:
+                    clan = obtener_clan(clan_id)
+                    if clan:
+                        tema = {
+                            "color_bg": clan.get("color_bg") or "#1a1208",
+                            "color_accent": clan.get("color_accent") or "#c47a2a",
+                            "color_parchment": clan.get("color_parchment") or "#f2e8c9",
+                            "icono": clan.get("icono") or "🐺",
+                            "nombre_display": clan.get("nombre_display") or None
+                        }
                 self.send_json({
                     "username": sesion["username"],
                     "rol": sesion["rol"],
                     "clan_id": clan_id,
                     "secciones": secciones,
-                    "idioma": idioma
+                    "idioma": idioma,
+                    "tema": tema
                 })
                 return
 

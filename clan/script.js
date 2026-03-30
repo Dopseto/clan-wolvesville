@@ -5,6 +5,19 @@ let datosCache = {}
 
 function puedeActuar() { return rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider' }
 
+function ajustarBrillo(hex, cantidad) {
+    // Convierte hex a RGB, ajusta brillo y devuelve hex
+    try {
+        let r = parseInt(hex.slice(1,3),16)
+        let g = parseInt(hex.slice(3,5),16)
+        let b = parseInt(hex.slice(5,7),16)
+        r = Math.max(0, Math.min(255, r + cantidad))
+        g = Math.max(0, Math.min(255, g + cantidad))
+        b = Math.max(0, Math.min(255, b + cantidad))
+        return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('')
+    } catch(e) { return hex }
+}
+
 // =================== TRADUCCIONES ===================
 const T = {
     es: {
@@ -1334,6 +1347,32 @@ async function cargarSesion() {
     // Cargar idioma: primero del servidor, si no hay usar localStorage
     idiomaActual = data.idioma || localStorage.getItem('idioma') || 'es'
     localStorage.setItem('idioma', idiomaActual)
+
+    // Aplicar tema del clan
+    if (data.tema && Object.keys(data.tema).length > 0) {
+        const t = data.tema
+        const root = document.documentElement
+        if (t.color_bg) root.style.setProperty('--bg', t.color_bg)
+        if (t.color_accent) {
+            // Calcular variantes del accent automáticamente
+            root.style.setProperty('--accent', t.color_accent)
+            root.style.setProperty('--accent-dark', ajustarBrillo(t.color_accent, -30))
+            root.style.setProperty('--accent-light', ajustarBrillo(t.color_accent, 30))
+            root.style.setProperty('--border', ajustarBrillo(t.color_accent, -10))
+        }
+        if (t.color_parchment) {
+            root.style.setProperty('--parchment', t.color_parchment)
+            root.style.setProperty('--parchment-dark', ajustarBrillo(t.color_parchment, -15))
+        }
+        if (t.icono) {
+            const iconos = document.querySelectorAll('.sidebar-icon')
+            iconos.forEach(el => el.textContent = t.icono)
+        }
+        if (t.nombre_display) {
+            const titulos = document.querySelectorAll('.sidebar-header h2, #topbar-title')
+            titulos.forEach(el => { if (!el.id || el.id === 'topbar-title') el.textContent = t.nombre_display })
+        }
+    }
 
     const topbarUser = document.getElementById('topbar-username')
     if (topbarUser) topbarUser.textContent = data.username
