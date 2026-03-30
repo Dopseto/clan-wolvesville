@@ -1,0 +1,3 @@
+fetch('https://api.wolvesville.com/clans/search?name=NOMBRE_DEL_CLAN', {
+    headers: { 'Authorization': 'Bot FkUKPpQhT9jlJspDzwKeuBK3MuvSOvFVHIfeMn9E0TiB9UrrzNzegAkJNCQWPbun' }
+}).then(r=>r.json()).then(d=>console.log(JSON.stringify(d)))
