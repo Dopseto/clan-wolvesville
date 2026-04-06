@@ -1234,6 +1234,67 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
                 return
 
+            if parsed.path == "/auth/iniciar-reset":
+                username_juego = data.get("username_juego", "").strip()
+                clan_id = data.get("clan_id", "").strip()
+                if not username_juego or not clan_id:
+                    self.send_json({"error": "Datos incompletos"})
+                    return
+                # Verificar que el usuario existe y pertenece a ese clan
+                usuario = buscar_usuario(username_juego)
+                if not usuario:
+                    self.send_json({"error": "No encontré una cuenta con ese usuario"})
+                    return
+                if str(usuario.get("clan_id", "")) != str(clan_id):
+                    self.send_json({"error": "El usuario no pertenece al clan seleccionado"})
+                    return
+                clan = obtener_clan(clan_id)
+                if not clan:
+                    self.send_json({"error": "Clan no encontrado"})
+                    return
+                codigo = crear_verificacion(username_juego, clan_id)
+                self.send_json({"ok": True, "codigo": codigo})
+                return
+
+            if parsed.path == "/auth/confirmar-reset":
+                username_juego = data.get("username_juego", "").strip()
+                clan_id = data.get("clan_id", "").strip()
+                password = data.get("password", "")
+                if not username_juego or not clan_id or not password:
+                    self.send_json({"error": "Datos incompletos"})
+                    return
+                if len(password) < 4:
+                    self.send_json({"error": "La contraseña debe tener al menos 4 caracteres"})
+                    return
+                clan = obtener_clan(clan_id)
+                if not clan:
+                    self.send_json({"error": "Clan no encontrado"})
+                    return
+                # Verificar código en la bio
+                try:
+                    rows = supabase_request("GET", f"verificaciones?username_juego=eq.{username_juego}&clan_id=eq.{clan_id}&select=*")
+                    if not rows:
+                        self.send_json({"error": "No hay verificación pendiente"})
+                        return
+                    v = rows[0]
+                    if int(time.time()) > v["expires"]:
+                        supabase_request("DELETE", f"verificaciones?username_juego=eq.{username_juego}")
+                        self.send_json({"error": "El código expiró. Iniciá el proceso nuevamente."})
+                        return
+                    nombre_encoded = quote(username_juego)
+                    jugador = consultar_api_key(f"https://api.wolvesville.com/players/search?username={nombre_encoded}", clan["api_key"])
+                    bio = jugador.get("personalMessage", "") or ""
+                    if v["codigo"] not in bio:
+                        self.send_json({"error": f"No encontré el código '{v['codigo']}' en tu mensaje personal."})
+                        return
+                    # Código correcto — actualizar contraseña
+                    supabase_request("DELETE", f"verificaciones?username_juego=eq.{username_juego}")
+                    supabase_request("PATCH", f"usuarios?username=eq.{username_juego}", {"password": hash_password(password)})
+                    self.send_json({"ok": True})
+                except Exception as e:
+                    self.send_json({"error": str(e)})
+                return
+
             # =================== Registro/verificación con cuenta del juego ===================
             if parsed.path == "/auth/iniciar-verificacion":
                 username_juego = data.get("username_juego", "").strip()
