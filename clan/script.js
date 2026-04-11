@@ -68,6 +68,7 @@ const T = {
         hacerMiembro: '↑ Hacer Miembro', resetearClave: '🔑 Resetear clave',
         // Tabla donaciones
         jugadorCol: 'Jugador', oro: 'Oro', gemas: 'Gemas', descripcionCol: 'Descripción',
+        activarConOro: 'Activar con este oro', activarConGemas: 'Activar con estas gemas',
         // Idioma
         selectorIdioma: 'Idioma',
     },
@@ -119,6 +120,7 @@ const T = {
         hacerMiembro: '↑ Make Member', resetearClave: '🔑 Reset password',
         // Tabla donaciones
         jugadorCol: 'Player', oro: 'Gold', gemas: 'Gems', descripcionCol: 'Description',
+        activarConOro: 'Enable with this gold', activarConGemas: 'Enable with these gems',
         // Idioma
         selectorIdioma: 'Language',
     },
@@ -170,6 +172,7 @@ const T = {
         hacerMiembro: '↑ Tornar Membro', resetearClave: '🔑 Redefinir senha',
         // Tabla donaciones
         jugadorCol: 'Jogador', oro: 'Ouro', gemas: 'Gemas', descripcionCol: 'Descrição',
+        activarConOro: 'Ativar com este ouro', activarConGemas: 'Ativar com estas gemas',
         // Idioma
         selectorIdioma: 'Idioma',
     }
@@ -762,23 +765,33 @@ function mostrarMiembros(members, carteras = {}, costoOro = 700, costoGemas = 17
         return (a.username || '').localeCompare(b.username || '', 'es', { sensitivity: 'base' })
     })
 
+    const activosCount = members.filter(m => m.participateInClanQuests !== false).length
+    const totalCount = members.length
+
     let html = `<h1>👥 ${t('miembrosTitle')}</h1>`
 
     html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0">${t('cambiosNombre')}</h3>
         <div style="display:flex; gap:8px; align-items:center">
+            ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="background:linear-gradient(180deg,#1a5e6b,#0a3e4a); padding:6px 14px; font-size:10px" onclick="actualizarNombres(this)">🔄 Actualizar nombres</button>` : ''}
             ${(rolActual === 'admin' || rolActual === 'lider' || rolActual === 'colider') ? `<button class="btn-primary" style="background:linear-gradient(180deg,#8b2010,#6b1008); padding:6px 14px; font-size:10px" onclick="abrirModalClean()">🧹 Clean</button>` : ''}
             <button class="btn-tracker" onclick="abrirDrawerCambios()">${t('verHistorial')}</button>
         </div>
     </div>`
 
-
-
     // Panel de acciones masivas - solo para admin y lider
     if (rolActual === 'admin' || rolActual === 'lider') {
     html += `
     <div class="card">
-        <h3>${t('accionesMasivas')}</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px">
+            <h3 style="margin:0">${t('accionesMasivas')}</h3>
+            <div style="display:flex; align-items:center; gap:8px; background:rgba(160,128,64,0.1); border:1px solid rgba(160,128,64,0.25); border-radius:var(--radius-sm); padding:6px 14px">
+                <span style="font-size:13px">⚔️</span>
+                <span style="font-family:Cinzel,serif; font-size:11px; color:var(--muted); letter-spacing:0.5px">Activos para misión:</span>
+                <span style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:${activosCount === totalCount ? 'var(--ok)' : activosCount === 0 ? 'var(--red)' : 'var(--accent)'}">${activosCount}</span>
+                <span style="font-family:Cinzel,serif; font-size:11px; color:var(--muted)">/ ${totalCount}</span>
+            </div>
+        </div>
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:16px">
             <button class="btn-primary" onclick="activarTodos(true)">${t('activarTodos')}</button>
             <button class="btn-primary" style="background:linear-gradient(180deg,#8b5e1a,#6b3e0a)" onclick="activarTodos(false)">${t('desactivarTodos')}</button>
@@ -2388,4 +2401,23 @@ function eliminarComandoPersonalizado(id, nombre) {
             if (data.ok) { mostrarToast(`✓ Comando ${nombre} eliminado`); cargarComandos() }
             else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
         }).catch(() => mostrarToast('Error al eliminar', 'error'))
+}
+
+function actualizarNombres(btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Actualizando...' }
+    fetch('/clan/actualizar-nombres', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                mostrarToast(`✓ ${data.actualizados} nombre(s) actualizado(s)`)
+                cargarMiembros()
+            } else {
+                mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+                if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar nombres' }
+            }
+        })
+        .catch(() => {
+            mostrarToast('Error al actualizar nombres', 'error')
+            if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar nombres' }
+        })
 }

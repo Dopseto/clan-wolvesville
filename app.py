@@ -7,6 +7,7 @@ import threading
 import hashlib
 import secrets
 import time
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse, quote
 
@@ -629,7 +630,12 @@ def sincronizar_donaciones(clan_id, wid, api_key):
 # =================== DETECCIÓN DE NUEVOS MIEMBROS ===================
 def detectar_nuevos_miembros(clan_id, wid, api_key):
     try:
-        ultima = get_config("ultimo_log_procesado", clan_id) or "2000-01-01T00:00:00.000Z"
+        ultima = get_config("ultimo_log_procesado", clan_id)
+        if not ultima:
+            # Primera vez o después de reset: guardar fecha actual sin procesar nada
+            now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            set_config("ultimo_log_procesado", now, clan_id)
+            return
         logs = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/logs", api_key)
         if not logs: return
         nuevos_ingresos = [l for l in logs if l.get("creationTime", "") > ultima and l.get("action", "").upper() == "PLAYER_JOINED"]
@@ -1406,6 +1412,31 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"ok": True})
                 else:
                     self.send_json({"error": "Mensaje vacío"})
+                return
+
+            if parsed.path == "/clan/actualizar-nombres":
+                if sesion["rol"] not in ("admin", "lider", "colider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                try:
+                    members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
+                    carteras_rows = supabase_request("GET", f"carteras?clan_id=eq.{clan_id}&select=*")
+                    carteras_por_pid = {r["player_id"]: r for r in carteras_rows}
+                    actualizados = 0
+                    for m in members:
+                        pid = m.get("playerId", "")
+                        username_actual = m.get("username", "")
+                        if not pid or not username_actual: continue
+                        cartera = carteras_por_pid.get(pid)
+                        if cartera and cartera.get("username") != username_actual:
+                            registrar_cambio_nombre(pid, cartera["username"], username_actual)
+                            supabase_request("PATCH", f"carteras?player_id=eq.{pid}&clan_id=eq.{clan_id}", {"username": username_actual})
+                            actualizados += 1
+                        elif not cartera:
+                            upsert_cartera(pid, username_actual, clan_id, 0, 0)
+                    self.send_json({"ok": True, "actualizados": actualizados})
+                except Exception as e:
+                    self.send_json({"error": str(e)})
                 return
 
             if parsed.path == "/clan/sincronizar":
