@@ -2169,7 +2169,7 @@ function cargarComandos() {
 
         // Formulario nuevo comando personalizado
         html += `<div class="card">
-            <h3>${t('agregarComando')}</h3>
+            <h3>➕ Agregar comando personalizado</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">El bot responderá automáticamente cuando alguien escriba el comando en el chat.</p>
             <div style="display:flex; flex-direction:column; gap:12px">
                 <div>
@@ -2185,19 +2185,37 @@ function cargarComandos() {
         </div>`
 
         html += `<div class="card">
-            <h3>${t('configComandos')}</h3>
+            <h3>⚙️ Configuración de comandos</h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
                 Controlá quién puede usar cada comando en el chat del clan. Los cambios se aplican de inmediato.
-            </p>`
+            </p>
+            ${leyendaHtml}`
 
         const KEYWORDS = [
-            '{cartera}', '{usuario}', '{oro}', '{gemas}',
-            '{clan}', '{miembros}', '{lider}', '{fecha}', '{posicion}'
+            { k: '{usuario}',  desc: 'Nombre del jugador que usó el comando' },
+            { k: '{cartera}',  desc: 'Saldo completo: oro y gemas del jugador' },
+            { k: '{oro}',      desc: 'Solo el oro del jugador' },
+            { k: '{gemas}',    desc: 'Solo las gemas del jugador' },
+            { k: '{clan}',     desc: 'Nombre del clan' },
+            { k: '{miembros}', desc: 'Cantidad de miembros del clan' },
+            { k: '{fecha}',    desc: 'Fecha actual (DD/MM/AAAA)' },
         ]
-        const keywordsHtml = KEYWORDS.map(k =>
-            `<span onclick="insertarKeyword('${k}')" style="font-family:Cinzel,serif; font-size:10px; background:rgba(160,128,64,0.15); border:1px solid rgba(160,128,64,0.4); border-radius:3px; padding:2px 8px; cursor:pointer; color:var(--accent-dark); transition:background 0.2s"
-                onmouseover="this.style.background='rgba(160,128,64,0.3)'" onmouseout="this.style.background='rgba(160,128,64,0.15)'">${k}</span>`
+        const keywordsHtml = KEYWORDS.map(kw =>
+            `<span onclick="insertarKeyword('${kw.k}')" title="${kw.desc}"
+                style="font-family:Cinzel,serif; font-size:10px; background:rgba(160,128,64,0.15); border:1px solid rgba(160,128,64,0.4); border-radius:3px; padding:2px 8px; cursor:pointer; color:var(--accent-dark); transition:background 0.2s"
+                onmouseover="this.style.background='rgba(160,128,64,0.3)'" onmouseout="this.style.background='rgba(160,128,64,0.15)'">${kw.k}</span>`
         ).join('')
+
+        const leyendaHtml = `<div style="background:rgba(160,128,64,0.08); border:1px solid rgba(160,128,64,0.2); border-radius:3px; padding:12px 14px; margin-bottom:16px">
+            <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:10px">📖 PALABRAS CLAVE DISPONIBLES</p>
+            <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:8px">
+                ${KEYWORDS.map(kw => `<div style="display:flex; gap:12px; align-items:baseline">
+                    <span style="font-family:Cinzel,serif; font-size:11px; color:var(--accent-dark); min-width:95px; flex-shrink:0">${kw.k}</span>
+                    <span style="font-size:12px; color:var(--muted)">${kw.desc}</span>
+                </div>`).join('')}
+            </div>
+            <p style="font-size:11px; color:var(--muted); font-style:italic">Hacé click en la palabra para insertarla donde está el cursor en el campo de respuesta.</p>
+        </div>`
 
         window._cmdEditando = null
 
