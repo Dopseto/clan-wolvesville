@@ -1270,8 +1270,14 @@ function cargarStats() {
         let html = `<h1>📊 Estadísticas</h1>`
 
         // Leyenda
+        const exMiembros = jugadores.filter(j => !j.enClan)
         html += `<div class="card">
-            <h3>${t('participacionMisiones')}</h3>
+            <h3 style="display:flex; justify-content:space-between; align-items:center">${t('participacionMisiones')}
+                ${(rolActual === 'admin' || rolActual === 'lider') && exMiembros.length > 0 ? `
+                <button class="btn-primary" style="padding:6px 14px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)" onclick="limpiarExMiembrosStats()">
+                    🧹 Limpiar ex-miembros (${exMiembros.length})
+                </button>` : ''}
+            </h3>
             <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:14px">
                 Registro de participación desde que el bot comenzó a trackear. Hacé click en un miembro para ver su historial.
             </p>
@@ -1499,6 +1505,18 @@ function enviarMensajeChat() {
             document.getElementById('admin-chat-msg').value = ''
         } else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
     }).catch(() => mostrarToast('Error al enviar', 'error'))
+}
+
+function limpiarExMiembrosStats() {
+    if (!confirm('¿Eliminar de estadísticas a todos los jugadores que ya no están en el clan?')) return
+    fetch('/clan/stats/limpiar-ex', { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                mostrarToast(`✓ ${data.eliminados} jugador(es) eliminado(s) de estadísticas`)
+                cargarStats()
+            } else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+        }).catch(() => mostrarToast('Error al limpiar', 'error'))
 }
 
 async function cerrarSesion() {

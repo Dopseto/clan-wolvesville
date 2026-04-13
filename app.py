@@ -1123,6 +1123,27 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(cargar_carteras(clan_id))
                 return
 
+            if parsed.path == "/clan/stats/limpiar-ex":
+                if sesion["rol"] not in ("admin", "lider", "colider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                # Obtener miembros actuales
+                members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
+                ids_actuales = {m.get("playerId") for m in members}
+                # Obtener todos los player_ids en participacion de este clan
+                rows = supabase_request("GET", f"participacion?clan_id=eq.{clan_id}&select=player_id")
+                ids_en_stats = {r["player_id"] for r in rows}
+                # Eliminar los que ya no están
+                ex_ids = ids_en_stats - ids_actuales
+                eliminados = 0
+                for pid in ex_ids:
+                    try:
+                        supabase_request("DELETE", f"participacion?player_id=eq.{pid}&clan_id=eq.{clan_id}")
+                        eliminados += 1
+                    except: pass
+                self.send_json({"ok": True, "eliminados": eliminados})
+                return
+
             if parsed.path == "/clan/ex-miembros":
                 members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members/detailed", api_key)
                 self.send_json(obtener_ex_miembros(members, clan_id))
@@ -1782,6 +1803,27 @@ class Handler(BaseHTTPRequestHandler):
                 player_id = parsed.path.split("/clan/carteras/")[1]
                 eliminar_cartera(player_id)
                 self.send_json({"ok": True})
+                return
+
+            if parsed.path == "/clan/stats/limpiar-ex":
+                if sesion["rol"] not in ("admin", "lider", "colider"):
+                    self.send_json({"error": "Sin permisos"}, 403)
+                    return
+                # Obtener miembros actuales
+                members = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
+                ids_actuales = {m.get("playerId") for m in members}
+                # Obtener todos los player_ids en participacion de este clan
+                rows = supabase_request("GET", f"participacion?clan_id=eq.{clan_id}&select=player_id")
+                ids_en_stats = {r["player_id"] for r in rows}
+                # Eliminar los que ya no están
+                ex_ids = ids_en_stats - ids_actuales
+                eliminados = 0
+                for pid in ex_ids:
+                    try:
+                        supabase_request("DELETE", f"participacion?player_id=eq.{pid}&clan_id=eq.{clan_id}")
+                        eliminados += 1
+                    except: pass
+                self.send_json({"ok": True, "eliminados": eliminados})
                 return
 
             if parsed.path == "/clan/ex-miembros":
