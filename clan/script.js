@@ -2167,30 +2167,6 @@ function cargarComandos() {
         const contenido = document.getElementById('contenido')
         let html = `<h1>🤖 Comandos del bot</h1>`
 
-        // Formulario nuevo comando personalizado
-        html += `<div class="card">
-            <h3>➕ Agregar comando personalizado</h3>
-            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">El bot responderá automáticamente cuando alguien escriba el comando en el chat.</p>
-            <div style="display:flex; flex-direction:column; gap:12px">
-                <div>
-                    <label style="font-family:Cinzel,serif; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px">Nombre del comando</label>
-                    <input id="nuevo-cmd-nombre" type="text" placeholder="!ejemplo" style="width:100%; padding:9px 12px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none"/>
-                </div>
-                <div>
-                    <label style="font-family:Cinzel,serif; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px">Respuesta del bot</label>
-                    <textarea id="nuevo-cmd-respuesta" placeholder="Escribí el mensaje que responderá el bot..." style="width:100%; padding:9px 12px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none; resize:vertical; min-height:70px"></textarea>
-                </div>
-                <button class="btn-primary" style="align-self:flex-start" onclick="guardarComandoPersonalizado()">💾 Guardar comando</button>
-            </div>
-        </div>`
-
-        html += `<div class="card">
-            <h3>⚙️ Configuración de comandos</h3>
-            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
-                Controlá quién puede usar cada comando en el chat del clan. Los cambios se aplican de inmediato.
-            </p>
-            ${leyendaHtml}`
-
         const KEYWORDS = [
             { k: '{usuario}',  desc: 'Nombre del jugador que usó el comando' },
             { k: '{cartera}',  desc: 'Saldo completo: oro y gemas del jugador' },
@@ -2218,6 +2194,30 @@ function cargarComandos() {
         </div>`
 
         window._cmdEditando = null
+
+        // Formulario nuevo comando personalizado
+        html += `<div class="card">
+            <h3>➕ Agregar comando personalizado</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">El bot responderá automáticamente cuando alguien escriba el comando en el chat.</p>
+            <div style="display:flex; flex-direction:column; gap:12px">
+                <div>
+                    <label style="font-family:Cinzel,serif; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px">Nombre del comando</label>
+                    <input id="nuevo-cmd-nombre" type="text" placeholder="!ejemplo" style="width:100%; padding:9px 12px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none"/>
+                </div>
+                <div>
+                    <label style="font-family:Cinzel,serif; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px">Respuesta del bot</label>
+                    <textarea id="nuevo-cmd-respuesta" placeholder="Escribí el mensaje que responderá el bot..." style="width:100%; padding:9px 12px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; outline:none; resize:vertical; min-height:70px"></textarea>
+                </div>
+                <button class="btn-primary" style="align-self:flex-start" onclick="guardarComandoPersonalizado()">💾 Guardar comando</button>
+            </div>
+        </div>`
+
+        html += `<div class="card">
+            <h3>⚙️ Configuración de comandos</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:16px">
+                Controlá quién puede usar cada comando en el chat del clan. Los cambios se aplican de inmediato.
+            </p>
+            ${leyendaHtml}`
 
         if (!comandos || comandos.length === 0) {
             html += `<p style="color:var(--muted); font-style:italic">No hay comandos configurados</p>`
