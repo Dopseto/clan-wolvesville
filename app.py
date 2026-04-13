@@ -473,6 +473,31 @@ def procesar_comandos_chat(clan_id, wid, api_key):
         carteras_por_username = {r["username"].lower(): r for r in carteras_rows if r.get("username")}
 
         # Mapa de respuestas personalizadas por nombre de comando
+        def reemplazar_keywords(texto, pid, msg_original=""):
+            cartera = carteras_por_pid.get(pid, {})
+            members_info = {}
+            try:
+                ml = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
+                for m in ml:
+                    if m.get("playerId") == pid:
+                        members_info = m
+                        break
+            except: pass
+            uname = members_info.get("username", carteras_por_pid.get(pid, {}).get("username", pid))
+            ahora = time.strftime("%d/%m/%Y", time.gmtime())
+            texto = texto.replace("{usuario}", uname)
+            texto = texto.replace("{cartera}", f"🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas")
+            texto = texto.replace("{oro}", str(cartera.get("oro", 0)))
+            texto = texto.replace("{gemas}", str(cartera.get("gemas", 0)))
+            texto = texto.replace("{clan}", wid)
+            texto = texto.replace("{fecha}", ahora)
+            try:
+                info = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/info", api_key)
+                texto = texto.replace("{clan}", info.get("name", wid))
+                texto = texto.replace("{miembros}", str(info.get("memberCount", "?")))
+            except: pass
+            return texto
+
         respuestas_custom = {c["nombre"].lower(): c["respuesta"] for c in comandos if c.get("respuesta")}
 
         if msg.lower() == "!cartera":
@@ -588,31 +613,6 @@ def procesar_comandos_chat(clan_id, wid, api_key):
             except: pass
 
         # Función para reemplazar keywords en respuestas
-        def reemplazar_keywords(texto, pid, msg_original=""):
-            cartera = carteras_por_pid.get(pid, {})
-            members_info = {}
-            try:
-                ml = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
-                for m in ml:
-                    if m.get("playerId") == pid:
-                        members_info = m
-                        break
-            except: pass
-            uname = members_info.get("username", carteras_por_pid.get(pid, {}).get("username", pid))
-            ahora = time.strftime("%d/%m/%Y", time.gmtime())
-            texto = texto.replace("{usuario}", uname)
-            texto = texto.replace("{cartera}", f"🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas")
-            texto = texto.replace("{oro}", str(cartera.get("oro", 0)))
-            texto = texto.replace("{gemas}", str(cartera.get("gemas", 0)))
-            texto = texto.replace("{clan}", wid)
-            texto = texto.replace("{fecha}", ahora)
-            try:
-                info = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/info", api_key)
-                texto = texto.replace("{clan}", info.get("name", wid))
-                texto = texto.replace("{miembros}", str(info.get("memberCount", "?")))
-            except: pass
-            return texto
-
         # Comandos predefinidos con keywords
         for cmd_nombre in ["!cartera", "!info @", "!comandos", "!donaroro ", "!donargemas "]:
             pass  # ya procesados arriba
