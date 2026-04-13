@@ -472,10 +472,20 @@ def procesar_comandos_chat(clan_id, wid, api_key):
         carteras_por_pid = {r["player_id"]: r for r in carteras_rows}
         carteras_por_username = {r["username"].lower(): r for r in carteras_rows if r.get("username")}
 
+        # Mapa de respuestas personalizadas por nombre de comando
+        respuestas_custom = {c["nombre"].lower(): c["respuesta"] for c in comandos if c.get("respuesta")}
+
         if msg.lower() == "!cartera":
             acceso = cfg.get("!cartera", "desactivado")
             if acceso == "desactivado": return
             if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            # Si tiene respuesta personalizada, usarla en lugar de la lógica original
+            if "!cartera" in respuestas_custom:
+                try:
+                    respuesta_final = reemplazar_keywords(respuestas_custom["!cartera"], pid, msg)
+                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": f"[Bot] {respuesta_final}"}, api_key)
+                except: pass
+                return
             try:
                 sincronizar_donaciones(clan_id, wid, api_key)
             except: pass
@@ -494,6 +504,12 @@ def procesar_comandos_chat(clan_id, wid, api_key):
             acceso = cfg.get("!info @", "desactivado")
             if acceso == "desactivado": return
             if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): return
+            if "!info @" in respuestas_custom:
+                try:
+                    respuesta_final = reemplazar_keywords(respuestas_custom["!info @"], pid, msg)
+                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": f"[Bot] {respuesta_final}"}, api_key)
+                except: pass
+                return
             objetivo = msg[7:].strip().lower()
             cartera = carteras_por_username.get(objetivo)
             if cartera:
@@ -601,10 +617,13 @@ def procesar_comandos_chat(clan_id, wid, api_key):
         for cmd_nombre in ["!cartera", "!info @", "!comandos", "!donaroro ", "!donargemas "]:
             pass  # ya procesados arriba
 
-        # Comandos personalizados
+        # Comandos personalizados (solo los que NO son builtins ya manejados arriba)
+        BUILTINS = {"!cartera", "!info @", "!comandos", "!donaroro ", "!donargemas "}
         for c in comandos:
             if not c.get("respuesta"): continue
-            if msg.lower() == c["nombre"].lower():
+            nombre_lower = c["nombre"].lower()
+            if nombre_lower in BUILTINS: continue  # ya manejado arriba
+            if msg.lower() == nombre_lower:
                 acceso = c.get("acceso", "desactivado")
                 if acceso == "desactivado": break
                 if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): break
