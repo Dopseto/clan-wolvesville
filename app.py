@@ -571,15 +571,46 @@ def procesar_comandos_chat(clan_id, wid, api_key):
                 post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": respuesta}, api_key)
             except: pass
 
+        # Función para reemplazar keywords en respuestas
+        def reemplazar_keywords(texto, pid, msg_original=""):
+            cartera = carteras_por_pid.get(pid, {})
+            members_info = {}
+            try:
+                ml = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/members", api_key)
+                for m in ml:
+                    if m.get("playerId") == pid:
+                        members_info = m
+                        break
+            except: pass
+            uname = members_info.get("username", carteras_por_pid.get(pid, {}).get("username", pid))
+            ahora = time.strftime("%d/%m/%Y", time.gmtime())
+            texto = texto.replace("{usuario}", uname)
+            texto = texto.replace("{cartera}", f"🥇 {cartera.get('oro', 0)} oro · 💎 {cartera.get('gemas', 0)} gemas")
+            texto = texto.replace("{oro}", str(cartera.get("oro", 0)))
+            texto = texto.replace("{gemas}", str(cartera.get("gemas", 0)))
+            texto = texto.replace("{clan}", wid)
+            texto = texto.replace("{fecha}", ahora)
+            try:
+                info = consultar_api_key(f"https://api.wolvesville.com/clans/{wid}/info", api_key)
+                texto = texto.replace("{clan}", info.get("name", wid))
+                texto = texto.replace("{miembros}", str(info.get("memberCount", "?")))
+            except: pass
+            return texto
+
+        # Comandos predefinidos con keywords
+        for cmd_nombre in ["!cartera", "!info @", "!comandos", "!donaroro ", "!donargemas "]:
+            pass  # ya procesados arriba
+
         # Comandos personalizados
         for c in comandos:
-            if not c.get("personalizado") or not c.get("respuesta"): continue
+            if not c.get("respuesta"): continue
             if msg.lower() == c["nombre"].lower():
                 acceso = c.get("acceso", "desactivado")
                 if acceso == "desactivado": break
                 if acceso == "lideres" and not es_lider_o_colider(pid, wid, api_key): break
                 try:
-                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": f"[Bot] {c['respuesta']}"}, api_key)
+                    respuesta_final = reemplazar_keywords(c["respuesta"], pid, msg)
+                    post_api_key(f"https://api.wolvesville.com/clans/{wid}/chat", {"message": f"[Bot] {respuesta_final}"}, api_key)
                 except: pass
                 break
 
@@ -1518,11 +1549,16 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": "Sin permisos"}, 403)
                     return
                 cmd_id = parsed.path.split("/comandos/")[1]
-                acceso = data.get("acceso", "desactivado")
-                if acceso not in ("todos", "lideres", "desactivado"):
-                    self.send_json({"error": "Acceso inválido"})
-                    return
-                supabase_request("PATCH", f"comandos_bot?id=eq.{cmd_id}", {"acceso": acceso})
+                # Actualizar acceso
+                if "acceso" in data:
+                    acceso = data.get("acceso", "desactivado")
+                    if acceso not in ("todos", "lideres", "desactivado"):
+                        self.send_json({"error": "Acceso inválido"})
+                        return
+                    supabase_request("PATCH", f"comandos_bot?id=eq.{cmd_id}", {"acceso": acceso})
+                # Actualizar respuesta editable
+                if "respuesta" in data:
+                    supabase_request("PATCH", f"comandos_bot?id=eq.{cmd_id}", {"respuesta": data["respuesta"]})
                 self.send_json({"ok": True})
                 return
 
@@ -1756,6 +1792,10 @@ class Handler(BaseHTTPRequestHandler):
                 ex = obtener_ex_miembros(members, clan_id)
                 for c in ex:
                     eliminar_cartera(c["player_id"])
+                    # También eliminar de participacion
+                    try:
+                        supabase_request("DELETE", f"participacion?player_id=eq.{c['player_id']}&clan_id=eq.{clan_id}")
+                    except: pass
                 self.send_json({"ok": True, "eliminados": len(ex)})
                 return
 

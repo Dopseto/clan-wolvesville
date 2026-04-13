@@ -1486,6 +1486,21 @@ async function cargarSesion() {
     }
 }
 
+function enviarMensajeChat() {
+    const msg = document.getElementById('admin-chat-msg')?.value.trim()
+    if (!msg) { mostrarToast('Escribí un mensaje primero', 'error'); return }
+    fetch('/clan/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) {
+            mostrarToast('✓ Mensaje enviado al chat')
+            document.getElementById('admin-chat-msg').value = ''
+        } else mostrarToast('Error: ' + (data.error || 'desconocido'), 'error')
+    }).catch(() => mostrarToast('Error al enviar', 'error'))
+}
+
 async function cerrarSesion() {
     await fetch('/auth/logout', { method: 'POST' })
     window.location.href = '/'
@@ -1568,6 +1583,16 @@ function estaConectado(ultimaActividad) {
 function mostrarAdmin(usuarios) {
     const contenido = document.getElementById('contenido')
     let html = `<h1>🛡️ ${t('panelAdmin')}</h1>`
+
+    // Card para enviar mensaje al chat (solo admin)
+    if (rolActual === 'admin') {
+        html += `<div class="card">
+            <h3>💬 Enviar mensaje al chat del clan</h3>
+            <p style="font-size:13px; color:var(--muted); font-style:italic; margin-bottom:12px">El mensaje se enviará desde el bot al chat del clan.</p>
+            <textarea id="admin-chat-msg" placeholder="Escribí el mensaje..." style="width:100%; padding:10px 14px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.8); color:var(--ink); font-family:Almendra,serif; font-size:14px; resize:vertical; min-height:70px; outline:none"></textarea>
+            <button class="btn-primary" style="margin-top:10px" onclick="enviarMensajeChat()">📨 Enviar al chat</button>
+        </div>`
+    }
 
     const pendientes = usuarios.filter(u => !u.aprobado && u.rol !== 'admin')
     const lideres = usuarios.filter(u => u.aprobado && u.rol === 'lider')
@@ -2147,6 +2172,17 @@ function cargarComandos() {
                 Controlá quién puede usar cada comando en el chat del clan. Los cambios se aplican de inmediato.
             </p>`
 
+        const KEYWORDS = [
+            '{cartera}', '{usuario}', '{oro}', '{gemas}',
+            '{clan}', '{miembros}', '{lider}', '{fecha}', '{posicion}'
+        ]
+        const keywordsHtml = KEYWORDS.map(k =>
+            `<span onclick="insertarKeyword('${k}')" style="font-family:Cinzel,serif; font-size:10px; background:rgba(160,128,64,0.15); border:1px solid rgba(160,128,64,0.4); border-radius:3px; padding:2px 8px; cursor:pointer; color:var(--accent-dark); transition:background 0.2s"
+                onmouseover="this.style.background='rgba(160,128,64,0.3)'" onmouseout="this.style.background='rgba(160,128,64,0.15)'">${k}</span>`
+        ).join('')
+
+        window._cmdEditando = null
+
         if (!comandos || comandos.length === 0) {
             html += `<p style="color:var(--muted); font-style:italic">No hay comandos configurados</p>`
         } else {
@@ -2154,9 +2190,10 @@ function cargarComandos() {
                 const acceso = c.acceso || 'desactivado'
                 const colorEstado = acceso === 'todos' ? '#2d6a1e' : acceso === 'lideres' ? '#c47a2a' : '#8b2010'
                 const textoEstado = acceso === 'todos' ? '✅ Todos' : acceso === 'lideres' ? '👑 Solo líderes' : '❌ Desactivado'
+                const respActual = c.respuesta || ''
                 html += `
                 <div style="padding:16px 0; border-bottom:1px solid rgba(160,128,64,0.2)">
-                    <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px">
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:10px">
                         <div>
                             <p style="font-family:Cinzel,serif; font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px">${c.nombre}</p>
                             <p style="font-size:13px; color:var(--muted); margin-bottom:8px">${c.descripcion || ''}</p>
@@ -2170,6 +2207,15 @@ function cargarComandos() {
                             <button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#8b2010,#6b1008)"
                                 onclick="cambiarAccesoComando(${c.id}, 'desactivado')">❌ Desactivar</button>
                             ${c.personalizado ? `<button class="btn-primary" style="padding:6px 12px; font-size:10px; background:linear-gradient(180deg,#4a1a1a,#2a0a0a)" onclick="eliminarComandoPersonalizado(${c.id}, '${c.nombre}')">🗑️ ${t('eliminar')}</button>` : ''}
+                        </div>
+                    </div>
+                    <div style="background:rgba(255,252,235,0.5); border:1px solid rgba(160,128,64,0.2); border-radius:3px; padding:10px 12px">
+                        <p style="font-family:Cinzel,serif; font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:6px">RESPUESTA DEL BOT</p>
+                        <textarea id="resp-${c.id}" onfocus="window._cmdEditando=${c.id}"
+                            style="width:100%; padding:8px 10px; border:1px solid var(--parchment-shadow); border-radius:3px; background:rgba(255,252,235,0.9); color:var(--ink); font-family:Almendra,serif; font-size:13px; resize:vertical; min-height:55px; outline:none">${respActual}</textarea>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px">
+                            <div style="display:flex; flex-wrap:wrap; gap:4px">${keywordsHtml}</div>
+                            <button class="btn-primary" style="padding:5px 14px; font-size:10px" onclick="guardarRespuestaComando(${c.id})">💾 Guardar respuesta</button>
                         </div>
                     </div>
                 </div>`
@@ -2347,6 +2393,32 @@ function aplicarMultas(playerIds, multaOro) {
             }).catch(() => {})
         }).catch(() => {})
     }).catch(() => mostrarToast('Error al aplicar multas', 'error'))
+}
+
+function insertarKeyword(keyword) {
+    const id = window._cmdEditando
+    if (!id) { mostrarToast('Hacé click en el campo de texto primero', 'error'); return }
+    const ta = document.getElementById(`resp-${id}`)
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    ta.value = ta.value.slice(0, start) + keyword + ta.value.slice(end)
+    ta.selectionStart = ta.selectionEnd = start + keyword.length
+    ta.focus()
+}
+
+function guardarRespuestaComando(id) {
+    const ta = document.getElementById(`resp-${id}`)
+    if (!ta) return
+    const respuesta = ta.value.trim()
+    fetch(`/comandos/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ respuesta })
+    }).then(r => r.json()).then(data => {
+        if (data.ok) mostrarToast('✓ Respuesta guardada')
+        else mostrarToast('Error: ' + data.error, 'error')
+    }).catch(() => mostrarToast('Error al guardar', 'error'))
 }
 
 function cambiarAccesoComando(id, acceso) {
