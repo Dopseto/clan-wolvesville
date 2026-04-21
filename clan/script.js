@@ -1935,6 +1935,13 @@ function cargarAjustes() {
         fetch('/config/mensaje_premio').then(r => r.json()).catch(() => ({ valor: '' })),
         fetch('/config/mensaje_multa').then(r => r.json()).catch(() => ({ valor: '' }))
     ]).then(([cfgOro, cfgGemas, anunciosAuto, cfgBienvenida, cfgP1, cfgP2, cfgP3, cfgMultaXp, cfgMultaPct, cfgMsgPremio, cfgMsgMulta]) => {
+        // Espectador: vaciar todos los contenidos sensibles
+        if (rolActual === 'espectador') {
+            cfgBienvenida = { valor: '' }
+            cfgMsgPremio = { valor: '' }
+            cfgMsgMulta = { valor: '' }
+            anunciosAuto = anunciosAuto.map(a => ({ ...a, mensaje: '' }))
+        }
         const contenido = document.getElementById('contenido')
         const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
         let html = `<h1>⚙️ Ajustes</h1>`
@@ -2226,7 +2233,7 @@ function cargarComandos() {
                 const acceso = c.acceso || 'desactivado'
                 const colorEstado = acceso === 'todos' ? '#2d6a1e' : acceso === 'lideres' ? '#c47a2a' : '#8b2010'
                 const textoEstado = acceso === 'todos' ? '✅ Todos' : acceso === 'lideres' ? '👑 Solo líderes' : '❌ Desactivado'
-                const respActual = c.respuesta || ''
+                const respActual = rolActual === 'espectador' ? '' : (c.respuesta || '')
                 html += `
                 <div style="padding:16px 0; border-bottom:1px solid rgba(160,128,64,0.2)">
                     <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:10px">
