@@ -60,7 +60,8 @@ function tarjeta(j) {
 }
 
 function buscarPorNombre() {
-    const nombre = document.getElementById('inputNombre').value.trim()
+    const inputNombre = document.getElementById("inputNombre")
+    const nombre = inputNombre.value.trim()
     if (!nombre) return
     mostrarCargando()
     fetch(`/buscar?nombre=${encodeURIComponent(nombre)}`)
@@ -72,11 +73,13 @@ function buscarPorNombre() {
             }
             mostrarResultado('<h3 style="margin-bottom:10px">✓ Jugador guardado</h3>' + tarjeta(data))
             cargarLista()
+            inputNombre.value = ""
         })
 }
 
 function buscarPorID() {
-    const id = document.getElementById('inputID').value.trim()
+    const inputID = document.getElementById("inputID")
+    const id = inputID.value.trim()
     if (!id) return
     mostrarCargando()
     fetch(`/buscarid?id=${encodeURIComponent(id)}`)
@@ -88,6 +91,7 @@ function buscarPorID() {
             }
             mostrarResultado('<h3 style="margin-bottom:10px">✓ Jugador guardado</h3>' + tarjeta(data))
             cargarLista()
+            inputID.value = ""
         })
 }
 
