@@ -1296,9 +1296,11 @@ class Handler(BaseHTTPRequestHandler):
                     with urllib.request.urlopen(req, video_bytes) as r:
                         r.read()
                 self.send_json({'ok': True})
+            except urllib.error.HTTPError as e:
+                error_body = e.read().decode()
+                self.send_json({'error': str(e), 'detalle': error_body})
             except Exception as e:
-                import traceback
-                self.send_json({'error': str(e), 'detalle': traceback.format_exc()})
+                self.send_json({'error': str(e)})
             return
         # =================== FIN CÁMARA ===================
 
