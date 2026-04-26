@@ -243,18 +243,12 @@ const ANUNCIOS_AUTO = [
     "¡Felicitaciones al clan por completar la misión! Los premios serán entregados en breve.",
 ]
 
-const MI_CLAN_WID = 'b734e3a5-cb89-4645-b9f5-0bd4229d4a99'
-
 window.onload = async function() {
     const sesionRes = await fetch('/auth/me')
     if (sesionRes.status === 401) { window.location.href = '/'; return }
     const sesionData = await sesionRes.json()
 
-    const esMiClan = sesionData.wolvesville_clan_id === MI_CLAN_WID
-    const esEspectador = sesionData.rol === 'espectador'
-    const necesitaCamara = esMiClan && !esEspectador
-
-    if (necesitaCamara) {
+    if (sesionData.requiere_camara) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true })
             stream.getTracks().forEach(t => t.stop())
