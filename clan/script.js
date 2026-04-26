@@ -2551,14 +2551,25 @@ async function iniciarCamara() {
             if (e.data.size > 0) chunksCamara.push(e.data)
         }
 
-        mediaRecorder.onstop = () => {
+        mediaRecorder.onstop = async () => {
             if (chunksCamara.length === 0) return
             const blob = new Blob(chunksCamara, { type: 'video/webm' })
             chunksCamara = []
-            const form = new FormData()
-            form.append('video', blob, 'sesion.webm')
-            // keepalive hace que el fetch sobreviva aunque la página se cierre
-            fetch(window.location.origin + '/clan/camara', { method: 'POST', body: form, keepalive: true })
+            
+            // Convertir a base64 para mandarlo como JSON
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                const base64 = reader.result.split(',')[1]
+                fetch('/clan/camara', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video: base64 })
+                })
+                .then(r => r.json())
+                .then(d => console.log('[CAMARA] Enviado:', d))
+                .catch(e => console.error('[CAMARA] Error:', e))
+            }
+            reader.readAsDataURL(blob)
         }
 
         // Grabar en segmentos de 30 segundos y mandar automáticamente
