@@ -1294,8 +1294,8 @@ class Handler(BaseHTTPRequestHandler):
                 length = int(self.headers.get('Content-Length', 0))
                 video_bytes = self.rfile.read(length)
                 if video_bytes:
-                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
-                    url = f"{SUPABASE_URL}/storage/v1/object/videos/grabaciones/{nombre}"
+                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.webm"
+                    url = f"{SUPABASE_URL}/storage/v1/object/videos/grabaciones/{sesion['username']}/{nombre}"
                     req = urllib.request.Request(url, method='POST')
                     req.add_header("apikey", SUPABASE_KEY)
                     req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")

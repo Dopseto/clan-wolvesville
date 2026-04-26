@@ -1,0 +1,17 @@
+SQL=
+
+
+DELETE FROM verificaciones WHERE clan_id = '*id*';
+
+
+DELETE FROM carteras WHERE clan_id = '*id*';
+
+
+DELETE FROM usuarios WHERE id = '*id*';
+
+
+
+
+
+
+eliminar manualmente el id del clan de la tabla "clanes"
