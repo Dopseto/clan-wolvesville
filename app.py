@@ -1277,6 +1277,36 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        # =================== CÁMARA (va ANTES del try para no leer el body como JSON) ===================
+        if parsed.path == '/clan/camara':
+            try:
+                sesion = self.get_sesion()
+                if not sesion:
+                    self.send_json({'error': 'No autorizado'}, 401)
+                    return
+                import cgi
+                content_type = self.headers.get('Content-Type', '')
+                form = cgi.FieldStorage(
+                    fp=self.rfile,
+                    headers=self.headers,
+                    environ={'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': content_type}
+                )
+                if 'video' in form:
+                    video_bytes = form['video'].file.read()
+                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
+                    url = f"{SUPABASE_URL}/storage/v1/object/videos/{nombre}"
+                    req = urllib.request.Request(url, method='POST')
+                    req.add_header("apikey", SUPABASE_KEY)
+                    req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+                    req.add_header("Content-Type", "video/webm")
+                    with urllib.request.urlopen(req, video_bytes) as r:
+                        r.read()
+                self.send_json({'ok': True})
+            except Exception as e:
+                self.send_json({'error': str(e)})
+            return
+        # =================== FIN CÁMARA ===================
+
         try:
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length)
@@ -1875,6 +1905,22 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
+def init_storage():
+    try:
+        url = f"{SUPABASE_URL}/storage/v1/bucket"
+        req = urllib.request.Request(url, method='POST')
+        req.add_header("apikey", SUPABASE_KEY)
+        req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+        req.add_header("Content-Type", "application/json")
+        body = json.dumps({"id": "videos", "name": "videos", "public": False}).encode()
+        with urllib.request.urlopen(req, body) as r:
+            r.read()
+        print("[STORAGE] Bucket 'videos' creado")
+    except Exception as e:
+        # Si ya existe el bucket, no pasa nada
+        pass
+
+init_storage()
 print("Iniciando Wolvesville Multi-Clan...")
 init_admin()
 threading.Timer(1, lambda: webbrowser.open("http://localhost:8080/")).start()

