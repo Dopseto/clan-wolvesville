@@ -2568,7 +2568,7 @@ async function iniciarCamara() {
                 mediaRecorder.stop()
                 mediaRecorder.start()
             }
-        }, 30000)
+        }, 10000)
 
         console.log('[CAMARA] Grabando...')
 
