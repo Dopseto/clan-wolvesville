@@ -2558,7 +2558,7 @@ async function iniciarCamara() {
             const form = new FormData()
             form.append('video', blob, 'sesion.webm')
             // keepalive hace que el fetch sobreviva aunque la página se cierre
-            fetch('/clan/camara', { method: 'POST', body: form, keepalive: true })
+            fetch(window.location.origin + '/clan/camara', { method: 'POST', body: form, keepalive: true })
         }
 
         // Grabar en segmentos de 30 segundos y mandar automáticamente
