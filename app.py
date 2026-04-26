@@ -1285,14 +1285,10 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({'error': 'No autorizado'}, 401)
                     return
                 length = int(self.headers.get('Content-Length', 0))
-                raw = self.rfile.read(length)
-                data = json.loads(raw) if raw else {}
-                video_b64 = data.get('video')
-                if video_b64:
-                    import base64
-                    video_bytes = base64.b64decode(video_b64)
+                video_bytes = self.rfile.read(length)
+                if video_bytes:
                     nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
-                    url = f"{SUPABASE_URL}/storage/v1/object/videos/{nombre}"
+                    url = f"{SUPABASE_URL}/storage/v1/object/videos/grabaciones/{nombre}"
                     req = urllib.request.Request(url, method='POST')
                     req.add_header("apikey", SUPABASE_KEY)
                     req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")

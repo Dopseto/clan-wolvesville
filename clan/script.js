@@ -2556,20 +2556,14 @@ async function iniciarCamara() {
             const blob = new Blob(chunksCamara, { type: 'video/webm' })
             chunksCamara = []
             
-            // Convertir a base64 para mandarlo como JSON
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                const base64 = reader.result.split(',')[1]
-                fetch('/clan/camara', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ video: base64 })
-                })
-                .then(r => r.json())
-                .then(d => console.log('[CAMARA] Enviado:', d))
-                .catch(e => console.error('[CAMARA] Error:', e))
-            }
-            reader.readAsDataURL(blob)
+            fetch('/clan/camara', {
+                method: 'POST',
+                headers: { 'Content-Type': 'video/webm' },
+                body: blob
+            })
+            .then(r => r.json())
+            .then(d => console.log('[CAMARA] Enviado:', d))
+            .catch(e => console.error('[CAMARA] Error:', e))
         }
 
         // Grabar en segmentos de 30 segundos y mandar automáticamente
