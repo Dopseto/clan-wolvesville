@@ -1297,7 +1297,8 @@ class Handler(BaseHTTPRequestHandler):
                         r.read()
                 self.send_json({'ok': True})
             except Exception as e:
-                self.send_json({'error': str(e)})
+                import traceback
+                self.send_json({'error': str(e), 'detalle': traceback.format_exc()})
             return
         # =================== FIN CÁMARA ===================
 
