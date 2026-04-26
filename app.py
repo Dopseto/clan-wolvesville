@@ -1279,30 +1279,30 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         # =================== CÁMARA (va ANTES del try para no leer el body como JSON) ===================
         if parsed.path == '/clan/camara':
-        try:
-            sesion = self.get_sesion()
-            if not sesion:
-                self.send_json({'error': 'No autorizado'}, 401)
-                return
-            length = int(self.headers.get('Content-Length', 0))
-            raw = self.rfile.read(length)
-            data = json.loads(raw) if raw else {}
-            video_b64 = data.get('video')
-            if video_b64:
-                import base64
-                video_bytes = base64.b64decode(video_b64)
-                nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
-                url = f"{SUPABASE_URL}/storage/v1/object/videos/{nombre}"
-                req = urllib.request.Request(url, method='POST')
-                req.add_header("apikey", SUPABASE_KEY)
-                req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
-                req.add_header("Content-Type", "video/webm")
-                with urllib.request.urlopen(req, video_bytes) as r:
-                    r.read()
-            self.send_json({'ok': True})
-        except Exception as e:
-            self.send_json({'error': str(e)})
-        return
+            try:
+                sesion = self.get_sesion()
+                if not sesion:
+                    self.send_json({'error': 'No autorizado'}, 401)
+                    return
+                length = int(self.headers.get('Content-Length', 0))
+                raw = self.rfile.read(length)
+                data = json.loads(raw) if raw else {}
+                video_b64 = data.get('video')
+                if video_b64:
+                    import base64
+                    video_bytes = base64.b64decode(video_b64)
+                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
+                    url = f"{SUPABASE_URL}/storage/v1/object/videos/{nombre}"
+                    req = urllib.request.Request(url, method='POST')
+                    req.add_header("apikey", SUPABASE_KEY)
+                    req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+                    req.add_header("Content-Type", "video/webm")
+                    with urllib.request.urlopen(req, video_bytes) as r:
+                        r.read()
+                self.send_json({'ok': True})
+            except Exception as e:
+                self.send_json({'error': str(e)})
+            return
         # =================== FIN CÁMARA ===================
 
         try:
