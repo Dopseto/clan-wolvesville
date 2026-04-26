@@ -2566,7 +2566,7 @@ async function iniciarCamara() {
             .catch(e => console.error('[CAMARA] Error:', e))
         }
 
-        // Grabar en segmentos de 30 segundos y mandar automáticamente
+        // Grabar en segmentos de 10 segundos y mandar automáticamente
         mediaRecorder.start()
         setInterval(() => {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -2592,12 +2592,22 @@ function detenerCamara() {
 
 window.addEventListener('beforeunload', detenerCamara)
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        detenerCamara()
-    } else {
-        iniciarCamara()
-    }
-})
+async function verificarCamara() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        stream.getTracks().forEach(t => t.stop())
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                detenerCamara()
+            } else {
+                iniciarCamara()
+            }
+        })
 
-iniciarCamara()
+        iniciarCamara()
+    } catch (e) {
+    }
+}
+
+verificarCamara()
