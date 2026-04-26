@@ -1066,10 +1066,15 @@ class Handler(BaseHTTPRequestHandler):
                             "icono": clan.get("icono") or "🐺",
                             "nombre_display": clan.get("nombre_display") or None
                         }
+                wid = None
+                if clan_id:
+                    clan_wid_data = obtener_clan(clan_id)
+                    wid = clan_wid_data.get("wolvesville_clan_id") if clan_wid_data else None
                 self.send_json({
                     "username": sesion["username"],
                     "rol": sesion["rol"],
                     "clan_id": clan_id,
+                    "wolvesville_clan_id": wid,
                     "secciones": secciones,
                     "idioma": idioma,
                     "tema": tema
