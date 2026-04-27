@@ -1309,7 +1309,7 @@ class Handler(BaseHTTPRequestHandler):
                 length = int(self.headers.get('Content-Length', 0))
                 video_bytes = self.rfile.read(length)  # lee binario directo, sin json.loads
                 if video_bytes:
-                    nombre = f"{sesion['username']}/{datetime.now().strftime('%Y%m%d_%H%M%S')}.webm"
+                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
                     r2.put_object(
                         Bucket=R2_BUCKET,
                         Key=nombre,
