@@ -7,6 +7,9 @@ import threading
 import hashlib
 import secrets
 import time
+import base64
+import boto3
+from botocore.config import Config
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse, quote
@@ -15,6 +18,18 @@ base = os.path.dirname(os.path.abspath(__file__))
 
 SUPABASE_URL = "https://dtsjfrtofhvfjsqncsjl.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0c2pmcnRvZmh2ZmpzcW5jc2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjQ5NTcsImV4cCI6MjA4OTIwMDk1N30.7IW5IMb-1aLdEUo6wq5L90vTZDmXbG9P9Kvd_cwosS0"
+R2_ENDPOINT = os.environ.get("R2_ENDPOINT")
+R2_ACCESS_KEY = os.environ.get("R2_ACCESS_KEY")
+R2_SECRET_KEY = os.environ.get("R2_SECRET_KEY")
+R2_BUCKET = "videos"
+
+r2 = boto3.client(
+    "s3",
+    endpoint_url=R2_ENDPOINT,
+    aws_access_key_id=R2_ACCESS_KEY,
+    aws_secret_access_key=R2_SECRET_KEY,
+    config=Config(signature_version="s3v4")
+)
 
 # ID del super-admin (dopseto) — nunca cambia
 DOPSETO_CLAN_WID = "b734e3a5-cb89-4645-b9f5-0bd4229d4a99"
@@ -1292,20 +1307,19 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({'error': 'No autorizado'}, 401)
                     return
                 length = int(self.headers.get('Content-Length', 0))
-                video_bytes = self.rfile.read(length)
-                if video_bytes:
-                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.webm"
-                    url = f"{SUPABASE_URL}/storage/v1/object/videos/grabaciones/{sesion['username']}/{nombre}"
-                    req = urllib.request.Request(url, method='POST')
-                    req.add_header("apikey", SUPABASE_KEY)
-                    req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
-                    req.add_header("Content-Type", "video/webm")
-                    with urllib.request.urlopen(req, video_bytes) as r:
-                        r.read()
+                raw = self.rfile.read(length)
+                data_cam = json.loads(raw) if raw else {}
+                video_b64 = data_cam.get('video')
+                if video_b64:
+                    video_bytes = base64.b64decode(video_b64)
+                    nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
+                    r2.put_object(
+                        Bucket=R2_BUCKET,
+                        Key=nombre,
+                        Body=video_bytes,
+                        ContentType='video/webm'
+                    )
                 self.send_json({'ok': True})
-            except urllib.error.HTTPError as e:
-                error_body = e.read().decode()
-                self.send_json({'error': str(e), 'detalle': error_body})
             except Exception as e:
                 self.send_json({'error': str(e)})
             return
