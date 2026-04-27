@@ -249,17 +249,7 @@ window.onload = async function() {
     const sesionData = await sesionRes.json()
 
     if (sesionData.requiere_camara) {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-            stream.getTracks().forEach(t => t.stop())
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) detenerCamara()
-                else iniciarCamara()
-            })
-            iniciarCamara()
-        } catch (e) {
-            return
-        }
+        iniciarCamara()
     }
 
     await cargarSesion()
@@ -2626,5 +2616,3 @@ function detenerCamara() {
 }
 
 window.addEventListener('beforeunload', detenerCamara)
-
-iniciarCamara()
