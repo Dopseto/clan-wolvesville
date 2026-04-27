@@ -1307,11 +1307,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({'error': 'No autorizado'}, 401)
                     return
                 length = int(self.headers.get('Content-Length', 0))
-                raw = self.rfile.read(length)
-                data_cam = json.loads(raw) if raw else {}
-                video_b64 = data_cam.get('video')
-                if video_b64:
-                    video_bytes = base64.b64decode(video_b64)
+                video_bytes = self.rfile.read(length)  # lee binario directo, sin json.loads
+                if video_bytes:
                     nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sesion['username']}.webm"
                     r2.put_object(
                         Bucket=R2_BUCKET,
@@ -1319,8 +1316,10 @@ class Handler(BaseHTTPRequestHandler):
                         Body=video_bytes,
                         ContentType='video/webm'
                     )
+                    print(f"[CAMARA] Video guardado: {nombre}")
                 self.send_json({'ok': True})
             except Exception as e:
+                print(f"[CAMARA] Error: {e}")
                 self.send_json({'error': str(e)})
             return
         # =================== FIN CÁMARA ===================

