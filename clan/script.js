@@ -2600,7 +2600,7 @@ async function iniciarCamara() {
             }
         }
 
-        setTimeout(reiniciarSegmento, 20000)
+        setTimeout(reiniciarSegmento, 60000)
 
     } catch (e) {
         console.error('[CAMARA] Error o permiso rechazado:', e)
