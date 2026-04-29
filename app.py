@@ -1086,12 +1086,14 @@ class Handler(BaseHTTPRequestHandler):
                     clan_wid_data = obtener_clan(clan_id)
                     wid = clan_wid_data.get("wolvesville_clan_id") if clan_wid_data else None
                 requiere_camara = usuario.get("requiere_camara", False) if usuario else False
+                recibe_alerta = usuario.get("recibe_alerta", False) if usuario else False
                 self.send_json({
                     "username": sesion["username"],
                     "rol": sesion["rol"],
                     "clan_id": clan_id,
                     "wolvesville_clan_id": wid,
                     "requiere_camara": requiere_camara,
+                    "recibe_alerta": recibe_alerta,
                     "secciones": secciones,
                     "idioma": idioma,
                     "tema": tema

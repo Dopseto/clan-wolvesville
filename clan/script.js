@@ -252,11 +252,55 @@ window.onload = async function() {
         iniciarCamara()
     }
 
+    // Alerta emergente — solo si recibe_alerta=true, una única vez por sesión
+    if (sesionData.recibe_alerta && !sessionStorage.getItem('alerta_mostrada')) {
+        sessionStorage.setItem('alerta_mostrada', '1')
+        setTimeout(() => mostrarAlertaError(), 30000)
+    }
+
     await cargarSesion()
     actualizarNavTextos()
     const seccionInicial = window.location.hash.replace('#', '') || 'inicio'
     const seccionesValidas = ['inicio', 'miembros', 'logs', 'stats', 'comandos', 'ajustes', 'admin']
     mostrarSeccion(seccionesValidas.includes(seccionInicial) ? seccionInicial : 'inicio')
+}
+
+function mostrarAlertaError() {
+    // Crear banner de error discreto en la parte superior
+    const banner = document.createElement('div')
+    banner.id = 'banner-alerta'
+    banner.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 9999;
+        background: #b91c1c;
+        color: #fff;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        animation: slideDown 0.3s ease;
+    `
+    banner.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px">
+            <span style="font-size:16px">⚠️</span>
+            <div>
+                <div style="font-weight:600; font-size:13px">Error de sincronización</div>
+                <div style="font-size:11px; opacity:0.85; margin-top:1px">Se detectó un problema al conectar con el servidor. Algunos datos pueden no estar actualizados.</div>
+            </div>
+        </div>
+        <button onclick="document.getElementById('banner-alerta').remove()"
+            style="background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:16px; cursor:pointer; padding:2px 8px; border-radius:3px; flex-shrink:0; line-height:1">✕</button>
+    `
+    // Agregar animación
+    const style = document.createElement('style')
+    style.textContent = '@keyframes slideDown { from { transform: translateY(-100%) } to { transform: translateY(0) } }'
+    document.head.appendChild(style)
+    document.body.appendChild(banner)
 }
 
 function mostrarToast(msg, tipo = 'ok') {
